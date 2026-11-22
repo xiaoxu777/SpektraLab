@@ -7,8 +7,29 @@
 //  migrated when it comes back.
 
 import Foundation
+import Observation
+
+/// **FilmLab's 普通版 / 专业版** (the owner, 2026-11-22: "我希望可以有一个按钮来切换专业版和普通版"): one switch, in the
+/// window's bar, on the home page, in the welcome and in Settings. Observed, so every view that asks
+/// `FeatureFlags.simpleWindow` in its body is drawn again when it flips. Kept in `UserDefaults` under the key the
+/// Advanced Tools checkbox has always used, so a choice made before the switch existed stays made.
+@Observable
+final class ProMode: @unchecked Sendable {
+    static let shared = ProMode()
+    var on: Bool {
+        didSet { UserDefaults.standard.set(on, forKey: FeatureFlags.showAdvancedKey) }
+    }
+    private init() { on = UserDefaults.standard.bool(forKey: FeatureFlags.showAdvancedKey) }
+}
 
 enum FeatureFlags {
+    /// **FilmLab's simple window** (普通版): 图库 · 冲洗 · 导出, each with its everyday controls only. 编辑 (local layers, masks), 合成 (double exposure, half-frame
+    /// pair), the Light Table and the agents' switch are held back whole — their pages and the controls that reach
+    /// them — while every model, edit and sidecar keeps their settings, so an edit made with them still renders.
+    /// Settings › General › 显示高级工具 turns them back on (`showAdvancedKey`); off by default.
+    static let showAdvancedKey = "filmlab.showAdvanced"
+    static var simpleWindow: Bool { !ProMode.shared.on }
+
     /// **Whether a screen of this Mac can show HDR at all** (the owner, 2026-11-04: "if it is on
     /// non-HDR machine we simply hide the HDR toggle throughout the app"): what the panels
     /// themselves say they can do (potential EDR headroom over 1.05). On the Mac **any** attached screen's, and read
@@ -68,5 +89,5 @@ enum FeatureFlags {
     /// since M1c (2026-11-13), when the last of the seams M1a left (主体 · 背景 · 人, 组合蒙版, 完善蒙版…) was filled and
     /// `MaskSeams` deleted. Off, the panel is as it was before M1; the layers an edit holds still apply wherever the frame
     /// is shown.
-    static let maskLayers = true
+    static var maskLayers: Bool { !simpleWindow }   // FilmLab: with the advanced tools
 }

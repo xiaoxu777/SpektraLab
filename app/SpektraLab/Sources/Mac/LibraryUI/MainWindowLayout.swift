@@ -109,6 +109,7 @@ enum MacLibraryGo {
         browser.selection = [image.id]
         browser.focus = image.id
         MacDevelopWanted.surface = mode == .edit ? .edit : .develop
+        MacDevelopWanted.step = mode == .export ? .format : mode == .develop ? .filmAndPaper : nil
         open(image, model: model)
     }
 
@@ -179,9 +180,15 @@ struct MainWindowLayout: View {
                 #if DEBUG
                 .onAppear { MacShellTrace.appeared("bar") }
                 #endif
+            // The reader re-runs at every step of a window resize. What it makes is compared, not re-made: the mode's
+            // content and the browser's grid are equatable views of their own (`ShellContent`, `ShellBrowserGrid`), so
+            // only the panel's width follows the room. Made here directly, both re-ran their whole bodies at every
+            // step — the hidden library page, its sidebar and viewer, and the grid with all its rows (2026-11-22,
+            // measured: a resize stalled the main thread for seconds).
             GeometryReader { geo in
                 HStack(spacing: 0) {
-                    content(develop)
+                    ShellContent(develop: develop)
+                        .equatable()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     if browser.viewerShown {
                         panel(store, rows, inDevelop: develop != nil, room: geo.size, factor: f)
@@ -191,6 +198,9 @@ struct MainWindowLayout: View {
             }
         }
         .background(Theme.background.ignoresSafeArea())
+        // Under FilmLab's home page or welcome the shell is not there for VoiceOver either (it would be read, and
+        // pressed, through the cover).
+        .accessibilityHidden(FilmLabHome.shared.shown || FilmLabHome.shared.welcome)
         // Pictures and folders dragged from Finder, in every mode: the import page with them as picked
         // (`MacImportDrop`, 2026-11-05). Refused (the cursor's ⊘) under another page's cover or sheet, and
         // for files that are not pictures, folders or catalogs; not answered at all for a drag from inside
@@ -199,6 +209,8 @@ struct MainWindowLayout: View {
         .overlay {
             if dropWatch.shown || browser.dropReading != nil { MacImportDropNote(reading: browser.dropReading).ignoresSafeArea() }
         }
+        // FilmLab's home page and, the first time, its welcome tour: over the whole window, the shell kept under them.
+        .overlay { OwnReads { filmLabCovers } }
         // A key while the note is up: it belongs to no drag (a backstop; a drag's end is heard).
         .onKeyPress(phases: .down) { _ in
             if dropWatch.shown { dropWatch.apply { $0.interrupted() } }
@@ -278,22 +290,6 @@ struct MainWindowLayout: View {
             .accessibilityHidden(true)
     }
 
-    /// The mode's content: the library page (mounted always, hidden under 冲洗/编辑), and the develop page
-    /// over it while a develop is on the path. No transition: the swap is the frame it happens in.
-    @ViewBuilder private func content(_ develop: Route?) -> some View {
-        ZStack {
-            LibraryScreen()
-                .opacity(develop == nil ? 1 : 0)
-                .allowsHitTesting(develop == nil)
-                .accessibilityHidden(develop != nil)
-            if let develop {
-                RouteContent(route: develop)
-                    .id(develop)
-            }
-        }
-        .transaction { $0.animation = nil }
-    }
-
     /// Shell bindings are off under fields, presentations, stacked pages and inline crop.
     private var shortcutsFree: Bool { Self.shortcutsFree(router) }
 
@@ -302,6 +298,7 @@ struct MainWindowLayout: View {
         return !browser.typing && !browser.modal && router.cover == nil && router.sheets.isEmpty
             && MacShellPath.split(router.path).stacked.isEmpty && MacShellBar.shared.develop?.inCrop != true
             && !actions.confirmingRemoval && actions.refusal == nil && !MacVariantActions.shared.confirmingDelete
+            && !FilmLabHome.shared.shown && !FilmLabHome.shared.welcome
     }
 
     @ViewBuilder private func shellKeys(_ store: any MacLibraryData, _ rows: [MacImage]) -> some View {
@@ -315,7 +312,7 @@ struct MainWindowLayout: View {
         MacShortcutButton(.crop, enabled: free && (dev?.cropEnabled ?? (browser.primary(rows) != nil))) {
             if let dev { dev.crop() } else if let row = browser.primary(rows) { MacLibraryGo.crop(row, model: model) }
         }
-        MacShortcutButton(.lightTable, enabled: free) {
+        MacShortcutButton(.lightTable, enabled: free && !FeatureFlags.simpleWindow) {
             MacLibraryGo.putOnLightTable(rows.filter { browser.selection.contains($0.id) }, model: model)
         }
         MacShortcutButton(.selectAll, enabled: free && !rows.isEmpty) { browser.selectAll(rows) }
@@ -404,6 +401,24 @@ struct MainWindowLayout: View {
         }
     }
 
+    /// The home page, and the welcome over it (`FilmLabHome`).
+    @ViewBuilder private var filmLabCovers: some View {
+        let home = FilmLabHome.shared
+        ZStack {
+            if home.shown {
+                FilmLabHomeView()
+                    .interfaceScaled(.macPoints)
+                    .accessibilityHidden(home.welcome)
+                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
+            }
+            if home.welcome {
+                FilmLabWelcome()
+                    .interfaceScaled(.macPoints)
+                    .transition(.opacity)
+            }
+        }
+    }
+
     // MARK: the bar
 
     private func topBar(_ store: any MacLibraryData, _ rows: [MacImage], inDevelop: Bool) -> some View {
@@ -415,7 +430,7 @@ struct MainWindowLayout: View {
         } actions: {
             if let dev, !dev.inCrop { MacDevelopActions(bar: dev) }
             // 图库 only: 合成, of the pictures chosen (the owner's decision 10).
-            else if !inDevelop {
+            else if !inDevelop, !FeatureFlags.simpleWindow {
                 MacCombineMenu(chosen: browser.picked(in: rows),
                                makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
                                makePair: { images in actions.makePair(images, store: store, model: model) })
@@ -448,7 +463,7 @@ struct MainWindowLayout: View {
             MacModeSwitch(current: dev?.surface ?? .develop) { mode in
                 switch mode {
                 case .library: router.toLibrary()
-                case .develop, .edit:
+                case .develop, .export, .edit:
                     browser.fullGrid = false      // a surface wants the picture: the viewer comes back
                     dev?.chooseSurface(mode)
                 }
@@ -485,16 +500,13 @@ struct MainWindowLayout: View {
         // The whole room right of the column when the grid has the window; its kept width otherwise.
         let width = (browser.fullGrid ? room.width / f - column : min(MacMetric.pt(browser.browserWidth), limit)) + 8
         return FloatingBrowser(browser: browser, limit: limit, full: browser.fullGrid) {
-            MacLibraryGrid(store: store, browser: browser, rows: rows,
-                           open: { row in openRow(row, store: store) },
-                           lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
-                           makePair: { images in actions.makePair(images, store: store, model: model) },
-                           makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
-                           confirmRemoval: { ids in actions.ask(ids) },
-                           // The thumbnails' size in 冲洗/编辑 too (the owner, 2026-10-26: the cells are
-                           // squares sized by this slider, so the canvas's browser needs it as the
-                           // library's does). The header drops it whole when its width cannot hold it.
-                           bar: .slim, sizeSlider: true, viewer: false)
+            ShellBrowserGrid(store: store, rows: rows, inDevelop: inDevelop,
+                             open: { row in openRow(row, store: store) },
+                             lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
+                             makePair: { images in actions.makePair(images, store: store, model: model) },
+                             makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
+                             confirmRemoval: { ids in actions.ask(ids) })
+                .equatable()
         }
         .padding(.top, 8)
         .interfaceScaled(.macPoints)
@@ -541,6 +553,79 @@ struct MainWindowLayout: View {
             h.combine(f.isFavourite)
         }
         return h.finalize()
+    }
+}
+
+/// The mode's content: the library page (mounted always, hidden under 冲洗/编辑), and the develop page
+/// over it while a develop is on the path. No transition: the swap is the frame it happens in.
+///
+/// Equatable on the mode alone (2026-11-22): the shell's reader makes it again at every step of a window resize, and
+/// made again it re-ran `LibraryScreen` — the hidden library page with it — though nothing it shows had changed. What
+/// the pages read they follow themselves (their own `@Observable` reads and environment).
+///
+/// Under 冲洗/编辑 the hidden library page keeps the size it last had in front (2026-11-22). Given the window's room, it
+/// was laid out again at every step of a resize — its column, viewer and browser — and its viewer asked for a new decode
+/// of its picture as it went (measured in 冲洗, a scripted sweep: one layout of the hidden page per size step, ~1.7
+/// decodes started per width step). Held, nothing under it moves; it stays mounted, so its scroll position and
+/// selection are what they were, and it takes the window's size again when 图库 is in front.
+private struct ShellContent: View, Equatable {
+    let develop: Route?
+    /// The library page's size when it was last in front. Kept in a box nothing observes: as `@State` it was written
+    /// at every resize step in 图库, and each write re-ran this body and the library page's.
+    @State private var front = FrontSize()
+
+    private final class FrontSize { var size: CGSize? }
+
+    nonisolated static func == (a: Self, b: Self) -> Bool { a.develop == b.develop }
+
+    var body: some View {
+        // Read when the mode changes (this body runs again then), so the hidden page keeps the size of its last frame in front.
+        let held = develop == nil ? nil : front.size
+        ZStack {
+            LibraryScreen()
+                .frame(width: held?.width, height: held?.height)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
+                    if develop == nil { front.size = size }
+                }
+                .opacity(develop == nil ? 1 : 0)
+                .allowsHitTesting(develop == nil)
+                .accessibilityHidden(develop != nil)
+            if let develop {
+                RouteContent(route: develop)
+                    .id(develop)
+            }
+        }
+        .transaction { $0.animation = nil }
+    }
+}
+
+/// The browser panel's grid, equatable on what it shows — the store, its rows and the mode (2026-11-22). Its acts are
+/// closures, which never compare equal: made again at every step of a window resize, `MacLibraryGrid` re-ran its body
+/// — every row's aspect and the lazy stack's rows — while its width, the panel's, had not moved. The acts reach the
+/// shell's shared objects, the same from one making to the next.
+private struct ShellBrowserGrid: View, Equatable {
+    let store: any MacLibraryData
+    let rows: [MacImage]
+    let inDevelop: Bool
+    let open: (MacImage) -> Void
+    let lightTable: ([MacImage]) -> Void
+    let makePair: ([MacImage]) -> Void
+    let makeDouble: ([MacImage]) -> Void
+    let confirmRemoval: (Set<LibraryFrame.ID>) -> Void
+
+    nonisolated static func == (a: Self, b: Self) -> Bool {
+        a.store === b.store && a.inDevelop == b.inDevelop && a.rows == b.rows
+    }
+
+    var body: some View {
+        MacLibraryGrid(store: store, browser: MacLibraryBrowser.shared, rows: rows,
+                       open: open, lightTable: lightTable, makePair: makePair, makeDouble: makeDouble,
+                       confirmRemoval: confirmRemoval,
+                       // The thumbnails' size in 冲洗/编辑 too (the owner, 2026-10-26: the cells are
+                       // squares sized by this slider, so the canvas's browser needs it as the
+                       // library's does). The header drops it whole when its width cannot hold it.
+                       bar: .slim, sizeSlider: true, viewer: false)
     }
 }
 
@@ -595,8 +680,7 @@ struct MacDevelopActions: View {
                 .contextMenu {
                     Button(bar.originalOn ? L("Process") : L("Original", as: "the picture"), action: bar.toggleOriginal)
                 }
-            CapsuleButton(title: L("Export"), height: disc, width: MacMetric.pt(84), action: bar.export)
-                .padding(.leading, MacMetric.pt(2))
+            // FilmLab: no Export here — the 导出 mode is where every export is set and begun.
         }
         .buttonStyle(.plain)
         .fixedSize()

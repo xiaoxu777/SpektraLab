@@ -16,7 +16,7 @@ enum MacCatalogActions {
     static var pictures: URL { URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Pictures") }
 
     static func newCatalog(_ store: any MacLibraryData) async -> String? {
-        guard let url = await MacSavePanel.catalogPlace(name: MacImportSession.freeName("SpektraLab Catalog", in: pictures),
+        guard let url = await MacSavePanel.catalogPlace(name: MacImportSession.freeName("FilmLab Catalog", in: pictures),
                                                         in: pictures, message: L("Where the new catalog is kept")) else { return nil }
         do { _ = try await store.newCatalog(at: url); return nil } catch { return words(error) }
     }

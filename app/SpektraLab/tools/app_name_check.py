@@ -7,7 +7,7 @@ import plistlib
 import sys
 from pathlib import Path
 
-NAME = "SpektraLab"
+NAME = "FilmLab"
 app = Path(sys.argv[1]).resolve()
 bundles = [app]
 problems = []

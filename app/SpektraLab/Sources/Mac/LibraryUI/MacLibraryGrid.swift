@@ -247,12 +247,21 @@ struct MacLibraryGrid: View {
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 } else if store.sources.isEmpty {
                     // No catalog yet (2026-10-24: the SpektraLab Library is the person's catalogs).
-                    Text(L("No catalog yet")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                    Text(L("Make a SpektraLab catalog, or open a catalog or a folder from the + menu below the sidebar."))
+                    // FilmLab: a folder first. It is read where it is (nothing is copied or moved), so a card's
+                    // or a disk's folder of 3FR files is open in one step; a catalog stays the second way in.
+                    Text(L("Open a folder of photographs")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
+                    Text(L("Choose a folder, such as a card of Hasselblad 3FR files. The pictures are read where they are; nothing is copied or moved."))
                         .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    Button(L("Open Folder…")) {
+                        Task {
+                            guard let url = await MacOpenPanel.choose(multiple: false)?.first else { return }
+                            do { _ = try await store.open(url) } catch { notMade = error.localizedDescription }
+                        }
+                    }
+                    .font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.accent).buttonStyle(.plain)
                     Button(L("New Catalog…")) { Task { notMade = await MacCatalogActions.newCatalog(store) } }
-                        .font(MacMetric.font(12, .medium)).foregroundStyle(Theme.accent).buttonStyle(.plain)
+                        .font(MacMetric.font(12)).foregroundStyle(Theme.dim).buttonStyle(.plain)
                     if let notMade {
                         Text(L(shown: notMade)).font(MacMetric.font(12)).foregroundStyle(Theme.danger)
                             .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)

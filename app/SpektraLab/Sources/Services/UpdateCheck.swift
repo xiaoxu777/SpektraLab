@@ -53,11 +53,8 @@ final class UpdateCheck {
     @ObservationIgnored private var task: Task<Void, Never>?
 
     /// The manifest's address, as the build wrote it; nil where the build has none.
-    nonisolated static var feedURL: URL? {
-        guard let s = Bundle.main.object(forInfoDictionaryKey: "SPKUpdateFeedURL") as? String,
-              !s.isEmpty, !s.contains("$("), let url = URL(string: s), url.scheme == "https" else { return nil }
-        return url
-    }
+    /// FilmLab has no release feed: SpektraLab's would offer to replace this app with the upstream one.
+    nonisolated static var feedURL: URL? { nil }
 
     nonisolated static var runningVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"

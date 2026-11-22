@@ -110,7 +110,7 @@ struct LibRawDecodeCheck {
 
         let fm = FileManager.default
         let raws = (fm.enumerator(at: samples, includingPropertiesForKeys: nil)?.compactMap { $0 as? URL } ?? [])
-            .filter { ["arw", "cr3", "cr2", "nef", "raf", "rw2", "orf", "dng"].contains($0.pathExtension.lowercased()) }
+            .filter { ["arw", "cr3", "cr2", "nef", "raf", "rw2", "orf", "dng", "3fr", "fff"].contains($0.pathExtension.lowercased()) }
             .filter { !$0.path.contains("/_prints/") }
             .sorted { $0.path < $1.path }
         guard !raws.isEmpty else { print("SKIPPED: no samples at \(samples.path)"); exit(failures == 0 ? 0 : 1) }

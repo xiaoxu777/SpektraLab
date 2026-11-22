@@ -396,7 +396,7 @@ struct MacLibrarySidebar: View {
                 }
             }))
         }
-        groups.append(("developed", L("SpektraLab"), [
+        groups.append(("developed", L("FilmLab"), [
             FacetRow(id: "developed", title: L("Opened in Develop"), count: f.developed, on: q.developedOnly) {
                 change { $0.developedOnly.toggle() }
             },

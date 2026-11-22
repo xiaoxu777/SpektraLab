@@ -96,7 +96,7 @@ final class MacImportSession {
     var destination: Destination? { didSet { if destination != oldValue { destinationChanged() } } }
     var placement: Placement = .inPlace
     var copyFolder: URL?
-    var newCatalogName = "SpektraLab Catalog"
+    var newCatalogName = "FilmLab Catalog"
     var newCatalogFolder = URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Pictures")
     private(set) var existing: MacImportExisting?
     private(set) var loadingExisting = false
@@ -453,7 +453,7 @@ final class MacImportSession {
     /// A name for the new catalog that is not taken in its folder: "SpektraLab Catalog", "… 2", ….
     static func freeName(_ name: String, in folder: URL) -> String {
         let fm = FileManager.default
-        let base = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "SpektraLab Catalog" : name
+        let base = name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "FilmLab Catalog" : name
         var candidate = base, n = 1
         while fm.fileExists(atPath: folder.appending(path: candidate + ".spkcatalog").path)
                 || fm.fileExists(atPath: folder.appending(path: candidate).path) {

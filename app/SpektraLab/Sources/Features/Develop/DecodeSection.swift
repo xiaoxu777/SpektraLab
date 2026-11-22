@@ -98,7 +98,8 @@ struct DecodeSection: View {
             ColumnSectionHeader(title: L("Decode"), folded: prefs.decodeCollapsed, id: "decode",
                                 toggleFold: { prefs.decodeCollapsed.toggle() })
             if !prefs.decodeCollapsed {
-                ForEach(DecodeTool.allCases) { t in
+                // 普通版 (FilmLab): Exposure and White Balance only; the curve, the enlarger and HDR are 专业版's.
+                ForEach(FeatureFlags.simpleWindow ? [DecodeTool.exposure, .whiteBalance] : DecodeTool.allCases) { t in
                     // On a pair or a double the white balance is each picture's (R3): the whole has none, and
                     // says where it is (`LayerWhiteBalanceLinks`).
                     if t == .whiteBalance, !session.layerPiece.isSingle {
@@ -128,8 +129,15 @@ struct DecodeSection: View {
                     part(t).rowEnabled(enabled(t))
                     }
                 }
-                EnlargerGroup(session: session)
-                HighDynamicRangeGroup(session: session)
+                if FeatureFlags.simpleWindow {
+                    // 片边 as one switch: its formats, holes and date back are 专业版's 导出 page.
+                    if frame.pair == nil, session.layerPiece.isSingle {
+                        FilmEdgeColumn(session: session, frame: frame, switchOnly: true)
+                    }
+                } else {
+                    EnlargerGroup(session: session)
+                    HighDynamicRangeGroup(session: session)
+                }
             }
         }
     }

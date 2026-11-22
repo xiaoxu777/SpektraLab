@@ -128,4 +128,9 @@ bool decode_raw_headroom(const std::filesystem::path& source,
 bool decode_raw_headroom(const std::filesystem::path& source, const std::array<float, 4>* user_mul,
                          DecodedRaw& out, std::string& error);
 
+// FilmLab: the compatible policy at half size (LibRaw's half_size: each 2x2 Bayer cell becomes one pixel, no
+// demosaic), for a preview that needs no more than half the frame's pixels on either side. Off by default; a
+// full-size decode is unchanged.
+void set_compatible_half_size(bool half);
+
 }  // namespace spk::io

@@ -71,7 +71,7 @@ final class MacLibraryMove {
         self.store = store
         self.model = model
         let pictures = URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Pictures")
-        destination = pictures.appending(path: MacImportSession.freeName("SpektraLab Library", in: pictures) + ".spkcatalog")
+        destination = pictures.appending(path: MacImportSession.freeName("FilmLab Library", in: pictures) + ".spkcatalog")
     }
 
     /// The files' batch: one `images.add` each (the import flow's chunk).

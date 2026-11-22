@@ -216,9 +216,34 @@ struct StockGrid: View {
 
     /// One card's button. Its own function, as `StockPreviewRow`'s is (Xcode 26's type checker, 2026-11-08).
     private func cell(_ card: StockPreviewCard, live: Bool) -> some View {
-        let chosen = card.stock == selected
-        return StockCardButton(session: session, strip: strip, card: card, selected: chosen, live: live,
-                               tapped: { scrolled.tapped = card.stock }) { state, starred in
+        let scrolled = scrolled
+        return StockGridCell(session: session, strip: strip, card: card, chosen: card.stock == selected, live: live,
+                             width: width, tapped: { scrolled.tapped = card.stock })
+            .equatable()
+    }
+}
+
+/// One card of a `StockGrid`, equatable on what it draws (2026-11-22). The column is made again at every step of a
+/// window resize (the develop page's reader), the grid with it, and each of its ~150 cards re-ran its body — its
+/// button, menu and accessibility — though none had changed; their tap is a closure, which never compares equal.
+/// What a card shows as it renders (`StockStrip.state`) and its star (`StockCatalog`) it reads in its own body, and
+/// follows there.
+private struct StockGridCell: View, Equatable {
+    let session: OpenFrameSession
+    let strip: StockStrip
+    let card: StockPreviewCard
+    let chosen: Bool
+    let live: Bool
+    let width: CGFloat
+    let tapped: () -> Void
+
+    nonisolated static func == (a: Self, b: Self) -> Bool {
+        a.session === b.session && a.strip === b.strip && a.card == b.card
+            && a.chosen == b.chosen && a.live == b.live && a.width == b.width
+    }
+
+    var body: some View {
+        StockCardButton(session: session, strip: strip, card: card, selected: chosen, live: live, tapped: tapped) { state, starred in
             StockGridCard(card: card, state: state, starred: starred, selected: chosen, live: live,
                           imageHeight: CGFloat(StockGridRule.imageHeight(width: Double(width))))
         }

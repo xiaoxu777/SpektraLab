@@ -64,6 +64,7 @@ struct MacSharedControls: View {
             .accessibilityIdentifier("mac.bar.fullgrid")
             // The third way to look at the chosen pictures, after the grid and the viewer: on the table, at
             // their printed size (2026-10-24). The Library's own loupe, as the window's Library draws it.
+            if !FeatureFlags.simpleWindow {
             Button { lightTable(store.images.filter { browser.selection.contains($0.id) }) } label: {
                 DrawnGlyph(icon: .standLoupe, size: MacMetric.pt(15), color: Theme.secondaryText)
                     .frame(width: MacMetric.pt(26), height: MacMetric.pt(22)).contentShape(Rectangle())
@@ -72,6 +73,7 @@ struct MacSharedControls: View {
             .help(L("Light Table"))
             .accessibilityLabel(L("Light Table"))
             .accessibilityIdentifier("mac.library.lighttable")
+            }
             if let crop {
                 // White while the crop is open, as the column's Crop has drawn since 2026-10-24.
                 Button(action: crop) {

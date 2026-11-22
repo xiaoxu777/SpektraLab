@@ -26,8 +26,13 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     @ViewBuilder var mode: Mode
     @ViewBuilder var actions: Actions
 
-    @Environment(WindowShape.self) private var window: WindowShape?
     @AppStorage(InterfaceScale.key) private var scaleChoice = InterfaceScale.standard.rawValue
+    /// The page's factor round the bar (`interfaceScaled(.macPoints)`): window points per bar point.
+    @Environment(\.interfaceFactor) private var factor
+    /// Whether the mode row stands in the window's centre (`centred(width:)`), kept as the answer and not as the
+    /// width (2026-11-22): the bar read the window's size, so every step of a window resize re-made the bar and
+    /// what it holds. Now a resize changes it only where it crosses `centreFrom`.
+    @State private var centred = true
 
     /// The bar's height, one in every mode.
     static var height: CGFloat { MacMetric.pt(35) }   // 44 until 2026-11-16: the owner asked for ~20 % less
@@ -37,20 +42,25 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     /// The mode row's width in the bar.
     static var modeWidth: CGFloat { MacMetric.pt(216) }
 
-    private var centred: Bool {
-        guard let window, window.size.width > 0 else { return true }
-        let choice = CGFloat(InterfaceScale(rawValue: scaleChoice)?.rawValue ?? 100) / 100
-        return window.size.width * MacMetric.scale >= Self.centreFrom * choice
+    /// The bar is the window's width: `width` bar points are `width × factor` window points, which are the
+    /// scene points `WindowShape` measures the window in over the page's own factor (`followsWindow`).
+    private func centred(width: CGFloat) -> Bool {
+        guard width > 0 else { return true }
+        let scale = InterfaceScale(rawValue: scaleChoice) ?? .standard
+        let choice = CGFloat(scale.rawValue) / 100
+        let windowWidth = width * factor / scale.factor(.padPoints)
+        return windowWidth * MacMetric.scale >= Self.centreFrom * choice
     }
 
     var body: some View {
-        let centred = centred
         ZStack {
             HStack(spacing: MacMetric.pt(10)) {
+                FilmLabHomeButton()
                 controls
                 if !centred { mode.frame(width: Self.modeWidth) }
                 Spacer(minLength: MacMetric.pt(8))
                 actions
+                ProModeSwitch()
                 browserToggle
             }
             if centred { mode.frame(width: Self.modeWidth) }
@@ -59,6 +69,10 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
         .frame(height: Self.height)
         .background(Theme.background)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.wall).frame(height: 1) }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+            let now = centred(width: width)
+            if now != centred { centred = now }
+        }
     }
 
     /// The browser, there or not: its icon mirrors the column's (`sidebar.right`, as the old column

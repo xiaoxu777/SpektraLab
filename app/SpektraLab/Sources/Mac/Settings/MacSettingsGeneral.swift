@@ -22,6 +22,7 @@ struct MacSettingsGeneral: View {
     var openSupporters: () -> Void = {}
     /// The MCP configuration was copied (the button says so until the page goes).
     @State private var copied = false
+    private var showAdvanced: Bool { ProMode.shared.on }
 
     var body: some View {
         VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
@@ -43,17 +44,24 @@ struct MacSettingsGeneral: View {
                 }
                 .macSettingsItem("Keyboard", "Space bar")
             }
-            agents
-            updates
+            MacSettingsGroup(title: L("Advanced Tools")) {
+                MacSettingsRow(label: L("Show advanced tools"),
+                               caption: L("Edit (darkroom, grain, halation, colour, layers), Combine and the Light Table. Off keeps the window to Library and Develop; edits made with them still apply."),
+                               last: true) {
+                    MacSettingsCheckbox(label: L("Show advanced tools"), on: Binding(get: { ProMode.shared.on }, set: { ProMode.shared.on = $0 }))
+                }
+            }
+            if showAdvanced { agents }
             MacSettingsGroup(title: L("About")) {
-                MacSettingsValueRow(label: L("Version"), value: "SpektraLab " + diagnostics.build.text)
+                MacSettingsValueRow(label: L("Version"), value: Brand.name + " " + diagnostics.build.text)
                     .macSettingsItem("About", "This app")
                 MacSettingsRow(label: L("Licences and credits"), last: true)
                     .macSettingsItem("Licences and credits", "Licences")
                 VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
                     // The engine's credit, first and in the page's own type: GPL-3.0 §5(a)'s prominent notice.
-                    Text(L("The SpektraLab engine is a C++/Metal implementation derived from spektrafilm by Andrea Volpato "
-                           + "(GPL-3.0-or-later)."))
+                    Text("FilmLab is a personal, modified version of SpektraLab by JamesQiu2005 "
+                         + "(github.com/JamesQiu2005/SpektraLab), GPL-3.0-or-later. Its engine is a C++/Metal "
+                         + "implementation derived from spektrafilm by Andrea Volpato (github.com/andreavolpato/spektrafilm).")
                         .font(MacMetric.font(12)).foregroundStyle(Theme.text)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

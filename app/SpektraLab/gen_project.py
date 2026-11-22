@@ -172,7 +172,7 @@ def main() -> None:
     engine = not args.no_engine and engine_built()
     # The Mac app's own id (app/SpektraLab): not the 1.x desktop app's com.hanze.filmify,
     # so neither its preferences nor its library are shared.
-    bundle = args.bundle_id or ("com.spektralab.mac." + args.team.lower() if args.team else "com.spektralab.mac.local")
+    bundle = args.bundle_id or ("com.filmlab.mac." + args.team.lower() if args.team else "com.filmlab.mac.local")
 
     prepare_samples()
 
@@ -320,7 +320,8 @@ def main() -> None:
             COPY_PHASE_STRIP="NO",
         )
     target = {
-        "PRODUCT_NAME": '"$(TARGET_NAME)"',
+        "PRODUCT_NAME": "FilmLab",
+        "PRODUCT_MODULE_NAME": "SpektraLab",
         "PRODUCT_BUNDLE_IDENTIFIER": bundle,
         # Mac Catalyst is the one destination. The device family is what a Catalyst target is made
         # from; on the Mac, 2 alone is "scaled Catalyst mode" and 2,6 "Optimize for Mac".
@@ -339,7 +340,7 @@ def main() -> None:
         # One name in every language (the owner, 2026-10-22: "The initial name is unified as
         # SpektraLab for all languages as this is the only trademark we hold"); InfoPlist.xcstrings
         # says it again per language, and tools/app_name_check.py holds both.
-        "INFOPLIST_KEY_CFBundleDisplayName": "SpektraLab",
+        "INFOPLIST_KEY_CFBundleDisplayName": "FilmLab",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation": "YES",
         # The Mac window is resizable; no device-orientation metadata is needed.
         "INFOPLIST_KEY_UIUserInterfaceStyle": "Dark",

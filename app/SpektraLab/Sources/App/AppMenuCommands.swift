@@ -25,19 +25,28 @@ struct AppMenuCommands: Commands {
             .keyboardShortcut(",", modifiers: .command)
         }
         CommandMenu(L("Go")) {
+            // FilmLab's home page: the projects (`FilmLabHome`).
+            Button(L("Home")) { FilmLabHome.shared.showHome() }
+                .keyboardShortcut("h", modifiers: [.command, .shift])
             Button(L("Library")) {
+                FilmLabHome.shared.hideHome()
                 model.router.dismissAllSheets()
                 model.router.dismissCover()
                 model.router.home()
             }
+            if !FeatureFlags.simpleWindow {
             Button(L("Light Table")) {
                 guard model.router.path.last != .lightTable, model.router.cover == nil else { return }
                 model.router.open(.lightTable)
             }
             .keyboardShortcut("l", modifiers: [.command, .shift])
+            }
             Divider()
             Button(L("Back")) { if model.router.cover == nil, model.router.sheets.isEmpty { model.router.back() } }
                 .keyboardShortcut("[", modifiers: .command)
+        }
+        CommandGroup(replacing: .help) {
+            Button(L("Welcome Tour")) { withAnimation(.easeInOut(duration: 0.4)) { FilmLabHome.shared.welcome = true } }
         }
     }
 }

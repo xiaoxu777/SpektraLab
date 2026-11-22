@@ -318,7 +318,7 @@ enum RawDecoderChoice: String, CaseIterable, Sendable {
     case system, libraw
 
     /// The setting as the decode reads it: `AppSettings.rawDecoder` sets it at launch and on a change.
-    nonisolated(unsafe) static var current = RawDecoderChoice.system
+    nonisolated(unsafe) static var current = RawDecoderChoice.libraw
 
     /// What it adds to a key: "" for Apple's, so those keys are 2.4.1's.
     var keyWord: String { self == .libraw ? "|decoder=libraw.1" : "" }

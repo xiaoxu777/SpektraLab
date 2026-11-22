@@ -69,7 +69,7 @@ final class AppSettings {
     var canvasGamut = CanvasGamut.proPhoto { didSet { save() } }
     /// **Check for updates at launch** (Settings › General, 2.2.1): once, a few seconds after a plain launch
     /// (`UpdateCheck`). On unless turned off.
-    var checksForUpdates = true { didSet { save() } }
+    var checksForUpdates = false { didSet { save() } }
     /// **Enable HDR by Default** (Settings › Develop on the Mac; the owner, 2026-11-03): every frame
     /// whose own Enable HDR was never set follows it (`FrameEdit.hdrByDefault`). Off until turned on — here, or by
     /// switching Enable HDR on a photograph, which sets it too (2.4.0, `OpenFrameSession.switchHDR`: the last state the
@@ -114,7 +114,9 @@ final class AppSettings {
     /// own helper (`LibRawDecode`). Handed to the decode as `RawDecoderChoice.current`, at launch and on a change; moving it
     /// is another picture of every RAW (its keys say which decoder made it), and the open ones are developed again
     /// (`AppServices.rawDecoderChanged`).
-    var rawDecoder = RawDecoderChoice.system {
+    /// FilmLab: LibRaw by default — it carries the Hasselblad X-system's own colour matrices (X1D II 50C, X2D), which
+    /// Core Image's camera list does not; a file LibRaw cannot read still falls back to Apple's.
+    var rawDecoder = RawDecoderChoice.libraw {
         didSet {
             RawDecoderChoice.current = rawDecoder
             save()

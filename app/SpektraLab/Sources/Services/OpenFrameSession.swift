@@ -228,6 +228,8 @@ final class OpenFrameSession {
 
     @ObservationIgnored private var pause: Task<Void, Never>?
     @ObservationIgnored private var dragging: ParamLayer?
+    /// FilmLab: the edit a drag has reached and the library has not been told of yet (`writeEdit`).
+    @ObservationIgnored private var unwrittenEdit: FrameEdit?
     /// The job on its way, and the edit it is of. The same edit is not asked
     /// for twice: a finger that lifts while the develop its pause started is
     /// still running would otherwise submit that develop again, and the
@@ -1071,7 +1073,12 @@ final class OpenFrameSession {
         touched()
         // 镜头校正 moved: its answer now (a chosen lens is read at once), and the whole one off the main actor.
         if lensMoved { resolveLens() }
-        library.update(frameID) { $0.edit = next }
+        // FilmLab: while a finger drags a control the library is told once, when it lifts (`ended`, `close`). Every write
+        // of the library's frame notifies the whole window — the sidebar, the browser, the info strip, the bar — and
+        // measured on a 3FR (`sample` of a Film Exposure drag) that kept the main thread for 100–555 ms a step, so the
+        // slider fell behind the finger and the canvas was never asked for a develop until the drag stopped. The
+        // page itself follows `edit`, which is set above at every step.
+        if dragging != nil { unwrittenEdit = next } else { unwrittenEdit = nil; library.update(frameID) { $0.edit = next } }
         // Enable HDR on: the curve of the edit as it stands (a print develops nothing for it).
         if hdrTurnedOn { askCurve() }
         // Layer 2 follows the edit at once: it is the GPU's pass, not a render.
@@ -1223,8 +1230,16 @@ final class OpenFrameSession {
         commit(look, pieceMoved: true)
     }
 
+    /// The edit a drag reached, written to the library now (`unwrittenEdit`).
+    private func writeEdit() {
+        guard let e = unwrittenEdit else { return }
+        unwrittenEdit = nil
+        library.update(frameID) { $0.edit = e }
+    }
+
     /// The finger lifted: whatever is outstanding is asked for now.
     func ended() {
+        writeEdit()
         adjusting = false
         dragging = nil
         if scheduler.frontend.interaction != .idle { scheduler.frontend.interaction = .idle }
@@ -1367,6 +1382,7 @@ final class OpenFrameSession {
     /// leaves behind is the frame's kept develop — its last picture when that
     /// is of the edit as it stands, a develop in the queue when it is not.
     private func close() {
+        writeEdit()
         landMoving()
         landMovingLayers()
         if layerMoving { layerMoving = false; Layer2Copies.shared.release(frameID) }

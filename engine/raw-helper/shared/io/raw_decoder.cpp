@@ -87,9 +87,11 @@ bool libraw_ok(int status, const char* stage, std::string& error) {
     return false;
 }
 
+bool compatible_half_size = false;
+
 void configure_compatible(libraw_output_params_t& params) {
     params.user_qual = 3;  // AHD (LibRaw still selects its native X-Trans path).
-    params.half_size = 0;
+    params.half_size = compatible_half_size ? 1 : 0;
     params.four_color_rgb = 0;
     params.output_color = 4;
     params.output_bps = 16;
@@ -272,6 +274,8 @@ protected:
 };
 
 }  // namespace
+
+void set_compatible_half_size(bool half) { compatible_half_size = half; }
 
 bool decode_raw_compatible(const std::filesystem::path& source,
                            DecodedRaw& out, std::string& error) {

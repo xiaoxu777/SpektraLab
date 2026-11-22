@@ -578,7 +578,10 @@ final class RenderQueue {
         log.info("start \(job.kind.rawValue, privacy: .public) \(job.canvas.megapixels, format: .fixed(precision: 1)) MP in \(plan.mode.name, privacy: .public): predicted \(predictedMB, format: .fixed(precision: 0)) MB of \(budgetMB, format: .fixed(precision: 0)) MB, \(plan.estimate.seconds, format: .fixed(precision: 2)) s")
         let engine = self.engine
         // The scheduler lives as long as the app; the task holds it for one job.
-        Task {
+        // FilmLab: detached, so the engine starts at once. A task made here runs its first line on the main actor,
+        // and while a slider is dragged the main thread is laying out the page: measured, a canvas job waited up to
+        // 840 ms for it before the engine (80–280 ms of work) was even asked. Only the result comes back to it.
+        Task.detached(priority: .userInitiated) { [self] in
             let result: Result<RenderResult, Error>
             do {
                 result = .success(try await engine.run(job, mode: plan.mode) { p in
@@ -587,7 +590,7 @@ final class RenderQueue {
             } catch {
                 result = .failure(error)
             }
-            self.ended(job, plan, started, reading, result)
+            await self.ended(job, plan, started, reading, result)
         }
         // Full-size jobs only. The page's own picture is never stopped by the watch: a RAW's open dips the
         // host's headroom for a moment past any line, and a canvas job cancelled there is started again into

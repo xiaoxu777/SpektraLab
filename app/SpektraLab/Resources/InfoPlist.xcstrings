@@ -6,25 +6,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SpektraLab"
+            "value" : "FilmLab"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SpektraLab"
+            "value" : "FilmLab"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SpektraLab"
+            "value" : "FilmLab"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SpektraLab"
+            "value" : "FilmLab"
           }
         }
       }

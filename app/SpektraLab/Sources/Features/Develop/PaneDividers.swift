@@ -66,8 +66,10 @@ final class PaneDividers {
 
     /// The widths a column may take in a page `width` wide: from today's up to as wide as the picture
     /// side beside it — the picture is never the narrower of the two.
-    static func columnRange(in width: CGFloat) -> ClosedRange<CGFloat> {
-        minColumn...max(minColumn, ((width - 1) / 2).rounded(.down))
+    /// Nonisolated: the page's layout fits the column with it (`DevelopRegions`).
+    nonisolated static func columnRange(in width: CGFloat) -> ClosedRange<CGFloat> {
+        let narrowest = WindowLayout.columnWidth
+        return narrowest...max(narrowest, ((width - 1) / 2).rounded(.down))
     }
 
     /// The column's width in a page `width` wide.

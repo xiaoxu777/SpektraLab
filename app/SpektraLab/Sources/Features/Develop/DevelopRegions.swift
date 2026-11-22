@@ -35,7 +35,8 @@ struct DevelopRegions: Layout {
     /// How far the filmstrip sits into the window's bottom safe area, so it is lower on the screen
     /// (the owner, 2026-10-22); the picture ends where the strip starts.
     var filmstripReach: CGFloat = 0
-    /// The column's width, as dragged (`PaneDividers`).
+    /// The column's width, as dragged (`PaneDividers`); fitted here to the page's width
+    /// (`PaneDividers.columnRange`), so the page's body never reads the window's size (2026-11-22).
     var columnWidth: CGFloat = WindowLayout.columnWidth
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -50,7 +51,8 @@ struct DevelopRegions: Layout {
                                proposal: ProposedViewSize(width: max(r.width, 0), height: max(r.height, 0)))
         }
         place(.crop, b)
-        let wall = WindowLayout.column(width: b.width, hasColumn: parts[.controls] != nil, columnWidth: columnWidth)
+        let fitted = columnWidth.clamped(to: PaneDividers.columnRange(in: b.width))
+        let wall = WindowLayout.column(width: b.width, hasColumn: parts[.controls] != nil, columnWidth: fitted)
         let left = wall.picture
         // the column
         // stands at the left, as Capture One's tools and the Mac library's sidebar do, and the picture
@@ -78,8 +80,8 @@ struct DevelopRegions: Layout {
             place(.rule, wall.rule.map { CGRect(x: b.minX + $0, y: b.minY, width: 1, height: b.height) } ?? .zero)
             place(.controls, CGRect(x: b.minX + wall.columnX, y: b.minY, width: wall.columnWidth, height: b.height))
         }
-        // The grip across the line, half on each side of it.
-        let line: CGFloat? = mirrored ? wall.columnWidth : wall.rule
-        place(.columnGrip, line.map { CGRect(x: b.minX + $0 + 0.5 - reach / 2, y: b.minY, width: reach, height: b.height) } ?? .zero)
+        // The grip across the line, half on each side of it: laid over the whole page, it stands itself on the line
+        // (`ColumnWidthGrip`, which reads the page's width so the page does not).
+        place(.columnGrip, wall.rule != nil ? b : .zero)
     }
 }

@@ -84,7 +84,12 @@ enum LibRawDecode {
     }
 
     /// The whole frame, decoded by the helper. Nil, with the log told, when it cannot be.
-    static func decode(_ url: URL, settings: DecodeSettings) -> Decoded? {
+    ///
+    /// FilmLab: `half` asks LibRaw for half size (each 2×2 Bayer cell one pixel, no demosaic): measured on X1D II 50C
+    /// 3FR files, interleaved, 0.29–0.40 s and 0.65 GB against 2.31–2.53 s and 2.27 GB at full size. The picture is
+    /// then drawn back up to the frame's own size, so every size the app planned holds; only a preview that needs no
+    /// more than half the frame on its long edge asks for it (`prepare`).
+    static func decode(_ url: URL, settings: DecodeSettings, half: Bool = false) -> Decoded? {
         guard isAvailable else { report("LibRaw decoder missing", ["file": url.lastPathComponent]); return nil }
         let out = FileManager.default.temporaryDirectory.appendingPathComponent("spkraw-\(UUID().uuidString).f32")
         defer { unlink(out.path) }
@@ -96,6 +101,7 @@ enum LibRawDecode {
         let baseline = frame?.baseline ?? 0
         let scale = exp2(settings.rawExposureTreatment.sourceOffsetEV + baseline)
         var args = ["decode", url.path, out.path, "--rgba", "--scale", String(scale), "--crop", "camera"]
+        if half { args.append("--half") }
         if let wb = whiteBalance(url, settings: settings) {
             args += ["--temperature", String(wb.temperature), "--tint", String(wb.tint)]
         }
@@ -117,15 +123,27 @@ enum LibRawDecode {
         }
         var image = CIImage(bitmapData: data, bytesPerRow: w * 16, size: CGSize(width: w, height: h),
                             format: .RGBAf, colorSpace: linearProPhoto)
+        // A half-size decode, drawn at the full frame's scale (its pixels' centres, not its corners, line up again).
+        let halved = reply["half"] as? Bool == true
+        let fw = halved ? w * 2 : w, fh = halved ? h * 2 : h
+        if halved {
+            image = image.samplingLinear().transformed(by: CGAffineTransform(scaleX: 2, y: 2))
+        }
         // The frame the library planned for: the helper cut the camera's own crop (`--crop camera`), which is Core
         // Image's frame to a pixel or two (measured 2026-11-18 over RAW_decode_tests: equal on 9 of 11 bodies, one row
         // or column short on the GFX 100RF and the E-300). Every size the app planned — an export's pixels, a crop's
         // fractions, the priced open (`ImportService.rawSize`, `ExportPlan`) — is Core Image's, so the last pixels are
         // made Core Image's: cut, or the edge row repeated. A frame further off than that is left as LibRaw made it.
-        var size = (width: w, height: h)
+        // FilmLab: Hasselblad 3FR/FFF (X1D II 50C: LibRaw 8278×6208, Core Image 8272×6200) is 6–8 px off, beyond the
+        // 4 px allowed before, so a 3FR kept LibRaw's size and disagreed with every size the app planned. The cut is
+        // now centred (the camera's margins are symmetric) and allowed up to 16 px on each axis.
+        var size = (width: fw, height: fh)
         if let apple = frame.map({ (width: $0.width, height: $0.height) }), apple != size,
-           abs(apple.width - w) <= 4, abs(apple.height - h) <= 4 {
-            image = image.clampedToExtent().cropped(to: CGRect(x: 0, y: 0, width: apple.width, height: apple.height))
+           abs(apple.width - fw) <= 16, abs(apple.height - fh) <= 16 {
+            let dx = CGFloat(max(0, fw - apple.width) / 2), dy = CGFloat(max(0, fh - apple.height) / 2)
+            image = image.clampedToExtent()
+                .cropped(to: CGRect(x: dx, y: dy, width: CGFloat(apple.width), height: CGFloat(apple.height)))
+                .transformed(by: CGAffineTransform(translationX: -dx, y: -dy))
             size = apple
         }
         let camera = reply["camera"] as? [String: Any] ?? [:]
@@ -155,7 +173,14 @@ enum LibRawDecode {
     /// `RawExposure.prepare`'s answer from LibRaw's pixels: the same `Prepared`, the app's lens step on it where the frame
     /// has one (`LensResolution`), scaled to `longEdge` the same way.
     static func prepare(_ url: URL, settings: DecodeSettings, longEdge: Int?, lens: LensResolution?) -> RawExposure.Prepared? {
-        guard let decoded = decode(url, settings: settings) else { return nil }
+        // Half size where the preview asks for no more than half the frame's long edge (Core Image's frame, read
+        // without decoding a pixel). An export, a 1:1 view or a long edge unknown is a full decode, as before.
+        let half: Bool = {
+            guard let longEdge, longEdge > 0, let frame = appleFrame(url) else { return false }
+            return longEdge * 2 <= max(frame.width, frame.height)
+        }()
+        guard let decoded = decode(url, settings: settings, half: half) ?? (half ? decode(url, settings: settings) : nil)
+        else { return nil }
         var image = decoded.image
         let resolution = lens ?? LensResolver.current(url, decode: settings)
         LensCorrection.applied.withLock { $0[url.standardizedFileURL.path] = resolution.word }

@@ -11,15 +11,19 @@
 import SwiftUI
 
 enum WorkspaceMode: String, CaseIterable, Hashable {
-    case library, develop, edit
+    case library, develop, export, edit
 
     var title: String {
         switch self {
         case .library: L("Library")
         case .develop: L("Develop")
+        case .export: L("Export")
         case .edit: L("Edit")
         }
     }
+
+    /// The modes the row offers: FilmLab's simple window leaves 编辑 out (`FeatureFlags.simpleWindow`).
+    static var shown: [WorkspaceMode] { FeatureFlags.simpleWindow ? [.library, .develop, .export] : allCases }
 }
 
 /// `current` wears the white capsule; `choose` is what a press asks for (`.library` pops the window back
@@ -31,10 +35,12 @@ struct MacModeSwitch: View {
     /// Why a mode stands down, in place (the owner, 2026-10-27: "say why in place, no silent no-op").
     var unavailable: (WorkspaceMode) -> String? = { _ in nil }
     let choose: (WorkspaceMode) -> Void
+    /// Read so the row redraws when Settings turns the advanced tools on or off.
+    private var showAdvanced: Bool { ProMode.shared.on }
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(WorkspaceMode.allCases, id: \.self) { mode in
+            ForEach(showAdvanced ? WorkspaceMode.allCases : [.library, .develop, .export], id: \.self) { mode in
                 let on = current == mode
                 let allowed = enabled(mode)
                 Button { choose(mode) } label: {
@@ -68,4 +74,6 @@ struct MacModeSwitch: View {
 @MainActor
 enum MacDevelopWanted {
     static var surface: DevelopSurface?
+    /// FilmLab: the step the opened page stands on (`.format` for 导出), read once with `surface`.
+    static var step: DevelopStep?
 }

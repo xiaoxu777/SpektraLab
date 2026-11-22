@@ -142,6 +142,10 @@ struct DevelopWorkspace: View {
             MacDevelopWanted.surface = nil
             session.show(wanted)
         }
+        if let step = MacDevelopWanted.step {
+            MacDevelopWanted.step = nil
+            session.pageNavigation.select(step)
+        }
         comparing = opening.compare
         let decode = session.edit.decode
         if decode.isAsShot { cameraWhiteBalance = (decode.temperature, decode.tint) }
@@ -170,18 +174,9 @@ struct DevelopWorkspace: View {
 
     var navigationBand: some View {
         VStack(spacing: 0) {
-            if navigation.surface == .develop {
-                HStack(spacing: 0) {
-                    ForEach(DevelopStep.allCases) { step in
-                        choice(step.title, selected: navigation.step == step) {
-                            withAnimation(motion) { session.pageNavigation.select(step) }
-                        }
-                        .accessibilityIdentifier("v5.step.\(step.rawValue)")
-                    }
-                }
-                .background { Capsule().fill(Theme.card).frame(height: 30) }
-                .padding(.horizontal, 16)
-            } else {
+            // FilmLab: the window's mode row is 冲洗 · 导出 now, so Develop's own two tabs (Film & Paper, Format) are
+            // not drawn; Edit keeps its tools.
+            if navigation.surface != .develop {
                 HStack(spacing: 0) {
                     ForEach(EditTool.allCases) { tool in
                         choice(tool.title, selected: navigation.tool == tool) {
@@ -229,22 +224,31 @@ struct DevelopWorkspace: View {
                 }
             case .format:
                 VStack(spacing: 0) {
-                    // 胶片 picked (a picture's row has its own page, `LayerPictureColumn`): a pair's piece, a
-                    // double's own section over the format, or a photograph's format.
-                    if let pair { PairPiecePanel(session: session, frame: frame, pair: pair) }
-                    else {
-                        if let double = session.double { DoublePieceSection(session: session, frame: frame, double: double) }
-                        FramePanel(session: session, frame: frame, v5: true, wide: true)
+                    // FilmLab's 导出 mode: the export's settings and its button first, whatever the film emulation is,
+                    // then the format they export (`ExportModeSection`).
+                    ExportModeSection(frameIDs: exportIDs)
+                    // 普通版 (FilmLab): the export alone; the frame, the film edge's own controls and the effects are
+                    // 专业版's (the film edge's switch is in 冲洗).
+                    if !FeatureFlags.simpleWindow {
+                    VStack(spacing: 0) {
+                        // 胶片 picked (a picture's row has its own page, `LayerPictureColumn`): a pair's piece, a
+                        // double's own section over the format, or a photograph's format.
+                        if let pair { PairPiecePanel(session: session, frame: frame, pair: pair) }
+                        else {
+                            if let double = session.double { DoublePieceSection(session: session, frame: frame, double: double) }
+                            FramePanel(session: session, frame: frame, v5: true, wide: true)
+                        }
+                        // 片边 and 日期后背 under the
+                        // film's sizes, in the old rows' place, each folding (`FilmEdgeColumn`).
+                        if let filmEdgeColumn { filmEdgeColumn }
                     }
-                    // 片边 and 日期后背 under the
-                    // film's sizes, in the old rows' place, each folding (`FilmEdgeColumn`).
-                    if let filmEdgeColumn { filmEdgeColumn }
+                    // The film edge and the date back are the film's (Apply Film Emulation).
+                    .rowEnabled(session.edit.appliesFilm)
                     // Remove anti-halation layer, then Grain and Halation with the other effects under their own
                     // folding header (`wideFormatTail`, `wideEffects`).
-                    wideFormatTail
+                    wideFormatTail.rowEnabled(session.edit.appliesFilm)
+                    }
                 }
-                // The film edge, the date back, the grain and the halation are the film's (Apply Film Emulation).
-                .rowEnabled(session.edit.appliesFilm)
                 .padding(.bottom, 12)
             }
         } else if navigation.tool == .crop {

@@ -39,6 +39,7 @@
 		073AC3410610903127CFD4E6 /* DrawnLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466C54CCD5FD603C47AB4E3 /* DrawnLayout.swift */; };
 		0773E59D8B2462FAA1A52B1C /* HDRLatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD3E651D29C5991BA44CAA0 /* HDRLatch.swift */; };
 		07CAD6596F43CCFA445A22F8 /* LCPReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LCPReader.swift; sourceTree = "<group>"; };
+		07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabWelcome.swift; sourceTree = "<group>"; };
 		07D41F3BE91FDA82433733CE /* RenderQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF55B480EDB2D0B74A40403 /* RenderQueue.swift */; };
 		091120469326DFB285F3E52E /* ExportRecipeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportRecipeStore.swift; sourceTree = "<group>"; };
 		0970B2C002A7B1DE65BE7372 /* LensCorrection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4589C937C8B8B08EA119D7D /* LensCorrection.swift */; };
@@ -140,8 +141,18 @@
 		18D2F04B336FB263F2A80EF1 /* MemoryRelease.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryRelease.swift; sourceTree = "<group>"; };
 		1941AC60ACF1B6E715BA33C0 /* InterfaceScale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceScale.swift; sourceTree = "<group>"; };
 		1A0FA5791717E1B823AECC2C /* LightTableShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableShare.swift; sourceTree = "<group>"; };
+		1A54AAD349604F84582FB04A /* ExportModeSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A081AB0A752739A48E7D39C0 /* ExportModeSection.swift */; };
 		1ADE8EF8E350DD3B4DF05598 /* LayersPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayersPanel.swift; sourceTree = "<group>"; };
 		1AEF1053C986EBC89A174A4A /* PairOriginalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairOriginalPreview.swift; sourceTree = "<group>"; };
+		1BA63E178A0434E45E6C8508 /* FilmLab */ = {
+			isa = PBXGroup;
+			children = (
+				8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */,
+				07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */,
+			);
+			path = FilmLab;
+			sourceTree = "<group>";
+		};
 		1BBFCCB078A9F1C3D7ADDDDF /* PairFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBD15D48B5288848A843E336 /* PairFlow.swift */; };
 		1CC65DCD6B1E371DE9C8736F /* SchedulerSignals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4213F502BF5AAF02B309BD /* SchedulerSignals.swift */; };
 		1CE6D911AFA3D8725424A1C7 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03CE3288234E587975804303 /* AppRouter.swift */; };
@@ -491,12 +502,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 202611181505;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = ("$(PROJECT_DIR)/../../engine/include");
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SpektraLab;
+				INFOPLIST_KEY_CFBundleDisplayName = FilmLab;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -505,8 +516,9 @@
 				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
 				MARKETING_VERSION = 2.4.2;
 				OTHER_LDFLAGS = ("$(inherited)", "-lsqlite3");
-				PRODUCT_BUNDLE_IDENTIFIER = com.spektralab.mac;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.filmlab.mac.local;
+				PRODUCT_MODULE_NAME = SpektraLab;
+				PRODUCT_NAME = FilmLab;
 				SPK_COMMIT = "";
 				SPK_UPDATE_FEED_URL = "https://spektralab.app/updates/mac.json";
 				SUPPORTS_MACCATALYST = YES;
@@ -703,6 +715,7 @@
 				06932D196DB6942184FDE392 /* Layer2Picture.swift */,
 				A08555755771CFDF00A8B5BD /* Layer2Snapshots.swift */,
 				6262DEFF124D84139235BEE5 /* EnlargerGroup.swift */,
+				1A54AAD349604F84582FB04A /* ExportModeSection.swift */,
 				74DFD5E1C11C4B31AAF5BB9D /* FilmEdgeColumn.swift */,
 				CA3994324F443EDE9D71CA5F /* FlowDialogLayout.swift */,
 				03584F0760EB51C724348857 /* HDRDisplays.swift */,
@@ -808,6 +821,8 @@
 				48358155B913CE5C93A04BD8 /* MacExportPage.swift */,
 				C24ECB06AF3EAC6AFB855825 /* MacExportRun.swift */,
 				9440E515F0D842E30F295990 /* MacHDRChoiceCheck.swift */,
+				E94324BF6880C02591FB83EC /* FilmLabHome.swift */,
+				7F38B2D7042763D9AB81F96E /* FilmLabWelcome.swift */,
 				D51ED89E1FF8D9629574CD4E /* MacHistoryCheck.swift */,
 				5CCBEB8E89A3F0A443E184C5 /* MacHistoryPage.swift */,
 				BCD9B74B4A73E19A5A84AF39 /* MacHistoryPageCheck.swift */,
@@ -1207,6 +1222,7 @@
 		7DB82D3ECC8C402A19BE2C8B /* LibraryPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPersistence.swift; sourceTree = "<group>"; };
 		7E4F162E8397EA9F2F690FF2 /* DoubleHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleHarness.swift; sourceTree = "<group>"; };
 		7EAE8884D6A1A513C5484E6D /* MacWatermarkCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatermarkCheck.swift; sourceTree = "<group>"; };
+		7F38B2D7042763D9AB81F96E /* FilmLabWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */; };
 		7F53927C8F6F6FBF206049EC /* MacDoubleRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15DE3B069FD0B9EA53483D76 /* MacDoubleRows.swift */; };
 		7FBCE1C61100E28132893BA3 /* DevicePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePolicy.swift; sourceTree = "<group>"; };
 		806CA75FACB855E02484D2E0 /* MacRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRenderCache.swift; sourceTree = "<group>"; };
@@ -1244,6 +1260,7 @@
 		8A4211C001E2FC5D5DBB63FA /* DevelopInspectorParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = D698EA74C9C0B58A9CADC324 /* DevelopInspectorParts.swift */; };
 		8A4791ADAEEB7DFF74273D93 /* LightTableExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5B7AF02C981FEAC5A1B5A /* LightTableExportSheet.swift */; };
 		8A4D4C6C2EBA2EFA5C2876EC /* PaneDividers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D1DA80476563F2C9E68A0F /* PaneDividers.swift */; };
+		8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabHome.swift; sourceTree = "<group>"; };
 		8AE5B7AF02C981FEAC5A1B5A /* LightTableExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableExportSheet.swift; sourceTree = "<group>"; };
 		8B1E856481F18198D4CBA87D /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		8B1F01B88A05C8AB8DDDDE32 /* StubPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39E0323F308011BC73380F6 /* StubPage.swift */; };
@@ -1364,6 +1381,7 @@
 				123519F34A6A7E452D79A238 /* DevelopRegions.swift */,
 				C49DB28897704CD14F706651 /* DevelopWorkspace.swift */,
 				BF579700FE81F9BD36713363 /* EnlargerGroup.swift */,
+				A081AB0A752739A48E7D39C0 /* ExportModeSection.swift */,
 				4C7EBAD0B4F86EBFCDE1B7FD /* FilmEdgeColumn.swift */,
 				EB58C4EC6CA468A386B15371 /* FlowDialogLayout.swift */,
 				99569E92BF5FB3CE3D415CE9 /* HDRDisplays.swift */,
@@ -1514,6 +1532,7 @@
 		9F5CBD1524E8DA1827B03413 /* MacFlowBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04171A8BD6053A51486176E9 /* MacFlowBar.swift */; };
 		A03C1901435B28D2CB26BBCD /* MacImportScan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportScan.swift; sourceTree = "<group>"; };
 		A0441D3924939B612631D2EF /* MaskPopovers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C838BC48226ABBC08E86FF /* MaskPopovers.swift */; };
+		A081AB0A752739A48E7D39C0 /* ExportModeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportModeSection.swift; sourceTree = "<group>"; };
 		A08555755771CFDF00A8B5BD /* Layer2Snapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5A1AFFAE02722854CCDB74 /* Layer2Snapshots.swift */; };
 		A0B87377B34C355B1851787F /* SliderProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliderProbe.swift; sourceTree = "<group>"; };
 		A154BD2096149FB848E59BB9 /* MacWatermarkCanvasCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A088D33495EE1E2F0F496C /* MacWatermarkCanvasCheck.swift */; };
@@ -1742,12 +1761,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 202611181505;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = ("$(PROJECT_DIR)/../../engine/include");
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SpektraLab;
+				INFOPLIST_KEY_CFBundleDisplayName = FilmLab;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1756,8 +1775,9 @@
 				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
 				MARKETING_VERSION = 2.4.2;
 				OTHER_LDFLAGS = ("$(inherited)", "-lsqlite3");
-				PRODUCT_BUNDLE_IDENTIFIER = com.spektralab.mac;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.filmlab.mac.local;
+				PRODUCT_MODULE_NAME = SpektraLab;
+				PRODUCT_NAME = FilmLab;
 				SPK_COMMIT = "";
 				SPK_UPDATE_FEED_URL = "https://spektralab.app/updates/mac.json";
 				SUPPORTS_MACCATALYST = YES;
@@ -1843,6 +1863,7 @@
 			isa = PBXGroup;
 			children = (
 				9573AB442387013C4C635C94 /* Export */,
+				1BA63E178A0434E45E6C8508 /* FilmLab */,
 				789536878CC66DF622C73767 /* History */,
 				372B02868E392477EDB043A3 /* Import */,
 				51C0998C0F9C5F5F035423EF /* Layers */,
@@ -2080,6 +2101,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E94324BF6880C02591FB83EC /* FilmLabHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */; };
 		E974799B6367D44B5E8244BA /* PiecePlacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecePlacer.swift; sourceTree = "<group>"; };
 		EA36A6B9C247B08C96479F2C /* SampleFrames in Resources */ = {isa = PBXBuildFile; fileRef = 10A187E71E276CDB08F36834 /* SampleFrames */; };
 		EAAFD97675AEA11BB4078813 /* MemoryTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = B761FB841C14F0FBE5DC255E /* MemoryTrace.swift */; };

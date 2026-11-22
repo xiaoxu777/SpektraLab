@@ -268,7 +268,9 @@ final class StockPreviews {
         // prepare a new set of material pairs for every intermediate value.
         if let f = inFlight, f.frame == strip.frameID { scheduler.cancel(f.job) }
         strip.settling = Task { [weak self, weak strip] in
-            do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
+            // FilmLab: 0.8 s, not 0.2: a card is 130–160 ms of GPU that cannot be taken back once begun, so at 0.2 s a
+            // pause in a drag started the strip (16–22 cards, 2–3 s) under the next movement of the finger.
+            do { try await Task.sleep(nanoseconds: 800_000_000) } catch { return }
             guard let self, let strip, self.strips[strip.frameID] === strip else { return }
             strip.editPending = false; strip.settling = nil
             self.feed(strip)
@@ -343,6 +345,13 @@ final class StockPreviews {
     /// The next card to make, or to read back: from the strips shown last, in
     /// the order their cards are on screen. One card in the scheduler at a time.
     private func pump() {
+        // FilmLab: no card while a finger is on a control, and the one being made gives way as the finger lands. The
+        // canvas has the GPU to itself for as long as the drag lasts; the frontend's change back to idle wakes this
+        // (`observeFrontend`), and a cancelled card is asked for again then.
+        if case .dragging = scheduler.frontend.interaction {
+            if let f = inFlight { scheduler.cancel(f.job) }
+            return
+        }
         guard inFlight == nil, !scheduler.frontend.cameraLive, scheduler.frontend.scene == .active else { return }
         for strip in strips.values.sorted(by: { $0.lastShown > $1.lastShown }) {
             guard !strip.editPending, let frame = library.frame(strip.frameID) else { continue }

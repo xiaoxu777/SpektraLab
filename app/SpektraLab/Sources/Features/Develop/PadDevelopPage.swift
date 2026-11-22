@@ -28,69 +28,71 @@ extension DevelopWorkspace {
     }
 
     /// The page: the picture side and the column (`DevelopRegions`).
+    ///
+    /// No reader around the page (window resize, 2026-11-22): read here, the window's size re-ran this body at every
+    /// step of a resize and re-made the whole column with it (its histogram, layers, film grids and Decode). The
+    /// layout fits the dragged column width to the window itself (`DevelopRegions`), the column takes its height from
+    /// the layout, and only the parts that need a number measure their own: the film panel's room
+    /// (`columnPanel`), the column's grip (`ColumnWidthGrip`) and the crop (`CropPlacement`).
     var pageBody: some View {
-        GeometryReader { geo in
-            let cropping = inlineCrop
-            // The pair's 44-unit band under the picture is gone on the Mac: its rows are the 图层 panel's, in the
-            // column (`LayersPanel`, LAYERS-SPEC §3).
-            let layers: CGFloat = 0
-            let arranging = LayersStage.shared.arranging(frame.id)
-            // the column is as wide as it was
-            // dragged, from today's 393 pt ("the current width should be the narrowest width") to as wide as
-            // the picture side (`PaneDividers`).
-            let splits = PaneDividers.shared
-            let columnWidth = splits.column(in: geo.size.width)
-            let wall = WindowLayout.column(width: geo.size.width, hasColumn: columnShown, columnWidth: columnWidth)
-            // The filmstrip too, from today's height up ("its current height is also the narrowest").
-            let stripHeight = Self.infoStripHeight
-            // Mac (the owner, 2026-10-27): the bar is the window's (`WindowToolbar`, full width above the
-            // page, the actions pinned to its trailing edge), so the picture side keeps no top band of its
-            // own — and nothing of it can be clipped by the browser beside it.
-            let topBand: CGFloat = 0
-            DevelopRegions(top: topBand, layers: layers, filmstrip: stripHeight, columnWidth: columnWidth) {
-                // The one canvas, whatever the window: never rebuilt by a resize. Built in a view of its own
-                // (`OwnReads`): the edit, the develop and the status line it is handed change with every layer act and
-                // job, and read in the page's body each re-made the whole page — its column too (2.4.0 A2).
-                // Made again for each frame (2.4.0 A2b): the zoom and the pan, the pictures it has decoded (one
-                // frame's never drawn under the next, `FramePicture`, `HDRImage`), the mask stage and its pointer
-                // are a frame's, as they were when the whole page was made again.
-                OwnReads { canvas(cropping: cropping, arranging: arranging) }.id(frame.id).padPart(.canvas)
-                // Mac (the owner, 2026-10-27): the line under the picture, in the filmstrip's place — the
-                // same strip the library draws under its viewer (`MacInfoStrip`), with the develop's own
-                // line in it, so the column keeps no status row.
-                if cropping == nil {
-                    macInfoStrip.padPart(.filmstrip)
-                }
-                if columnShown {
-                    Rectangle().fill(Theme.wall).padPart(.rule)
-                    Group {
-                        if cropping != nil {
-                            // The column has no header of its own (the mode row is the window's bar's): the
-                            // crop's controls stand in its place (`CropScreen(inline:)`, over the page).
-                            Color.clear.frame(width: wall.columnWidth)
-                        } else {
-                            column(width: wall.columnWidth, height: geo.size.height)
-                        }
+        let cropping = inlineCrop
+        // The pair's 44-unit band under the picture is gone on the Mac: its rows are the 图层 panel's, in the
+        // column (`LayersPanel`, LAYERS-SPEC §3).
+        let layers: CGFloat = 0
+        let arranging = LayersStage.shared.arranging(frame.id)
+        // the column is as wide as it was
+        // dragged, from today's 393 pt ("the current width should be the narrowest width") to as wide as
+        // the picture side (`PaneDividers`); the layout fits it to the window.
+        let splits = PaneDividers.shared
+        // The filmstrip too, from today's height up ("its current height is also the narrowest").
+        let stripHeight = Self.infoStripHeight
+        // Mac (the owner, 2026-10-27): the bar is the window's (`WindowToolbar`, full width above the
+        // page, the actions pinned to its trailing edge), so the picture side keeps no top band of its
+        // own — and nothing of it can be clipped by the browser beside it.
+        let topBand: CGFloat = 0
+        return DevelopRegions(top: topBand, layers: layers, filmstrip: stripHeight, columnWidth: splits.columnWidth) {
+            // The one canvas, whatever the window: never rebuilt by a resize. Built in a view of its own
+            // (`OwnReads`): the edit, the develop and the status line it is handed change with every layer act and
+            // job, and read in the page's body each re-made the whole page — its column too (2.4.0 A2).
+            // Made again for each frame (2.4.0 A2b): the zoom and the pan, the pictures it has decoded (one
+            // frame's never drawn under the next, `FramePicture`, `HDRImage`), the mask stage and its pointer
+            // are a frame's, as they were when the whole page was made again.
+            OwnReads { canvas(cropping: cropping, arranging: arranging) }.id(frame.id).padPart(.canvas)
+            // Mac (the owner, 2026-10-27): the line under the picture, in the filmstrip's place — the
+            // same strip the library draws under its viewer (`MacInfoStrip`), with the develop's own
+            // line in it, so the column keeps no status row.
+            if cropping == nil {
+                macInfoStrip.padPart(.filmstrip)
+            }
+            if columnShown {
+                Rectangle().fill(Theme.wall).padPart(.rule)
+                Group {
+                    if cropping != nil {
+                        // The column has no header of its own (the mode row is the window's bar's): the
+                        // crop's controls stand in its place (`CropScreen(inline:)`, over the page).
+                        Color.clear
+                    } else {
+                        column
                     }
-                    .background(Theme.background)
-                    .padPart(.controls)
                 }
-                if let cropping {
+                .background(Theme.background)
+                .padPart(.controls)
+            }
+            if let cropping {
+                // The crop lies over the whole page: the column's width it leaves is the window's to fit.
+                GeometryReader { page in
                     CropScreen(frameID: frame.id, target: cropping.target,
-                               inline: CropPlacement(columnWidth: wall.columnWidth,
+                               inline: CropPlacement(columnWidth: splits.column(in: page.size.width),
                                                      columnTop: topBand, pictureTop: topBand),
                                finishes: cropping.finishes)
-                        // One crop's state is never the other's: Develop's and Edit's are two pages.
-                        .id(cropping.target == .source ? "crop.source" : "crop.finished")
-                        .padPart(.crop)
                 }
-                if columnShown, wall.rule != nil {
-                    // the line between the column and the picture side is dragged.
-                    DividerGrip(way: .sideways, value: wall.columnWidth, range: PaneDividers.columnRange(in: geo.size.width),
-                                   grows: 1, label: L("Column width"),
-                                   set: { splits.columnWidth = $0 }, ended: { splits.save() })
-                        .padPart(.columnGrip)
-                }
+                // One crop's state is never the other's: Develop's and Edit's are two pages.
+                .id(cropping.target == .source ? "crop.source" : "crop.finished")
+                .padPart(.crop)
+            }
+            if columnShown {
+                // the line between the column and the picture side is dragged.
+                ColumnWidthGrip(splits: splits).padPart(.columnGrip)
             }
         }
         // The keys and the menu bar.
@@ -264,6 +266,8 @@ extension DevelopWorkspace {
     struct MacBarSignature: Hashable {
         var frame: LibraryFrame.ID
         var edit: Bool
+        /// FilmLab: the page stands on Format, which the mode row calls 导出.
+        var export: Bool
         var inCrop: Bool
         var columnShown: Bool
         var cropEnabled: Bool
@@ -276,6 +280,7 @@ extension DevelopWorkspace {
     var macBarSignature: MacBarSignature {
         // 摆放 is the page's crop of a pair's frame or a double's exposure: the bar wears it as it wears a crop.
         MacBarSignature(frame: frame.id, edit: navigation.surface == .edit,
+                        export: navigation.surface == .develop && navigation.step == .format,
                         inCrop: inlineCrop != nil || LayersStage.shared.arranging(frame.id) != nil,
                         columnShown: columnShown, cropEnabled: cropAction != nil,
                         canUndo: session.canUndo, canRedo: session.canRedo,
@@ -295,7 +300,7 @@ extension DevelopWorkspace {
         let session = session, router = router, frame = frame
         MacShellBar.shared.develop = MacDevelopBar(
             owner: ObjectIdentifier(session), frameID: frame.id,
-            surface: s.edit ? .edit : .develop, inCrop: s.inCrop, columnShown: s.columnShown,
+            surface: s.edit ? .edit : s.export ? .export : .develop, inCrop: s.inCrop, columnShown: s.columnShown,
             toggleColumn: { withAnimation(motion) { pad?.columnHidden.toggle() } },
             // 裁剪 pressed while 摆放 is open finishes it, as it finishes a crop.
             crop: {
@@ -304,7 +309,12 @@ extension DevelopWorkspace {
             cropEnabled: s.cropEnabled,
             chooseSurface: { mode in
                 original = false
-                withAnimation(motion) { session.show(mode == .edit ? .edit : .develop) }
+                withAnimation(motion) {
+                    session.show(mode == .edit ? .edit : .develop)
+                    // FilmLab: 冲洗 is Film & Paper, 导出 is Format with the export under it.
+                    if mode == .develop { session.pageNavigation.select(DevelopStep.filmAndPaper) }
+                    if mode == .export { session.pageNavigation.select(DevelopStep.format) }
+                }
             },
             canUndo: s.canUndo, canRedo: s.canRedo,
             undo: { session.undo() }, redo: { session.redo() },
@@ -338,13 +348,15 @@ extension DevelopWorkspace {
 
     // MARK: the column
 
-    /// The column, `width` wide. Built in a view of its own (`OwnReads`): what it reads — the row picked, the mask
+    /// The column. Built in a view of its own (`OwnReads`): what it reads — the row picked, the mask
     /// layers, the tools — re-makes the column, never the page with its canvas and the window's browser (2.4.0 A2).
-    private func column(width: CGFloat, height: CGFloat) -> some View {
-        OwnReads { columnContent(width: width, height: height) }
+    /// Its width and height are the layout's (`DevelopRegions`), never arguments: a window resized moves it and
+    /// does not make it again (2026-11-22).
+    private var column: some View {
+        OwnReads { columnContent }
     }
 
-    private func columnContent(width: CGFloat, height: CGFloat) -> some View {
+    private var columnContent: some View {
         #if DEBUG && SPK_ENGINE
         TransitionMarks.mark("column.body")
         #endif
@@ -355,30 +367,35 @@ extension DevelopWorkspace {
         let arranging = LayersStage.shared.arranging(frame.id)
         let picture = session.layerPick.isPicture
         // A mask layer's page has no band either (MASKS-SPEC §5).
-        let band = showsNavigationBand && !picture && maskPage == nil && arranging == nil
+        // FilmLab: Develop has no tabs of its own (the mode row's 冲洗 · 导出 are its steps), so only Edit has a band.
+        let band = showsNavigationBand && !picture && maskPage == nil && arranging == nil && navigation.surface != .develop
         let tabs: CGFloat = !band ? 0 : typeSize.isAccessibilitySize ? 60 : 56
         let layersHeight = LayersPanel.height(piece, session: session)
         // The column has no header (the mode row is the window's bar's), no action row (the actions are
         // on the window's bar) and no status line (it is the info strip's, under the picture): the
         // histogram first, on Develop and on Edit alike (HistogramPanel.swift).
         let histogram = HistogramPanel.height()
-        let room = max(height - histogram - layersHeight - tabs, 0)
         return VStack(spacing: 0) {
             // The frame's: it holds its session's histogram while it is shown (`HistogramPanel.holder`), so it is made
             // again with the next frame's session (2.4.0 A2b).
             histogramPanel.frame(height: histogram, alignment: .top).id(frame.id)
-            LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
+            // 普通版 (FilmLab): a single photograph has no 图层 row (its mask layers are 专业版's); a double or a pair keeps
+            // it, the way to its pictures.
+            if !(FeatureFlags.simpleWindow && piece.isSingle) {
+                LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
+            }
             if band { navigationBand.frame(height: tabs) }
             Group {
                 if let arranging {
                     ArrangeColumn(session: session, frame: frame, pick: arranging)
                 } else {
-                    columnPanel(width: width, room: room)
+                    columnPanel
                 }
             }
-            .frame(height: room, alignment: .top).clipped()
+            // The panel takes the height the histogram, 图层 and the band leave (the layout's, not a number).
+            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top).clipped()
         }
-        .frame(width: width)
+        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
         .animation(.easeOut(duration: 0.18), value: layersHeight)
         .layerSheets(session: session, frame: frame)
         // 摆放 is of this picture and this mode: another frame, or Edit, closes it (Done).
@@ -407,7 +424,7 @@ extension DevelopWorkspace {
 
     /// What Export takes on the Mac: the frames chosen in the browser, in the browser's order, and with
     /// fewer than two the open picture (`MacDevelopExport`). The window's filmstrip answers as it did.
-    private var exportIDs: [LibraryFrame.ID] {
+    var exportIDs: [LibraryFrame.ID] {
         MacDevelopExport.ids(current: frame.id, model: model)
     }
 
@@ -429,7 +446,7 @@ extension DevelopWorkspace {
     /// photographs' and the rows'.
     private var watermarkKeysOn: Bool { watermarkPage != nil && session.watermarkSelected && columnShown }
 
-    @ViewBuilder private func columnPanel(width: CGFloat, room: CGFloat) -> some View {
+    @ViewBuilder private var columnPanel: some View {
         if let mark = watermarkPage {
             WatermarkPage(session: session, placement: mark)
         } else if let layer = maskPage {
@@ -447,7 +464,7 @@ extension DevelopWorkspace {
                 VStack(spacing: 0) {
                     LayerStandsDown(session: session, name: LayerRules.summary(session.layerPick, in: LayerRules.rows(session.layerPiece, has: { _ in true })))
                     FoldRule()
-                    columnAdjust(width: width, room: room).rowEnabled(false)
+                    columnAdjust.rowEnabled(false)
                 }
             }
         } else if navigation.surface == .develop, navigation.step == .filmAndPaper, let stockStrip {
@@ -455,12 +472,17 @@ extension DevelopWorkspace {
             // its grip was dragged and scrolling its own cards up and down, then Decode (`StockPreviewPanel(room:)`,
             // `StripSplit`). The column scrolls the panel as one, as before: a strip nobody dragged fits the room,
             // so at rest both strips and Decode's shortest part are on screen where the room holds them.
-            ScrollView(.vertical) {
-                StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
-                                  decode: decodeSection, status: nil, foldable: true, room: room, width: width)
-                    .frame(maxWidth: .infinity, alignment: .top)
+            // The room and the width are measured here, the one place that needs them as numbers: a resize re-makes
+            // this panel where its room changed, and nothing else of the column (2026-11-22).
+            GeometryReader { room in
+                ScrollView(.vertical) {
+                    StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
+                                      decode: decodeSection, status: nil, foldable: true,
+                                      room: room.size.height, width: room.size.width)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
         } else if navigation.surface == .develop {
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
@@ -471,14 +493,14 @@ extension DevelopWorkspace {
         } else {
             // Edit is Adjust — no EngineRouter
             // (its Latitude card, Enlarger and Effects) and no Crop in the column (DevelopInspectorParts.swift).
-            columnAdjust(width: width, room: room)
+            columnAdjust
         }
     }
 
     /// Adjust in the column (2026-11-11): small pills for every tool, any number of tools open under them, one
     /// order for both that is dragged into shape, the column scrolling as one, the layout remembered
     /// (`AdjustColumn`). The column's width and room no longer decide anything: it scrolls.
-    private func columnAdjust(width: CGFloat, room: CGFloat) -> some View {
+    private var columnAdjust: some View {
         AdjustColumn(session: session, state: $adjustState)
     }
 
@@ -605,6 +627,23 @@ extension DevelopWorkspace {
     }
 }
 
+/// The grip on the line between the column and the picture side, over the whole page: it reads the page's width
+/// (the widths the column may take in it) itself, so a window resized re-makes the grip and not the page (2026-11-22).
+private struct ColumnWidthGrip: View {
+    let splits: PaneDividers
+
+    var body: some View {
+        GeometryReader { page in
+            let width = splits.column(in: page.size.width)
+            DividerGrip(way: .sideways, value: width, range: PaneDividers.columnRange(in: page.size.width),
+                        grows: 1, label: L("Column width"),
+                        set: { splits.columnWidth = $0 }, ended: { splits.save() })
+                .frame(width: DividerGrip.reach, height: page.size.height)
+                .position(x: width + 0.5, y: page.size.height / 2)
+        }
+    }
+}
+
 /// A part of a large view built in a view of its own: the observed values `content` reads are this view's to follow,
 /// so a change to one of them re-makes this part and not the view that holds it (an `@Observable` read is tracked
 /// against the body being evaluated). What the page's column, keys and strip read changes with each row, tool and
@@ -614,3 +653,4 @@ struct OwnReads<Content: View>: View {
     init(@ViewBuilder _ content: @escaping () -> Content) { self.content = content }
     var body: some View { content() }
 }
+

@@ -142,10 +142,11 @@ int cmd_decode(int argc, char** argv) {
     std::string mode = "compatible16";
     std::optional<double> temperature;
     double tint = 0.0, scale = 1.0;
-    bool rgba = false, camera_crop = false;
+    bool rgba = false, camera_crop = false, half = false;
     for (int i = 4; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--rgba") { rgba = true; continue; }
+        if (a == "--half") { half = true; continue; }
         if (a == "--crop") {
             if (i + 1 >= argc || std::strcmp(argv[i + 1], "camera") != 0) return fail("bad_request", "--crop takes camera");
             camera_crop = true; ++i; continue;
@@ -163,6 +164,8 @@ int cmd_decode(int argc, char** argv) {
         else return fail("bad_request", "unknown option " + a);
     }
     if (mode != "compatible16" && mode != "headroom") return fail("bad_request", "--mode must be compatible16 or headroom");
+    if (half && mode != "compatible16") return fail("bad_request", "--half is compatible16's only");
+    spk::io::set_compatible_half_size(half);
 
     // The camera facts, from an open without an unpack (cheap), for the reply.
     auto meta = std::make_unique<spk::io::detail::CameraLibRaw>();
@@ -196,9 +199,10 @@ int cmd_decode(int argc, char** argv) {
     crop_reply.set("applied", Json(false));
     if (camera_crop) {
         const auto& c = sizes.raw_inset_crops[0];
-        const long W = sizes.width, H = sizes.height;
-        const long x0 = long(c.cleft) - sizes.left_margin, y0 = long(c.ctop) - sizes.top_margin;
-        const long cw = c.cwidth, ch = c.cheight;
+        const int sh = half ? 1 : 0;   // FilmLab: a half-size decode's frame and crop are halved
+        const long W = (long(sizes.width) + sh) >> sh, H = (long(sizes.height) + sh) >> sh;
+        const long x0 = (long(c.cleft) - sizes.left_margin) >> sh, y0 = (long(c.ctop) - sizes.top_margin) >> sh;
+        const long cw = long(c.cwidth) >> sh, ch = long(c.cheight) >> sh;
         const int flip = sizes.flip;
         const bool turned = flip & 4;
         const long ow = turned ? H : W, oh = turned ? W : H;
@@ -261,6 +265,7 @@ int cmd_decode(int argc, char** argv) {
 
     Json j = Json::object();
     j.set("ok", Json(true));
+    j.set("half", Json(half));
     j.set("width", num(decoded.width));
     j.set("height", num(decoded.height));
     j.set("mode", str(mode));

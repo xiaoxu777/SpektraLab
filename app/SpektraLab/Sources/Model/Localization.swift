@@ -238,10 +238,26 @@ struct LText: ExpressibleByStringInterpolation {
     }
 }
 
+/// FilmLab: the app's own name as shown. Every sentence the interface shows goes through `L`, so the name changes
+/// here, once, and the tables' keys stay the upstream's. A sentence that credits the upstream projects (it names
+/// Andrea Volpato or JamesQiu2005) keeps "SpektraLab": GPL-3.0 §5(a) and CC BY-SA 4.0 ask for that credit.
+enum Brand {
+    static let name = "FilmLab"
+    static func shown(_ s: String) -> String {
+        // The black-and-white profiles are SpektraLab's work, so their credit keeps that name too.
+        guard s.contains("SpektraLab"), !s.contains("Andrea Volpato"), !s.contains("JamesQiu2005"),
+              !s.contains("black-and-white films and their paper"), !s.contains("黑白胶片"), !s.contains("黑白底片"),
+              !s.contains("白黒フィルム") else { return s }
+        return s.replacingOccurrences(of: "SpektraLab", with: name)
+    }
+}
+
 /// The sentence in the app's language. English is the literal itself.
 func L(_ text: LText) -> String {
     let template = Language.shared.translation(of: text.key) ?? text.key
-    return text.isFormat ? LText.filled(template, text.arguments) : template
+    // The app's name in the sentence, never in what is filled into it (a catalog's or a file's own name).
+    let shown = Brand.shown(template)
+    return text.isFormat ? LText.filled(shown, text.arguments) : shown
 }
 
 /// One English word that is two things in the app — *Original* is a file, a picture and a shape —
@@ -249,11 +265,13 @@ func L(_ text: LText) -> String {
 /// is still the word alone.
 func L(_ text: LText, as sense: String) -> String {
     guard let template = Language.shared.translation(of: text.key + " {" + sense + "}") else { return L(text) }
-    return text.isFormat ? LText.filled(template, text.arguments) : template
+    // The app's name in the sentence, never in what is filled into it (a catalog's or a file's own name).
+    let shown = Brand.shown(template)
+    return text.isFormat ? LText.filled(shown, text.arguments) : shown
 }
 
 /// A sentence that was made in English somewhere that also writes it to the log, or that a check
 /// compares: looked up here, where it is shown. A sentence the table lacks is shown as it is.
 func L(shown english: String) -> String {
-    Language.shared.translation(of: english) ?? english
+    Brand.shown(Language.shared.translation(of: english) ?? english)
 }

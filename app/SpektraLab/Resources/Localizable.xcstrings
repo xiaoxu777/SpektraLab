@@ -1145,6 +1145,28 @@
         }
       }
     },
+    "%@ pictures" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 張"
+          }
+        }
+      }
+    },
     "%@ pictures are in the catalog." : {
       "localizations" : {
         "ja" : {
@@ -1427,6 +1449,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ 張在 App 存放的位置讀取"
+          }
+        }
+      }
+    },
+    "%@ saved" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚を保存しました"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已儲存 %@ 張"
           }
         }
       }
@@ -4335,6 +4379,28 @@
         }
       }
     },
+    "Advanced Tools" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細ツール"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高级工具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進階工具"
+          }
+        }
+      }
+    },
     "After" : {
       "localizations" : {
         "ja" : {
@@ -5189,6 +5255,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "返回效果"
+          }
+        }
+      }
+    },
+    "Back to Library" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ライブラリに戻る"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回到图库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回到圖庫"
           }
         }
       }
@@ -6249,6 +6337,28 @@
         }
       }
     },
+    "Catalog" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カタログ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图库目录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖庫目錄"
+          }
+        }
+      }
+    },
     "Catalog Collections" : {
       "localizations" : {
         "ja" : {
@@ -6843,6 +6953,72 @@
         }
       }
     },
+    "Choose a film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムを選ぶ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "挑一款胶卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "挑一款底片"
+          }
+        }
+      }
+    },
+    "Choose a film and a paper" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムと印画紙を選ぶ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选胶卷和相纸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選底片和相紙"
+          }
+        }
+      }
+    },
+    "Choose a folder of pictures, such as an X1D card of 3FR files. FilmLab reads them where they are: nothing is copied, moved or changed." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真のフォルダ（X1D の 3FR カードなど）を選びます。FilmLab はその場で読み込み、コピーも移動も変更もしません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选一个照片文件夹，比如 X1D 的 3FR 存储卡。FilmLab 原地读取，不会复制、移动或修改任何文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選一個照片資料夾，比如 X1D 的 3FR 記憶卡。FilmLab 原地讀取，不會複製、移動或修改任何檔案。"
+          }
+        }
+      }
+    },
     "Choose a folder or pictures to import." : {
       "localizations" : {
         "ja" : {
@@ -6861,6 +7037,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇要匯入的檔案夾或影像。"
+          }
+        }
+      }
+    },
+    "Choose a folder, such as a card of Hasselblad 3FR files. The pictures are read where they are; nothing is copied or moved." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハッセルブラッドの 3FR ファイルが入ったカードなど、フォルダを選んでください。写真はその場で読み込まれ、コピーも移動もされません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一个文件夹，例如装着哈苏 3FR 文件的存储卡。照片在原处读取，不会复制或移动。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一個資料夾，例如裝著哈蘇 3FR 檔案的記憶卡。照片在原處讀取，不會複製或移動。"
           }
         }
       }
@@ -6971,6 +7169,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇要拷貝到的檔案夾。"
+          }
+        }
+      }
+    },
+    "Choose the format, the quality and the size, and where the files go. One button exports every picture you chose." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "形式、画質、サイズ、保存先を選び、ボタンひとつで選んだ写真をすべて書き出します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选格式、画质、尺寸和保存位置，一个按钮导出你选中的所有照片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選格式、畫質、尺寸和儲存位置，一個按鈕匯出你選取的所有照片。"
           }
         }
       }
@@ -9703,6 +9923,28 @@
         }
       }
     },
+    "Develop your Hasselblad pictures as film: a real film's colour, its paper and its grain, worked out from the film makers' own data." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハッセルブラッドの写真をフィルムのように現像します。本物のフィルムの色、印画紙、粒状を、メーカーのデータから計算します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把哈苏照片冲洗成胶片：真实胶卷的色彩、相纸和颗粒，按胶片厂商公布的数据计算出来。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把哈蘇照片沖洗成底片：真實底片的色彩、相紙和顆粒，按底片廠商公布的資料計算出來。"
+          }
+        }
+      }
+    },
     "Developed" : {
       "localizations" : {
         "ja" : {
@@ -10385,6 +10627,28 @@
         }
       }
     },
+    "Each card is your picture on that film. Pick one, then set the exposure and the white balance; the picture follows as you drag." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードはそれぞれ、そのフィルムで撮ったあなたの写真です。1 枚選び、露出とホワイトバランスを調整すると、ドラッグに合わせて写真が変わります。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张卡片就是你的照片在那款胶卷上的样子。选一张，再调曝光和白平衡，拖动时画面实时跟着变。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張卡片就是你的照片在那款底片上的樣子。選一張，再調曝光和白平衡，拖動時畫面即時跟著變。"
+          }
+        }
+      }
+    },
     "Each catalog and session keeps the previews of its pictures inside it. Pictures in no library keep theirs on this Mac, in Preview copies." : {
       "localizations" : {
         "ja" : {
@@ -10957,6 +11221,28 @@
         }
       }
     },
+    "Edit (darkroom, grain, halation, colour, layers), Combine and the Light Table. Off keeps the window to Library and Develop; edits made with them still apply." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集（暗室、粒子、ハレーション、色、レイヤー）、合成、ライトテーブル。オフのときはライブラリと現像のみ表示します。それらで行った調整はそのまま適用されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑（暗房、颗粒、光晕、色彩、图层）、合成和观片台。关闭时窗口只保留图库和冲洗；用它们做过的调整仍然生效。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯（暗房、顆粒、光暈、色彩、圖層）、合成和觀片台。關閉時視窗只保留圖庫和沖洗；用它們做過的調整仍然生效。"
+          }
+        }
+      }
+    },
     "Edit History" : {
       "localizations" : {
         "ja" : {
@@ -11041,6 +11327,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編輯歷史：%@"
+          }
+        }
+      }
+    },
+    "Edit, layers, recipes and colour spaces" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集、レイヤー、レシピ、色空間"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑、图层、导出配方和色彩空间"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯、圖層、匯出配方和色彩空間"
           }
         }
       }
@@ -11353,6 +11661,28 @@
         }
       }
     },
+    "Everything in Simple" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプルのすべて"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含普通版的全部"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "包含普通版的全部"
+          }
+        }
+      }
+    },
     "Exclude Duplicates" : {
       "localizations" : {
         "ja" : {
@@ -11441,6 +11771,28 @@
         }
       }
     },
+    "Export %@ Pictures" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚を書き出す"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出 %@ 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出 %@ 張照片"
+          }
+        }
+      }
+    },
     "Export Log Zip" : {
       "localizations" : {
         "ja" : {
@@ -11459,6 +11811,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "輸出日誌壓縮檔"
+          }
+        }
+      }
+    },
+    "Export in one step" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワンステップで書き出し"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一步导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一步匯出"
+          }
+        }
+      }
+    },
+    "Export the roll" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ロールを書き出す"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出整卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出整卷"
           }
         }
       }
@@ -11503,6 +11899,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "曝光"
+          }
+        }
+      }
+    },
+    "Exposure and white balance" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "露出とホワイトバランス"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曝光和白平衡"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曝光和白平衡"
           }
         }
       }
@@ -12339,6 +12757,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "片邊已開"
+          }
+        }
+      }
+    },
+    "Film edge on or off" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの縁をオン・オフ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片边一键开关"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片邊一鍵開關"
           }
         }
       }
@@ -13927,6 +14367,28 @@
         }
       }
     },
+    "Get Started" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はじめる"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始"
+          }
+        }
+      }
+    },
     "Give a picture a film edge in Develop, and it can lie on the table at its film's size." : {
       "localizations" : {
         "ja" : {
@@ -14209,6 +14671,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顆粒分層"
+          }
+        }
+      }
+    },
+    "Grain, halation and film edge detail" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粒状、ハレーション、フィルムの縁の詳細"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "颗粒、光晕和片边细节"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顆粒、光暈和片邊細節"
           }
         }
       }
@@ -14561,6 +15045,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "硬度"
+          }
+        }
+      }
+    },
+    "Hasselblad files in, film out." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハッセルブラッドの写真を、フィルムの色に。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放进哈苏原片，冲出胶片味道。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放進哈蘇原片，沖出底片味道。"
           }
         }
       }
@@ -14983,6 +15489,28 @@
         }
       }
     },
+    "Home" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホーム"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主頁"
+          }
+        }
+      }
+    },
     "Horizontal {perspective}" : {
       "localizations" : {
         "ja" : {
@@ -15045,6 +15573,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "底片各感光層相互抑制的強弱："
+          }
+        }
+      }
+    },
+    "How would you like to work?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "どちらで使いますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想怎么用 FilmLab？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你想怎麼用 FilmLab？"
           }
         }
       }
@@ -17707,6 +18257,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "長邊"
+          }
+        }
+      }
+    },
+    "Long edge %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長辺 %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长边 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長邊 %@"
           }
         }
       }
@@ -21407,6 +21979,116 @@
         }
       }
     },
+    "Open Folder…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダを開く…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开文件夹…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開資料夾…"
+          }
+        }
+      }
+    },
+    "Open a Folder…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダを開く…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开照片文件夹…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開照片資料夾…"
+          }
+        }
+      }
+    },
+    "Open a folder" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダを開く"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開資料夾"
+          }
+        }
+      }
+    },
+    "Open a folder of photographs" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真のフォルダを開く"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开一个照片文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開一個照片資料夾"
+          }
+        }
+      }
+    },
+    "Open a folder of photographs, such as a card of Hasselblad 3FR files. Each folder becomes a project here; the pictures stay where they are." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真のフォルダ（ハッセルブラッドの 3FR が入ったカードなど）を開きます。フォルダごとにここでプロジェクトになり、写真はその場所のままです。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开一个照片文件夹，比如一张装着哈苏 3FR 的存储卡。每个文件夹都会成为这里的一个项目，照片留在原处。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開一個照片資料夾，比如一張裝著哈蘇 3FR 的記憶卡。每個資料夾都會成為這裡的一個專案，照片留在原處。"
+          }
+        }
+      }
+    },
     "Open in Develop" : {
       "localizations" : {
         "ja" : {
@@ -23409,6 +24091,50 @@
         }
       }
     },
+    "Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专业"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專業"
+          }
+        }
+      }
+    },
+    "Pro: every tool — the curve, the enlarger, grain and halation, layers, recipes and colour spaces." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロ：すべてのツール——カーブ、引き伸ばし機、粒状とハレーション、レイヤー、レシピ、色空間。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专业版：全部工具——曲线、放大机、颗粒与光晕、图层、导出配方和色彩空间。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專業版：全部工具——曲線、放大機、顆粒與光暈、圖層、匯出配方和色彩空間。"
+          }
+        }
+      }
+    },
     "ProPhoto RGB" : {
       "localizations" : {
         "ja" : {
@@ -24619,6 +25345,28 @@
         }
       }
     },
+    "Remove from Home" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホームから削除"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从主页移除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從主頁移除"
+          }
+        }
+      }
+    },
     "Remove from Library" : {
       "localizations" : {
         "ja" : {
@@ -25807,6 +26555,28 @@
         }
       }
     },
+    "Scene curve, enlarger and HDR" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シーンカーブ、引き伸ばし機、HDR"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "场景曲线、放大机和 HDR"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場景曲線、放大機和 HDR"
+          }
+        }
+      }
+    },
     "Search" : {
       "localizations" : {
         "ja" : {
@@ -25957,6 +26727,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "分隔符號"
+          }
+        }
+      }
+    },
+    "Session" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "セッション"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作階段"
           }
         }
       }
@@ -26665,6 +27457,28 @@
         }
       }
     },
+    "Show advanced tools" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細ツールを表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示高级工具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示進階工具"
+          }
+        }
+      }
+    },
     "Show in Files" : {
       "localizations" : {
         "ja" : {
@@ -26749,6 +27563,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示目錄"
+          }
+        }
+      }
+    },
+    "Show the Welcome Tour" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウェルカムツアーを見る"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "观看欢迎引导"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "觀看歡迎導覽"
           }
         }
       }
@@ -26951,6 +27787,94 @@
         }
       }
     },
+    "Simple" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプル"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通"
+          }
+        }
+      }
+    },
+    "Simple or Pro" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプルまたはプロ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版或专业版"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版或專業版"
+          }
+        }
+      }
+    },
+    "Simple shows the everyday controls; Pro shows every tool." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプルはよく使う操作だけ、プロはすべてのツールを表示します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版只显示常用控件；专业版显示全部工具。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版只顯示常用控制項；專業版顯示全部工具。"
+          }
+        }
+      }
+    },
+    "Simple: choose a film, set the exposure and the white balance, and export." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプル：フィルムを選び、露出とホワイトバランスを整えて書き出すだけ。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版：选一款胶卷，调曝光和白平衡，然后导出。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版：選一款底片，調曝光和白平衡，然後匯出。"
+          }
+        }
+      }
+    },
     "Simulated: this build develops no picture" : {
       "localizations" : {
         "ja" : {
@@ -27057,6 +27981,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尺寸，%@"
+          }
+        }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキップ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳過"
           }
         }
       }
@@ -28025,6 +28971,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在開始安裝"
+          }
+        }
+      }
+    },
+    "Step 1 · Library" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ステップ 1 · ライブラリ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第一步 · 图库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第一步 · 圖庫"
+          }
+        }
+      }
+    },
+    "Step 2 · Develop" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ステップ 2 · 現像"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第二步 · 冲洗"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第二步 · 沖洗"
+          }
+        }
+      }
+    },
+    "Step 3 · Export" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ステップ 3 · 書き出し"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第三步 · 导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第三步 · 匯出"
           }
         }
       }
@@ -29345,6 +30357,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "放大機的曝光。用同一張負片重新放相。"
+          }
+        }
+      }
+    },
+    "The export could not begin. Try again in a moment." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書き出しを開始できませんでした。少し待ってからもう一度お試しください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出没能开始，请稍后再试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出未能開始，請稍後再試。"
           }
         }
       }
@@ -33771,6 +34805,72 @@
         }
       }
     },
+    "Welcome Tour" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウェルカムツアー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎引导"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎導覽"
+          }
+        }
+      }
+    },
+    "Welcome back. Pick up a roll, or open a new folder." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "おかえりなさい。続きのロールを開くか、新しいフォルダを開きましょう。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎回来。继续一卷，或者打开新的文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎回來。繼續一卷，或者打開新的資料夾。"
+          }
+        }
+      }
+    },
+    "Welcome to FilmLab" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FilmLab へようこそ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎使用 FilmLab"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎使用 FilmLab"
+          }
+        }
+      }
+    },
     "What Export opens with" : {
       "localizations" : {
         "ja" : {
@@ -34563,6 +35663,28 @@
         }
       }
     },
+    "You can change this at any time with the switch at the top of the window." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウインドウ上部のスイッチでいつでも切り替えられます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随时可以用窗口顶部的开关切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨時可以用視窗頂部的開關切換。"
+          }
+        }
+      }
+    },
     "You can leave the app while it works." : {
       "localizations" : {
         "ja" : {
@@ -34603,6 +35725,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "檔案留在原處。"
+          }
+        }
+      }
+    },
+    "Your first roll" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初のロール"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的第一卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的第一卷"
           }
         }
       }
