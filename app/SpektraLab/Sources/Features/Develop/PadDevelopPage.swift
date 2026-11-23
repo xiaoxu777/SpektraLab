@@ -45,7 +45,9 @@ extension DevelopWorkspace {
         // the picture side (`PaneDividers`); the layout fits it to the window.
         let splits = PaneDividers.shared
         // The filmstrip too, from today's height up ("its current height is also the narrowest").
-        let stripHeight = Self.infoStripHeight
+        // FilmLab: the browser's strip under the info line, in the same slot: under the picture only (`ShellFilmStrip`).
+        let filmStrip = ShellFilmStrip.shown
+        let stripHeight = Self.infoStripHeight + (filmStrip ? FilmStripBar.height : 0)
         // Mac (the owner, 2026-10-27): the bar is the window's (`WindowToolbar`, full width above the
         // page, the actions pinned to its trailing edge), so the picture side keeps no top band of its
         // own — and nothing of it can be clipped by the browser beside it.
@@ -62,7 +64,11 @@ extension DevelopWorkspace {
             // same strip the library draws under its viewer (`MacInfoStrip`), with the develop's own
             // line in it, so the column keeps no status row.
             if cropping == nil {
-                macInfoStrip.padPart(.filmstrip)
+                VStack(spacing: 0) {
+                    macInfoStrip.frame(height: Self.infoStripHeight)
+                    if filmStrip { ShellFilmStrip().frame(height: FilmStripBar.height) }
+                }
+                .padPart(.filmstrip)
             }
             if columnShown {
                 Rectangle().fill(Theme.wall).padPart(.rule)
@@ -501,7 +507,8 @@ extension DevelopWorkspace {
     /// order for both that is dragged into shape, the column scrolling as one, the layout remembered
     /// (`AdjustColumn`). The column's width and room no longer decide anything: it scrolls.
     private var columnAdjust: some View {
-        AdjustColumn(session: session, state: $adjustState)
+        AdjustColumn(session: session, state: $adjustState,
+                     tail: Self.gradingHasEffects ? AnyView(wideFormatTail.rowEnabled(session.edit.appliesFilm)) : nil)
     }
 
     // MARK: keys

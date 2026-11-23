@@ -68,7 +68,7 @@ struct MacInfoStrip: View {
                 .frame(width: geo.size.width, height: geo.size.height)
         }
         .frame(height: Self.height)
-        .background(Theme.panel)
+        .background(Theme.well)
         .overlay(alignment: .top) { Rectangle().fill(Theme.wall).frame(height: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mac.infostrip")

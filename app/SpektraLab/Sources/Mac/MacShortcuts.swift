@@ -6,12 +6,14 @@ import SwiftUI
 import UIKit
 
 enum MacShortcut: String, CaseIterable {
-    case browser, column, grid, crop, lightTable, compare, copy, copyChoosing, paste, pasteAll, reset, export
+    case browser, column, grid, crop, lightTable, compare, copy, copyChoosing, paste, pasteChoosing, pasteAll, reset, export
     case selectAll, selectNone, invert, previous, next, first, last, filters
     case libraryTab, filtersTab, infoTab, fit, actualSize, zoomIn, zoomOut, fullScreen
     case tableDrag, tableClick, tableLoupe, tableFit, tableActual, tableZoomIn, tableZoomOut
     case tableRight, tableLeft
-    case red, yellow, green
+    case red, yellow, green, blue
+    /// FilmLab 暗房 (the owner, 2026-11-23): ⌘1–⌘4 are the four modes; ⌃⌘P is 普通 | 专业.
+    case modeLibrary, modeDevelop, modeGrading, modeExport, proMode
     case original
     case newVariant, cloneVariant
 
@@ -22,9 +24,16 @@ enum MacShortcut: String, CaseIterable {
         // Capture One's own on the Mac (PRD-G §3; its support pages, 2026-11-13). Delete Variant has none there.
         case .newVariant: return [k(UIKeyCommand.f2)]
         case .cloneVariant: return [k(UIKeyCommand.f3)]
-        case .red: return [k("-")]
-        case .yellow: return [k("*")]
-        case .green: return [k("+")]
+        // Capture One's - * +, and 6 7 8 9 beside the stars' 0–5 (design A).
+        case .red: return [k("-"), k("6")]
+        case .yellow: return [k("*"), k("7")]
+        case .green: return [k("+"), k("8")]
+        case .blue: return [k("9")]
+        case .modeLibrary: return [k("1", .command)]
+        case .modeDevelop: return [k("2", .command)]
+        case .modeGrading: return [k("3", .command)]
+        case .modeExport: return [k("4", .command)]
+        case .proMode: return [k("p", [.command, .control])]
         case .browser: return [k("b", .command), k("b", [.command, .alternate])]
         case .column: return [k("t", .command), k("s", [.command, .control])]
         case .grid: return [k("g")]
@@ -38,7 +47,9 @@ enum MacShortcut: String, CaseIterable {
         // stays Paste's alias.
         case .copy: return [k("c", .command)]
         case .copyChoosing: return [k("c", [.command, .shift])]
-        case .paste: return [k("v", .command), k("v", [.command, .shift])]
+        case .paste: return [k("v", .command)]
+        // FilmLab 暗房 (design A): ⇧⌘V opens the paste panel — where the settings go — as ⇧⌘C opens the copy panel.
+        case .pasteChoosing: return [k("v", [.command, .shift])]
         // FilmLab: the settings onto every picture the browser shows, after asking (`MacLibraryActions.PasteRequest`).
         case .pasteAll: return [k("v", [.command, .alternate])]
         case .reset: return [k("r", .command)]
@@ -51,9 +62,10 @@ enum MacShortcut: String, CaseIterable {
         case .first: return [k(UIKeyCommand.inputHome, .command)]
         case .last: return [k(UIKeyCommand.inputEnd, .command)]
         case .filters: return [k("f", [.command, .shift])]
-        case .libraryTab: return [k("1", [.command, .alternate]), k("1", .command)]
-        case .filtersTab: return [k("2", [.command, .alternate]), k("2", .command)]
-        case .infoTab: return [k("3", [.command, .alternate]), k("3", .command)]
+        // ⌘1–⌘3 are the modes' since design A (the owner, 2026-11-23); the sidebar's tabs keep ⌥⌘1–⌥⌘3.
+        case .libraryTab: return [k("1", [.command, .alternate])]
+        case .filtersTab: return [k("2", [.command, .alternate])]
+        case .infoTab: return [k("3", [.command, .alternate])]
         case .fit: return [k(",")]
         case .actualSize: return [k(".")]
         case .zoomIn: return [k("+", .command), k("=", .command)]
@@ -79,6 +91,12 @@ enum MacShortcut: String, CaseIterable {
         case .red: L("Red")
         case .yellow: L("Yellow")
         case .green: L("Green")
+        case .blue: L("Blue")
+        case .modeLibrary: L("Library")
+        case .modeDevelop: L("Develop")
+        case .modeGrading: L("Grading")
+        case .modeExport: L("Export", as: "the mode")
+        case .proMode: L("Simple or Pro")
         case .browser: L("Browser")
         case .column: L("Sidebar")
         case .grid: L("Grid")
@@ -88,6 +106,7 @@ enum MacShortcut: String, CaseIterable {
         case .copy: L("Copy Settings")
         case .copyChoosing: L("Copy Settings…")
         case .paste: L("Paste Settings")
+        case .pasteChoosing: L("Paste Settings…")
         case .pasteAll: L("Paste Settings to All Pictures…")
         case .reset: L("Reset")
         case .export: L("Export")

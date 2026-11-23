@@ -5,7 +5,7 @@ import SwiftUI
 extension Theme {
     /// The one line where the picture side meets the column, and over the filmstrip: on the blue-grey a
     /// darker line (`Theme.tone`), following a chosen ground (`Theme.ground`).
-    static let wall = ground(dark: 0x0E1013, light: 0xBDC1C7)
+    static let wall = ground(dark: 0x2A2C31, light: 0xD2D4D8)
 }
 
 /// The app's appearance — System (following macOS), Light or Dark — chosen in Settings › Appearance and

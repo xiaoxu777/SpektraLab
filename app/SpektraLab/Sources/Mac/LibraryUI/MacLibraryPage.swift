@@ -34,7 +34,8 @@ struct MacLibraryPage: View {
 
     var body: some View {
         let store = MacLibraryUI.store(model)
-        let rows = store.images
+        // FilmLab: the roll's quick filter in front narrows what the page shows and walks (`FilmLabRollFilterState`).
+        let rows = FilmLabRollFilterState.shared.apply(store.images, library: library)
         return presentations(window(store, rows), store)
     }
 
@@ -122,9 +123,18 @@ struct MacLibraryPage: View {
             .overlay(alignment: .trailing) { wall }
     }
 
-    /// The picture (the owner, 2026-10-26: the library's centre is the viewer).
+    /// FilmLab 暗房 (the owner chose design A, 2026-11-23): 图库's centre is the grid itself, filling the room right of the
+    /// column — the grid is the browser here, so there is no strip under it (the strip is 冲洗's, 二级调色's and 导出's).
+    /// A double click, or Return, opens the picture in 冲洗.
     private func centrePane(_ rows: [MacImage]) -> some View {
-        BrowserViewerSplit(image: browser.primary(rows), open: open, chosen: browser.selection.count)
+        let store = MacLibraryUI.store(model)
+        return MacLibraryGrid(store: store, browser: browser, rows: rows, open: open,
+                              lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
+                              makePair: makePair,
+                              makeDouble: { actions.makeDouble($0, store: store, model: model) },
+                              confirmRemoval: confirmRemoval,
+                              bar: .slim, sizeSlider: true, viewer: false, crop: crop)
+            .background(Theme.well)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

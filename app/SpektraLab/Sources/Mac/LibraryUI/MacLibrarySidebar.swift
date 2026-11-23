@@ -161,6 +161,9 @@ struct MacLibrarySidebar: View {
             }
                 .padding(.horizontal, MacMetric.pt(8))
                 .padding(.vertical, MacMetric.pt(6))
+            // FilmLab 暗房: the roll's quick filters first (`FilmLabRollFilters`), then the catalog's tree.
+            FilmLabRollFilters(rows: store.images)
+            Rectangle().fill(Theme.wall).frame(height: 1).padding(.horizontal, MacMetric.pt(10))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     // The Light Table is entered from the grid's header (its loupe, beside the viewer), with the

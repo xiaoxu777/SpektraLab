@@ -195,20 +195,11 @@ struct MainWindowLayout: View {
                         panel(store, rows, inDevelop: develop != nil, room: geo.size, factor: f)
                     }
                 } else {
-                    // FilmLab (the owner, 2026-11-23): the browser is a strip along the bottom, with its stars, in every
-                    // mode (`FilmStripBar`).
-                    VStack(spacing: 0) {
-                        ShellContent(develop: develop)
-                            .equatable()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        if browser.viewerShown {
-                            FilmStripBar(store: store, rows: rows, open: { row in openRow(row, store: store) })
-                                .equatable()
-                                .interfaceScaled(.macPoints)
-                                .frame(height: FilmStripBar.height * f)
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-                    }
+                    // FilmLab: the browser is a strip under each page's picture, never under its column
+                    // (`ShellFilmStrip`, the owner, 2026-11-23).
+                    ShellContent(develop: develop)
+                        .equatable()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }
@@ -223,6 +214,20 @@ struct MainWindowLayout: View {
         .macImportDropZone(router: router, watch: dropWatch)
         .overlay {
             if dropWatch.shown || browser.dropReading != nil { MacImportDropNote(reading: browser.dropReading).ignoresSafeArea() }
+        }
+        // What a paste just did, over the picture while 冲洗/二级调色/导出 is in front (the library says it in its sidebar).
+        .overlay(alignment: .bottom) {
+            if develop != nil {
+                OwnReads { FilmLabToast() }
+                    .interfaceScaled(.macPoints)
+                    .padding(.bottom, (ShellFilmStrip.shown ? FilmStripBar.height : 0) * f + 56)
+            }
+        }
+        // A check's launch: a bar panel drawn in the window, where `--capture-window` can see it (`FilmLabCheckOverlay`).
+        .overlay(alignment: .topTrailing) {
+            if FilmLabCheckArgs.value("--filmlab-panel-inline") != nil {
+                FilmLabCheckOverlay(store: store, rows: rows, develop: bar.develop).interfaceScaled(.macPoints)
+            }
         }
         // FilmLab's home page and, the first time, its welcome tour: over the whole window, the shell kept under them.
         .overlay { OwnReads { filmLabCovers } }
@@ -351,9 +356,9 @@ struct MainWindowLayout: View {
         MacShortcutButton(.copy, enabled: free && source != nil) {
             if let source { actions.copySettings(of: source, model: model) }
         }
-        MacShortcutButton(.copyChoosing, enabled: free && source != nil) {
-            if let dev { dev.copySettings() } else if let source { router.present(.copySettings(source)) }
-        }
+        // ⇧⌘C and ⇧⌘V: the bar's panels (design A), the same the 复制 and 粘贴 buttons open.
+        MacShortcutButton(.copyChoosing, enabled: free && source != nil) { FilmLabClipboardUI.shared.copyShown = true }
+        MacShortcutButton(.pasteChoosing, enabled: free && library.clipboard != nil) { FilmLabClipboardUI.shared.pasteShown = true }
         MacShortcutButton(.paste, enabled: free && library.clipboard != nil && (dev != nil || !browser.selection.isEmpty)) {
             pasteSettings(store, rows, dev)
         }
@@ -365,9 +370,22 @@ struct MainWindowLayout: View {
         MacShortcutButton(.export, enabled: free && (dev != nil || !browser.selection.isEmpty)) {
             if let dev { dev.export() } else { browser.exportAsked = true }
         }
-        ForEach([MacShortcut.red, .yellow, .green], id: \.rawValue) { shortcut in
+        // ⌘1–⌘4: the four modes, as the mode row has them (二级调色 only in 专业版); ⌃⌘P: 普通 | 专业.
+        ForEach([(MacShortcut.modeLibrary, WorkspaceMode.library), (.modeDevelop, .develop), (.modeGrading, .edit), (.modeExport, .export)],
+                id: \.0.rawValue) { key, mode in
+            MacShortcutButton(key, enabled: free && WorkspaceMode.shown.contains(mode) && (mode == .library || !rows.isEmpty || dev != nil)) {
+                browser.fullGrid = false
+                if let dev {
+                    if mode == .library { router.toLibrary() } else if !dev.inCrop { dev.chooseSurface(mode) }
+                } else if mode != .library {
+                    MacLibraryGo.choose(mode, rows: rows, model: model)
+                }
+            }
+        }
+        MacShortcutButton(.proMode, enabled: free) { FilmLabHome.shared.setPro(!ProMode.shared.on) }
+        ForEach([MacShortcut.red, .yellow, .green, .blue], id: \.rawValue) { shortcut in
             MacShortcutButton(shortcut, enabled: free && !browser.selection.isEmpty && store.selectedSource?.isHelperBacked == true) {
-                let label: MacColorLabel = shortcut == .red ? .red : shortcut == .yellow ? .yellow : .green
+                let label: MacColorLabel = shortcut == .red ? .red : shortcut == .yellow ? .yellow : shortcut == .green ? .green : .blue
                 let ids = rows.filter { browser.selection.contains($0.id) }.map(\.id)
                 Task {
                     do { try await store.setColorLabel(label, for: ids) }
@@ -470,7 +488,19 @@ struct MainWindowLayout: View {
 
     private func topBar(_ store: any MacLibraryData, _ rows: [MacImage], inDevelop: Bool) -> some View {
         let dev = inDevelop ? bar.develop : nil
-        return WindowToolbar(browser: browser) {
+        // 导出, at the bar's end (design A): to the 导出 mode, from 图库 or the develop page; none in 导出 itself.
+        let exportGo: (() -> Void)? = {
+            if let dev {
+                guard dev.surface != .export, !dev.inCrop else { return nil }
+                return { browser.fullGrid = false; dev.chooseSurface(.export) }
+            }
+            guard !rows.isEmpty else { return nil }
+            return { browser.fullGrid = false; MacLibraryGo.choose(.export, rows: rows, model: model) }
+        }()
+        // What 复制 copies from: the open frame, or in 图库 the first chosen picture that is a frame already.
+        let copySource = dev?.frameID ?? browser.primary(rows)?.develop.map(\.frameID).flatMap { library.frame($0)?.id }
+        return WindowToolbar(browser: browser, export: exportGo, stripToggle: inDevelop) {
+            FilmLabRollName(store: store)
             sharedControls(store, rows, dev)
         } mode: {
             modeSwitch(rows, dev, inDevelop: inDevelop)
@@ -482,6 +512,11 @@ struct MainWindowLayout: View {
                                makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
                                makePair: { images in actions.makePair(images, store: store, model: model) })
             }
+            // 复制 ▾ and 粘贴 ▾, in every mode (the owner: "入口要看得见").
+            if !(dev?.inCrop ?? false) {
+                FilmLabCopyButton(frameID: copySource)
+                FilmLabPasteButton(store: store, rows: rows, develop: dev)
+            }
         }
     }
 
@@ -491,17 +526,16 @@ struct MainWindowLayout: View {
                               toggleColumn: dev.toggleColumn,
                               lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
                               fullGrid: { MacLibraryGo.fullGrid(model: model) },
-                              crop: dev.crop, cropping: dev.inCrop, cropEnabled: dev.cropEnabled)
+                              crop: dev.crop, cropping: dev.inCrop, cropEnabled: dev.cropEnabled, sort: false)
         } else {
             let picture = browser.primary(rows)
             MacSharedControls(store: store, browser: browser, columnShown: browser.sidebarShown,
                               toggleColumn: { browser.sidebarShown.toggle() },
                               lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
                               fullGrid: { MacLibraryGo.fullGrid(model: model) },
-                              // Always there, disabled with nothing chosen: the bar must not change shape
-                              // when a picture is picked (the owner, 2026-10-27).
-                              crop: { if let picture { MacLibraryGo.crop(picture, model: model) } },
-                              cropEnabled: picture != nil)
+                              // FilmLab 暗房 (design A): 图库's grid header has the sort, and Crop is C or the picture's
+                              // menu, so the bar keeps room for its own buttons.
+                              crop: nil, cropEnabled: picture != nil, sort: false)
         }
     }
 
@@ -686,10 +720,8 @@ struct MacDevelopActions: View {
 
     var body: some View {
         HStack(spacing: MacMetric.pt(6)) {
-            Button(action: bar.undo) { round("arrow.uturn.backward") }
-                .disabled(!bar.canUndo).accessibilityLabel(L("Undo"))
-            Button(action: bar.redo) { round("arrow.uturn.forward") }
-                .disabled(!bar.canRedo).accessibilityLabel(L("Redo"))
+            FilmLabBarIcon(symbol: "arrow.uturn.backward", help: L("Undo"), enabled: bar.canUndo, action: bar.undo)
+            FilmLabBarIcon(symbol: "arrow.uturn.forward", help: L("Redo"), enabled: bar.canRedo, action: bar.redo)
             Menu {
                 Button(L("Undo"), action: bar.undo).disabled(!bar.canUndo)
                     .keyboardShortcut("z", modifiers: .command)
@@ -699,7 +731,7 @@ struct MacDevelopActions: View {
                     .disabled(!bar.resetEnabled)
                 Divider()
                 // Copy: which groups is asked on the sheet; paste onto the chosen pictures, or onto all of them.
-                Button(L("Copy Settings…"), action: bar.copySettings)
+                Button(L("Copy Settings…")) { FilmLabClipboardUI.shared.copyShown = true }
                 Button(L("Paste to Selected Pictures")) { MacLibraryActions.shared.pasteRequest = .selected }
                     .disabled(!bar.pasteEnabled)
                 Button(L("Paste to All Pictures…")) { MacLibraryActions.shared.pasteRequest = .all }
@@ -717,19 +749,15 @@ struct MacDevelopActions: View {
                 .accessibilityIdentifier("mac.develop.canvas-gamut")
                 Divider()
                 Button(L("Settings"), action: bar.settings)
-            } label: { round("ellipsis") }
+            } label: {
+                Image(systemName: "ellipsis").font(MacMetric.font(13.5, .medium)).foregroundStyle(Theme.secondaryText)
+                    .frame(width: MacMetric.pt(28), height: MacMetric.pt(24)).contentShape(Rectangle())
+            }
                 .menuIndicator(.hidden)
                 .accessibilityLabel(L("Edit actions"))
                 .accessibilityIdentifier("v5.edit-actions")
-            Button(action: bar.paste) { round("doc.on.clipboard") }
-                .disabled(!bar.pasteEnabled)
-                .accessibilityLabel(L("Paste Settings"))
-                .accessibilityHint(bar.pasteHint)
-                .accessibilityIdentifier("v5.paste")
-            Button(action: bar.compare) { round("rectangle.lefthalf.filled", selected: bar.compareOn) }
-                .disabled(!bar.compareEnabled)
-                .accessibilityLabel(L("Compare"))
-                .accessibilityAddTraits(bar.compareOn ? .isSelected : [])
+            FilmLabBarIcon(symbol: "rectangle.lefthalf.filled", help: L("Compare"), selected: bar.compareOn,
+                           enabled: bar.compareEnabled, action: bar.compare)
                 .contextMenu {
                     Button(bar.originalOn ? L("Process") : L("Original", as: "the picture"), action: bar.toggleOriginal)
                 }

@@ -94,7 +94,20 @@ extension DevelopWorkspace {
     /// Format's ↺: the format, and the effects laid there (`wideEffects`) — Grain and Halation are the
     /// format's already; Scatter, Glare, the couplers and Grain's sub-layers with them.
     var resettingWideFormat: Bool { navigation.surface == .develop && navigation.step == .format && pair == nil }
-    static let wideFormatScopes: [PageResetScope] = [.format, .effects, .couplers, .leak]
+    static var wideFormatScopes: [PageResetScope] { gradingHasEffects ? [.format] : [.format] + gradingEffectScopes }
+
+    /// FilmLab on the Mac (the owner, 2026-11-23, design A): Remove anti-halation layer and the effects — Grain,
+    /// Halation, Scatter, Glare, the couplers, 漏光 — are 二级调色's, under Adjust's tools (`wideFormatTail` as the
+    /// `AdjustColumn`'s tail), not 导出 › 格式's. Their resets go with them: 二级调色's ↺ puts them back, Format's
+    /// does not.
+    static var gradingHasEffects: Bool {
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
+        return false
+        #endif
+    }
+    static let gradingEffectScopes: [PageResetScope] = [.effects, .couplers, .leak]
 
     /// Format's 片边 and 日期后背 sections, on a single frame (a pair keeps its own lines).
     var filmEdgeColumn: FilmEdgeColumn? {

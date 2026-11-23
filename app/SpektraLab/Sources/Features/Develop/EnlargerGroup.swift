@@ -105,6 +105,7 @@ struct EnlargerGroup: View {
     private var title: some View {
         ColumnSectionHeader(title: L("Enlarger"), folded: prefs.enlargerCollapsed, id: "enlarger",
                             rule: false, indent: HighDynamicRangeGroup.indent,
+                            value: ClipboardGroup.enlarger.summary(of: edit),
                             toggleFold: { prefs.enlargerCollapsed.toggle() }) {
             RoundButton(diameter: 22, label: L("Reset") + " " + L("Enlarger"), action: {
                 model.resetPage(.enlarger, in: session)

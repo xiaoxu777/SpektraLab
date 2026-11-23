@@ -146,11 +146,18 @@ struct StockPreviewPanel: View {
                                paper: section(paperCards, folded: paperFolded, dragged: heights.paper, standard: StockGridRule.defaultPaper(width: w)))
     }
 
+    /// The film (0) or the paper (1) as Copy Settings names them, for its section's folded header (design A).
+    private func chosenText(_ part: Int) -> String? {
+        // `StockCatalog.pairText` joins the two with a plain " · ".
+        let parts = ClipboardGroup.filmAndPaper.summary(of: session.edit).components(separatedBy: " · ")
+        return part < parts.count ? parts[part] : nil
+    }
+
     private var gridColumn: some View {
         let layout = gridRoom
         let split = StripSplit.resolve(layout)
         return VStack(spacing: 0) {
-            ColumnSectionHeader(title: L("Film"), folded: filmFolded, id: "film",
+            ColumnSectionHeader(title: L("Film"), folded: filmFolded, id: "film", value: chosenText(0),
                                 toggleFold: { prefs.filmRowCollapsed.toggle() }) {
                 filmPill(small: true).rowEnabled(appliesFilm)
                 if let crop { cropButton(crop).rowEnabled(appliesFilm) }
@@ -159,7 +166,7 @@ struct StockPreviewPanel: View {
                 filmGrid.frame(height: split.film).rowEnabled(appliesFilm)
                 grip(.film, layout, shown: split.film)
             }
-            ColumnSectionHeader(title: L("Paper"), folded: paperFolded, id: "paper",
+            ColumnSectionHeader(title: L("Paper"), folded: paperFolded, id: "paper", value: chosenText(1),
                                 toggleFold: { prefs.paperRowCollapsed.toggle() }) {
                 paperPill(small: true).rowEnabled(appliesFilm)
             }
@@ -230,13 +237,13 @@ struct StockPreviewPanel: View {
             if foldable {
                 // Edit › Adjust's folding headers (2026-11-11): the chevron at the left, the strip's name, its
                 // shelf's small pill at the right. The pill greys with the film off; the fold still works.
-                ColumnSectionHeader(title: L("Film"), folded: filmFolded, id: "film",
+                ColumnSectionHeader(title: L("Film"), folded: filmFolded, id: "film", value: chosenText(0),
                                     toggleFold: { prefs.filmRowCollapsed.toggle() }) {
                     filmPill(small: true).rowEnabled(appliesFilm)
                     if let crop { cropButton(crop).rowEnabled(appliesFilm) }
                 }
                 if !filmFolded { filmRow.rowEnabled(appliesFilm).padding(.bottom, Self.stripGap) }
-                ColumnSectionHeader(title: L("Paper"), folded: paperFolded, id: "paper",
+                ColumnSectionHeader(title: L("Paper"), folded: paperFolded, id: "paper", value: chosenText(1),
                                     toggleFold: { prefs.paperRowCollapsed.toggle() }) {
                     paperPill(small: true).rowEnabled(appliesFilm)
                 }

@@ -230,7 +230,10 @@ struct DevelopWorkspace: View {
                     // 片边 and 日期后背 are 导出's in both modes, every part of them (the owner, 2026-11-23: "专业和普通版，
                     // 加片边的功能都应该放在导出的界面，并且应该都要支持自定义"). 普通版 has nothing else under the export.
                     if FeatureFlags.simpleWindow {
-                        if pair == nil, let filmEdgeColumn { filmEdgeColumn.rowEnabled(session.edit.appliesFilm) }
+                        if pair == nil, let filmEdgeColumn {
+                            filmEdgeColumn.rowEnabled(session.edit.appliesFilm)
+                            FilmEdgeToAllRow(session: session, frame: frame, ids: exportIDs)
+                        }
                     } else {
                     VStack(spacing: 0) {
                         // 胶片 picked (a picture's row has its own page, `LayerPictureColumn`): a pair's piece, a
@@ -242,13 +245,17 @@ struct DevelopWorkspace: View {
                         }
                         // 片边 and 日期后背 under the
                         // film's sizes, in the old rows' place, each folding (`FilmEdgeColumn`).
-                        if let filmEdgeColumn { filmEdgeColumn }
+                        if let filmEdgeColumn {
+                            filmEdgeColumn
+                            FilmEdgeToAllRow(session: session, frame: frame, ids: exportIDs)
+                        }
                     }
                     // The film edge and the date back are the film's (Apply Film Emulation).
                     .rowEnabled(session.edit.appliesFilm)
                     // Remove anti-halation layer, then Grain and Halation with the other effects under their own
                     // folding header (`wideFormatTail`, `wideEffects`).
-                    wideFormatTail.rowEnabled(session.edit.appliesFilm)
+                    // On the Mac they are 二级调色's (`gradingHasEffects`).
+                    if !Self.gradingHasEffects { wideFormatTail.rowEnabled(session.edit.appliesFilm) }
                     }
                 }
                 .padding(.bottom, 12)
@@ -451,14 +458,24 @@ struct DevelopWorkspace: View {
     }
     func performReset() {
         // Edit's column whole, one step of Undo: Layer 2, and 镜头's settings on the negative with it (PRD-D §3.4).
-        if adjusting { session.change { e in for t in Adjustments.Tool.allCases { e.adjustments.reset(t) }; e.lens = LensSettings() } }
+        if adjusting {
+            let owns = session.beginHistoryTransaction()
+            session.change { e in for t in Adjustments.Tool.allCases { e.adjustments.reset(t) }; e.lens = LensSettings() }
+            if Self.gradingHasEffects {
+                for scope in Self.gradingEffectScopes where changesAnything(scope) { model.resetPage(scope, in: session) }
+            }
+            if owns { session.endHistoryTransaction() }
+        }
         else if resettingDecode { resetScopes(filmAndPaperResetScopes) }
         else if resettingWideFormat { resetScopes(Self.wideFormatScopes) }
         else if let scope = resetScope { model.resetPage(scope, in: session) }
     }
 
     var resetChangesAnything: Bool {
-        if adjusting { return AdjustTool.allCases.contains { !session.adjustIsAtRest($0) } }
+        if adjusting {
+            return AdjustTool.allCases.contains { !session.adjustIsAtRest($0) }
+                || Self.gradingHasEffects && Self.gradingEffectScopes.contains { changesAnything($0) }
+        }
         if resettingDecode { return filmAndPaperResetScopes.contains { changesAnything($0) } }
         if resettingWideFormat { return Self.wideFormatScopes.contains { changesAnything($0) } }
         guard let scope = resetScope else { return false }

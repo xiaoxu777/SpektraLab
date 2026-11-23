@@ -15,6 +15,9 @@ struct BrowserViewerSplit: View {
     let open: (MacImage) -> Void
     /// How many pictures are chosen: the strip under the picture says so above one (`MacInfoStrip`).
     var chosen = 1
+    /// FilmLab: the library page's viewer carries the browser's strip under it (`ShellFilmStrip`); the import's and the
+    /// export page's do not.
+    var filmStrip = false
     @Environment(FrameCatalog.self) private var library
     @Environment(AppServices.self) private var model
 
@@ -44,8 +47,10 @@ struct BrowserViewerSplit: View {
                 }
             }
             MacInfoStrip(image: image.map(MacInfoStrip.Item.init), chosen: chosen, status: image.flatMap(statusLine))
+            // FilmLab: the browser's strip, under the picture and not under the sidebar (`ShellFilmStrip`).
+            if filmStrip, ShellFilmStrip.shown { ShellFilmStrip(open: open).frame(height: FilmStripBar.height) }
         }
-        .background(Theme.background)
+        .background(Theme.well)
     }
 
     @ViewBuilder private func picture(_ image: MacImage, in box: CGSize) -> some View {

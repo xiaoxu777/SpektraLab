@@ -31,6 +31,8 @@ struct MacSharedControls: View {
     var crop: (() -> Void)? = nil
     var cropping = false
     var cropEnabled = true
+    /// The sort: 图库's (its grid); the develop page's strip keeps the order it has.
+    var sort = true
 
     var body: some View {
         HStack(spacing: MacMetric.pt(8)) {
@@ -44,36 +46,8 @@ struct MacSharedControls: View {
             .accessibilityIdentifier("mac.bar.column")
             // The library's viewer and the develop page's browser are the same split: on, the picture has
             // a browser beside it; off, the picture has the window.
-            Button { browser.viewerShown.toggle() } label: { MacViewerGlyph(on: browser.viewerShown) }
-            .buttonStyle(.plain)
-            .help(L("Viewer"))
-            .accessibilityLabel(L("Viewer"))
-            .accessibilityAddTraits(browser.viewerShown ? .isSelected : [])
-            .accessibilityIdentifier("mac.library.viewer")
-            // The grid, whole (G): the viewer steps aside and the browser has the window — 图库's third
-            // layout, beside the viewer-with-browser and the browser alone. Lit while it is on.
-            Button(action: fullGrid) {
-                Image(systemName: "square.grid.2x2").font(MacMetric.font(14))
-                    .foregroundStyle(browser.fullGrid ? Theme.accent : Theme.secondaryText)
-                    .frame(width: MacMetric.pt(26), height: MacMetric.pt(22)).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(L("Grid"))
-            .accessibilityLabel(L("Grid"))
-            .accessibilityAddTraits(browser.fullGrid ? .isSelected : [])
-            .accessibilityIdentifier("mac.bar.fullgrid")
-            // The third way to look at the chosen pictures, after the grid and the viewer: on the table, at
-            // their printed size (2026-10-24). The Library's own loupe, as the window's Library draws it.
-            if !FeatureFlags.simpleWindow {
-            Button { lightTable(store.images.filter { browser.selection.contains($0.id) }) } label: {
-                DrawnGlyph(icon: .standLoupe, size: MacMetric.pt(15), color: Theme.secondaryText)
-                    .frame(width: MacMetric.pt(26), height: MacMetric.pt(22)).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(L("Light Table"))
-            .accessibilityLabel(L("Light Table"))
-            .accessibilityIdentifier("mac.library.lighttable")
-            }
+            // FilmLab 暗房 (design A): no viewer or grid buttons in the bar — ⌘B is the strip, G the grid.
+            // The Light Table: its key (P) and the Image menu; no button in design A's bar.
             if let crop {
                 // White while the crop is open, as the column's Crop has drawn since 2026-10-24.
                 Button(action: crop) {
@@ -95,7 +69,7 @@ struct MacSharedControls: View {
                 .accessibilityAddTraits(cropping ? .isSelected : [])
                 .accessibilityIdentifier("mac.bar.crop")
             }
-            MacSortControls(store: store)
+            if sort { MacSortControls(store: store) }
         }
     }
 

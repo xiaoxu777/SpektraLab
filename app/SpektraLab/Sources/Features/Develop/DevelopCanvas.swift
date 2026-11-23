@@ -155,7 +155,7 @@ struct DevelopCanvas: View {
             let _ = allowsOriginalHold ? (Self.probe = Probe(frame: frame.id, zoom: zoom, offset: offset, stamp: developed?.stamp)) : ()
             #endif
             ZStack {
-                Theme.background
+                Theme.well
                 printCropped(size: size, pointSize: max(fit.width, fit.height) * min(decodeZoom, decodeCap(fit: fit)))
                     .frame(width: size.width, height: size.height)
                     .position(centre)

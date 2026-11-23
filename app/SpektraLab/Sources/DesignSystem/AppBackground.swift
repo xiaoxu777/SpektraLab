@@ -28,8 +28,8 @@ enum AppBackground {
     static let darkKey = "ui.background.dark"
     static let lightKey = "ui.background.light"
     /// The default grounds: the Mac's and the window's dark blue-grey and its light (`Theme.background`).
-    static let darkDefault: UInt32 = 0x1A1D22
-    static let lightDefault: UInt32 = 0xE8EAED
+    static let darkDefault: UInt32 = 0x1C1D20
+    static let lightDefault: UInt32 = 0xF4F4F5
 
     /// The ground for a mode: the chosen one, or the default.
     static func ground(light: Bool) -> UInt32 {
@@ -40,8 +40,8 @@ enum AppBackground {
     /// The picker's few grounds for a mode, its default first: Dark's black (the reference device's), a neutral
     /// graphite, a deeper blue and a warm brown; Light's near white, paper, a cool grey-blue and a mid grey.
     static func presets(light: Bool) -> [UInt32] {
-        light ? [lightDefault, 0xF5F5F4, 0xEEEAE3, 0xE3E8EF, 0xD9DADB]
-              : [darkDefault, 0x000000, 0x1C1C1E, 0x232A33, 0x241F1B]
+        light ? [lightDefault, 0xE8EAED, 0xEEEAE3, 0xE3E8EF, 0xD9DADB]
+              : [darkDefault, 0x000000, 0x1A1D22, 0x232A33, 0x241F1B]
     }
 
     /// Whether a mode's ground is the default.

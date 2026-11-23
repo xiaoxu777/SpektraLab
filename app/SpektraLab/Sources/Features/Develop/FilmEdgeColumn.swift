@@ -48,6 +48,9 @@ struct ColumnSectionHeader<Accessory: View>: View {
     /// The hairline above it; a section folding inside another has none.
     var rule = true
     var indent: CGFloat = 0
+    /// FilmLab 暗房 (design A): what the section is set to, said beside its name while it is folded ("+0.3 EV · 5500 K"),
+    /// so a folded section still tells what it holds. Nil or empty: nothing.
+    var value: String? = nil
     let toggleFold: () -> Void
     @ViewBuilder var accessory: () -> Accessory
 
@@ -58,7 +61,13 @@ struct ColumnSectionHeader<Accessory: View>: View {
         VStack(spacing: 0) {
             if rule { FoldRule() }
             FoldHeader(open: !folded, indent: indent, toggle: fold) {
-                FoldTitle(title, open: !folded)
+                HStack(spacing: 8) {
+                    FoldTitle(title, open: !folded)
+                    if folded, let value, !value.isEmpty {
+                        Text(value).font(Theme.Font.note).foregroundStyle(Theme.dim)
+                            .lineLimit(1).truncationMode(.tail)
+                    }
+                }
             } accessory: {
                 accessory()
             }
@@ -73,8 +82,9 @@ struct ColumnSectionHeader<Accessory: View>: View {
 }
 
 extension ColumnSectionHeader where Accessory == EmptyView {
-    init(title: String, folded: Bool, id: String, rule: Bool = true, indent: CGFloat = 0, toggleFold: @escaping () -> Void) {
-        self.init(title: title, folded: folded, id: id, rule: rule, indent: indent, toggleFold: toggleFold) { EmptyView() }
+    init(title: String, folded: Bool, id: String, rule: Bool = true, indent: CGFloat = 0, value: String? = nil,
+         toggleFold: @escaping () -> Void) {
+        self.init(title: title, folded: folded, id: id, rule: rule, indent: indent, value: value, toggleFold: toggleFold) { EmptyView() }
     }
 }
 
@@ -235,5 +245,47 @@ struct FilmEdgeColumn: View {
         b.tap(face)
         guard b != back else { return }
         session.change { $0.dateBack = b }
+    }
+}
+
+/// Under 导出's 片边 (design A): this picture's film edge and date back onto every picture this export takes, in one go.
+/// A film edge is each picture's own setting, so without it a batch would export each with its own. Shown when the
+/// export takes more than this picture; each picture can be undone on its own page.
+struct FilmEdgeToAllRow: View {
+    let session: OpenFrameSession
+    let frame: LibraryFrame
+    let ids: [LibraryFrame.ID]
+    @Environment(AppServices.self) private var model
+    @State private var done = false
+
+    var body: some View {
+        let others = ids.filter { $0 != frame.id }
+        if !others.isEmpty, FeatureFlags.filmEdge {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("Use this film edge on all \(ids.count) pictures"))
+                        .font(Theme.Font.ui(12.5, .semibold)).foregroundStyle(Theme.text)
+                    Text(done ? L("Done. Each picture can be undone on its own page.")
+                              : L("The pictures this export takes. Otherwise each keeps its own."))
+                        .font(Theme.Font.note).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Button(done ? L("Applied") : L("Apply")) {
+                    MacLibraryActions.shared.applyFilmEdge(of: frame, edit: session.edit, onto: ids, model: model)
+                    done = true
+                }
+                .buttonStyle(FilmLabPanelButtonStyle(primary: !done))
+                .disabled(done)
+                .accessibilityIdentifier("filmlab.export.edge-to-all")
+            }
+            .padding(12)
+            .background(Theme.card.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            // Changed again after applying: offered again.
+            .onChange(of: session.edit.filmEdge) { _, _ in done = false }
+            .onChange(of: session.edit.dateBack) { _, _ in done = false }
+        }
     }
 }

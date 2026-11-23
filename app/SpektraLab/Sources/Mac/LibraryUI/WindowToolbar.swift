@@ -20,6 +20,10 @@ import SwiftUI
 /// browser's toggle.
 struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     let browser: MacLibraryBrowser
+    /// FilmLab 暗房 (design A): 导出 at the bar's end, going to the 导出 mode; nil where it has nowhere to go (in 导出).
+    var export: (() -> Void)? = nil
+    /// The strip's toggle: 冲洗, 二级调色 and 导出 have the strip; 图库's grid is its own browser.
+    var stripToggle = true
     @ViewBuilder var controls: Controls
     /// 图库 · 冲洗 · 编辑 (`MacModeSwitch`, the owner, 2026-10-27): centred in the window where the window
     /// is at least `centreFrom` Mac points wide, else right after the shared controls.
@@ -61,13 +65,14 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
                 Spacer(minLength: MacMetric.pt(8))
                 actions
                 ProModeSwitch()
-                browserToggle
+                if let export { FilmLabExportButton(action: export) }
+                if stripToggle { browserToggle }
             }
             if centred { mode.frame(width: Self.modeWidth) }
         }
         .padding(.horizontal, 12)
         .frame(height: Self.height)
-        .background(Theme.background)
+        .background(Theme.chrome)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.wall).frame(height: 1) }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
             let now = centred(width: width)
@@ -87,7 +92,7 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(browser.viewerShown ? L("Hide the browser") : L("Show the browser"))
+        .help(browser.viewerShown ? L("Hide the filmstrip (⌘B)") : L("Show the filmstrip (⌘B)"))
         .accessibilityLabel(L("Browser"))
         .accessibilityIdentifier("mac.bar.browser")
         // The shell registers Browser once, alongside its menu command (MacShortcuts).

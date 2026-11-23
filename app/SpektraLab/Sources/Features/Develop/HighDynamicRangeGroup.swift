@@ -93,7 +93,8 @@ struct HighDynamicRangeGroup: View {
     /// The group's own fold: Decode's folding header, a step in, as 放大机's.
     private var title: some View {
         ColumnSectionHeader(title: L("High Dynamic Range"), folded: prefs.hdrCollapsed, id: "hdr",
-                            rule: false, indent: Self.indent, toggleFold: { prefs.hdrCollapsed.toggle() })
+                            rule: false, indent: Self.indent, value: ClipboardGroup.hdr.summary(of: edit),
+                            toggleFold: { prefs.hdrCollapsed.toggle() })
     }
 
     /// A switch row as Apply Film Emulation's, with a line under its name that wraps (never "…").

@@ -18,36 +18,43 @@ enum Theme {
     /// than black, darker than Capture One's greys (#2B2D30–#333). Since the same
     /// day it may be chosen there, per mode (Settings › Appearance, `AppBackground`),
     /// and the surfaces marked `ground` below follow it.
-    static let background = ground(dark: 0x1A1D22, light: 0xE8EAED)
+    static let background = ground(dark: 0x1C1D20, light: 0xF4F4F5)
+    /// FilmLab 暗房 (the owner chose design A, 2026-11-23): the picture's surround — darker than the column in Dark, a
+    /// mid grey in Light so a photograph never looks dim against white. Follows a chosen ground.
+    static let well = ground(dark: 0x111214, light: 0xD9DADD)
+    /// The window's bar and the filmstrip under the picture (design A).
+    static let chrome = ground(dark: 0x1A1B1E, light: 0xEFEFF1)
     /// `CARD` — `Theme.card`: round buttons, chips, cards, grouped rows.
-    static let card = ground(dark: 0x30343B, light: 0xD5D8DD)
+    static let card = ground(dark: 0x28292D, light: 0xE3E4E7)
     /// `PLOT` — `Theme.plot`: the Latitude card and plot grounds.
-    static let plot = ground(dark: 0x22262C, light: 0xF4F5F7)
+    static let plot = ground(dark: 0x232528, light: 0xFBFBFC)
     /// `SHEET` — a sheet's surface over the black app. The plot colour, on purpose.
     static let sheet = plot
     /// `RULE` — `Theme.rule`: hairlines.
-    static let rule = ground(dark: 0x3A3F47, light: 0xC3C7CD)
+    static let rule = ground(dark: 0x2D2F34, light: 0xD2D4D8)
     /// `FIELD` — a segmented control's track inside a grouped row.
-    static let field = ground(dark: 0x3A3F47, light: 0xCDD1D7)
+    static let field = ground(dark: 0x323439, light: 0xD8DADE)
     /// `PANEL` — in-frame panels and banners.
-    static let panel = ground(dark: 0x14161A, light: 0xDDE0E4)
+    static let panel = ground(dark: 0x151618, light: 0xE6E7EA)
+    /// A popover's or a toast's surface: the copy and paste panels, the notes that say what just happened (design A).
+    static let popover = tone(dark: 0x26282C, light: 0xFFFFFF)
     /// `TEXT` — primary text and glyphs.
-    static let text = tone(dark: 0xF9F7F3, light: 0x1C1E22)
+    static let text = tone(dark: 0xECEAE6, light: 0x1C1D20)
     /// `TEXT2` — `Theme.secondaryText`.
-    static let secondaryText = tone(dark: 0xDAD8D4, light: 0x3E424A)
+    static let secondaryText = tone(dark: 0xA6A39D, light: 0x55575D)
     /// `DIM` — captions and anything the page is not asking you to read.
-    static let dim = tone(dark: 0x898989, light: 0x686D76)
+    static let dim = tone(dark: 0x7E7C78, light: 0x7A7C82)
     /// A note's second, quieter paragraph (`#6d6d6b` in gen_flow.py).
-    static let faint = tone(dark: 0x6D6D6B, light: 0x8A8F97)
+    static let faint = tone(dark: 0x5E5D5A, light: 0x9A9CA1)
     /// `ACCENT` — **actions and state only**: Process, Export, develop
     /// progress, the selected lens, the level. Selection is never accent.
-    static let accent = Color(hex: 0xE1A95F)
+    static let accent = tone(dark: 0xE8A33D, light: 0xB8741A)
     /// `SEL` — selection: the white capsule.
-    static let selection = Color.white
+    static let selection = tone(dark: 0xFFFFFF, light: 0x1C1D20)
     /// `ONSEL` — text on a selection capsule, and on an accent button.
-    static let onSelection = Color(hex: 0x0F0E0E)
+    static let onSelection = tone(dark: 0x0F0E0E, light: 0xFFFFFF)
     /// `SELFRAME` — selection as a frame: a chosen card, a chosen tile.
-    static let selectionFrame = tone(dark: 0xFAF8F4, light: 0x1C1E22)
+    static let selectionFrame = tone(dark: 0xFAF8F4, light: 0x1C1D20)
     /// `DANGER` — remove, missing, not connected.
     static let danger = tone(dark: 0xE8796B, light: 0xC4473A)
     /// The Latitude meter (the desktop's v4 graph).
@@ -55,11 +62,19 @@ enum Theme {
     static let latitudeInsideEdge = tone(dark: 0xD6D5D2, light: 0x5B5F66)
     static let latitudeBeyond = ground(dark: 0x41464E, light: 0xCCD0D6)
     /// An off switch's track (the operating system's own `#3A3A3C`).
-    static let toggleOff = ground(dark: 0x3E434B, light: 0xC5C9CF)
+    static let toggleOff = ground(dark: 0x44464B, light: 0xC9CBCF)
     /// The film strip, as an inverted overscan reads (research/overscan/recreate).
     static let rebate = Color(hex: 0x1B120C)
     static let perforation = Color(hex: 0x010102)
     static let edgeInk = Color(hex: 0xF2B24E)
+
+    /// The colour labels, as the strip, the grid and the info column draw them (design A): red, yellow, green, blue,
+    /// purple. The same in both modes, so a label reads the same everywhere.
+    static let labelRed = Color(hex: 0xE5484D)
+    static let labelYellow = Color(hex: 0xF5C518)
+    static let labelGreen = Color(hex: 0x3DB86B)
+    static let labelBlue = Color(hex: 0x3E8EF7)
+    static let labelPurple = Color(hex: 0xA06CE8)
 
     /// `SCRIM` — the black over whatever a sheet or a menu covers.
     static let scrimOpacity: Double = 0.62
@@ -73,6 +88,10 @@ enum Theme {
         /// The one way a view gets a font: the drawing's size and weight.
         static func ui(_ size: CGFloat, _ weight: SwiftUI.Font.Weight = .medium) -> SwiftUI.Font {
             .system(size: size, weight: weight)
+        }
+        /// A reading in figures (EV, K, px): SF Mono, so columns of numbers line up (design A).
+        static func mono(_ size: CGFloat, _ weight: SwiftUI.Font.Weight = .medium) -> SwiftUI.Font {
+            .system(size: size, weight: weight, design: .monospaced)
         }
         /// A page's own large title: Settings, Sources, Storage.
         static let pageTitle = ui(30, .bold)

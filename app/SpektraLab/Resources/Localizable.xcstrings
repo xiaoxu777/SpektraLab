@@ -4555,6 +4555,22 @@
         }
       }
     },
+    "All %@ pictures in this roll" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这一卷全部 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這一捲全部 %@ 張"
+          }
+        }
+      }
+    },
     "All Images" : {
       "localizations" : {
         "ja" : {
@@ -4595,6 +4611,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部人物"
+          }
+        }
+      }
+    },
+    "All Pictures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部照片"
           }
         }
       }
@@ -4925,6 +4957,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple（macOS）"
+          }
+        }
+      }
+    },
+    "Applied" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已应用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已套用"
+          }
+        }
+      }
+    },
+    "Apply" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用"
           }
         }
       }
@@ -5959,6 +6023,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "亮度 "
+          }
+        }
+      }
+    },
+    "Brightness & Colour" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "亮度和冷暖"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "亮度和冷暖"
           }
         }
       }
@@ -8185,6 +8265,22 @@
         }
       }
     },
+    "Copied from %@:" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪贴板里是 %@ 的："
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剪貼簿裡是 %@ 的："
+          }
+        }
+      }
+    },
     "Copied in" : {
       "localizations" : {
         "ja" : {
@@ -8295,6 +8391,22 @@
         }
       }
     },
+    "Copy %@ Items" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制 %@ 项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝 %@ 項"
+          }
+        }
+      }
+    },
     "Copy MCP Configuration" : {
       "localizations" : {
         "ja" : {
@@ -8357,6 +8469,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拷貝設定…"
+          }
+        }
+      }
+    },
+    "Copy Which Settings" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制哪些设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝哪些設定"
           }
         }
       }
@@ -8445,6 +8573,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拷貝到工作階段的 Capture 檔案夾"
+          }
+        }
+      }
+    },
+    "Copy settings (⌘C); choose which (⇧⌘C)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制设置（⌘C）；选择复制哪些（⇧⌘C）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝設定（⌘C）；選擇拷貝哪些（⇧⌘C）"
           }
         }
       }
@@ -10363,6 +10507,22 @@
         }
       }
     },
+    "Done. Each picture can be undone on its own page." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已应用。每张照片都可以在它自己的页面撤销。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已套用。每張照片都可以在它自己的頁面撤銷。"
+          }
+        }
+      }
+    },
     "Dots" : {
       "localizations" : {
         "ja" : {
@@ -11041,6 +11201,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "半格組的每張照片由其自身的編輯校正"
+          }
+        }
+      }
+    },
+    "Each picture can be undone on its own page" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张照片都可以在它自己的页面撤销"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張照片都可以在它自己的頁面撤銷"
           }
         }
       }
@@ -11921,6 +12097,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "輸出日誌壓縮檔"
+          }
+        }
+      }
+    },
+    "Export {the mode}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出"
+          }
+        }
+      }
+    },
+    "Exported" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已匯出"
           }
         }
       }
@@ -14587,6 +14795,22 @@
         }
       }
     },
+    "Go to Export" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "去导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前往匯出"
+          }
+        }
+      }
+    },
     "Go to This Step" : {
       "localizations" : {
         "ja" : {
@@ -15265,6 +15489,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隱藏底片條"
+          }
+        }
+      }
+    },
+    "Hide the filmstrip (⌘B)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏浏览条（⌘B）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏瀏覽條（⌘B）"
           }
         }
       }
@@ -20285,6 +20525,22 @@
         }
       }
     },
+    "Next time ⌘C copies these without asking." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下次按 ⌘C 会直接按这次的勾选复制。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下次按 ⌘C 會直接按這次的勾選拷貝。"
+          }
+        }
+      }
+    },
     "No %@ back printed this face." : {
       "localizations" : {
         "ja" : {
@@ -20369,6 +20625,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無日期"
+          }
+        }
+      }
+    },
+    "No Label" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无色标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無色標"
           }
         }
       }
@@ -21183,6 +21455,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無：尚未沖洗"
+          }
+        }
+      }
+    },
+    "Not Developed Yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没冲洗"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒沖洗"
           }
         }
       }
@@ -22265,6 +22553,22 @@
         }
       }
     },
+    "Only the %@ not developed yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只给还没冲洗的 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只給還沒沖洗的 %@ 張"
+          }
+        }
+      }
+    },
     "Opacity" : {
       "localizations" : {
         "ja" : {
@@ -22837,6 +23141,22 @@
         }
       }
     },
+    "Other {copy panel heading}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
+          }
+        }
+      }
+    },
     "Output" : {
       "localizations" : {
         "ja" : {
@@ -23167,6 +23487,22 @@
         }
       }
     },
+    "Paste Settings…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴设置…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上設定…"
+          }
+        }
+      }
+    },
     "Paste and Match Style" : {
       "localizations" : {
         "ja" : {
@@ -23185,6 +23521,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "貼上並符合樣式"
+          }
+        }
+      }
+    },
+    "Paste onto" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴到"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上到"
+          }
+        }
+      }
+    },
+    "Paste onto %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴到 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上到 %@ 張"
+          }
+        }
+      }
+    },
+    "Paste settings (⌘V); choose where (⇧⌘V)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴设置（⌘V）；选择粘贴到哪些照片（⇧⌘V）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上設定（⌘V）；選擇貼上到哪些照片（⇧⌘V）"
           }
         }
       }
@@ -23647,6 +24031,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選一張或兩張照片"
+          }
+        }
+      }
+    },
+    "Picks ★4+" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精选 ★4 以上"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精選 ★4 以上"
           }
         }
       }
@@ -25077,6 +25477,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隨機"
+          }
+        }
+      }
+    },
+    "Rated" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打过星的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打過星的"
           }
         }
       }
@@ -28183,6 +28599,22 @@
         }
       }
     },
+    "Show the filmstrip (⌘B)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示浏览条（⌘B）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示瀏覽條（⌘B）"
+          }
+        }
+      }
+    },
     "Shown" : {
       "localizations" : {
         "ja" : {
@@ -30361,6 +30793,22 @@
         }
       }
     },
+    "The %@ chosen pictures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选中的 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選中的 %@ 張"
+          }
+        }
+      }
+    },
     "The %@ sheet alone, flat, with its scale and every film at its size. Size is the sheet's short edge; it prints at %@." : {
       "localizations" : {
         "ja" : {
@@ -32033,6 +32481,22 @@
         }
       }
     },
+    "The pictures this export takes. Otherwise each keeps its own." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用到这次导出的照片。不应用的话，每张照片保留自己的片边。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "套用到這次匯出的照片。不套用的話，每張照片保留自己的片邊。"
+          }
+        }
+      }
+    },
     "The piece of film: a guide over the frames' own pictures" : {
       "localizations" : {
         "ja" : {
@@ -32733,6 +33197,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "這張 PNG 的長邊是 %@ px，浮水印最大 %@ px。"
+          }
+        }
+      }
+    },
+    "This Roll" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这一卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這一捲"
           }
         }
       }
@@ -34893,6 +35373,22 @@
         }
       }
     },
+    "Use this film edge on all %@ pictures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这次导出的 %@ 张都用这套片边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這次匯出的 %@ 張都用這套片邊"
+          }
+        }
+      }
+    },
     "User Collections" : {
       "localizations" : {
         "ja" : {
@@ -35241,6 +35737,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "等待沖洗"
+          }
+        }
+      }
+    },
+    "Warm or Cool" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冷暖"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冷暖"
           }
         }
       }

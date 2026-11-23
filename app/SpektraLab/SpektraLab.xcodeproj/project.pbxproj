@@ -43,6 +43,7 @@
 		07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabWelcome.swift; sourceTree = "<group>"; };
 		07D41F3BE91FDA82433733CE /* RenderQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF55B480EDB2D0B74A40403 /* RenderQueue.swift */; };
 		091120469326DFB285F3E52E /* ExportRecipeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportRecipeStore.swift; sourceTree = "<group>"; };
+		091777C259CD64E2D1342678 /* FilmLabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */; };
 		0970B2C002A7B1DE65BE7372 /* LensCorrection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4589C937C8B8B08EA119D7D /* LensCorrection.swift */; };
 		0985E1B72C90E9E49323987F /* LCPReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07CAD6596F43CCFA445A22F8 /* LCPReader.swift */; };
 		0992E8801560EDB7F1ED83E9 /* DevelopController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopController.swift; sourceTree = "<group>"; };
@@ -148,10 +149,13 @@
 		1BA63E178A0434E45E6C8508 /* FilmLab */ = {
 			isa = PBXGroup;
 			children = (
+				9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */,
 				A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */,
+				8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */,
 				8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */,
 				E5C5A19A1E1EB7336667C4D7 /* FilmLabImport.swift */,
 				5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */,
+				7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */,
 				07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */,
 				8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */,
 			);
@@ -828,10 +832,13 @@
 				48358155B913CE5C93A04BD8 /* MacExportPage.swift */,
 				C24ECB06AF3EAC6AFB855825 /* MacExportRun.swift */,
 				9440E515F0D842E30F295990 /* MacHDRChoiceCheck.swift */,
+				091777C259CD64E2D1342678 /* FilmLabBar.swift */,
 				2918D511AE485C203E1C9127 /* FilmLabCopier.swift */,
+				F327F52B5308BEF31D70B261 /* FilmLabExportLog.swift */,
 				E94324BF6880C02591FB83EC /* FilmLabHome.swift */,
 				024A4CD8A2C36E2FD85A5932 /* FilmLabImport.swift */,
 				A573EBB0EBF5CD18ACCBB6E4 /* FilmLabOpen.swift */,
+				949DC9B2496450AEC0E04987 /* FilmLabRollFilter.swift */,
 				7F38B2D7042763D9AB81F96E /* FilmLabWelcome.swift */,
 				3B0AB8287D50EE02A5F6F785 /* FilmStrip.swift */,
 				D51ED89E1FF8D9629574CD4E /* MacHistoryCheck.swift */,
@@ -1208,6 +1215,7 @@
 		79FE2EFDD06CF75B360A2185 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E7BB6A1CDB66786D10C8C9 /* Theme.swift */; };
 		7A1244BD6FBE732BD2295CD9 /* LightTableSizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableSizing.swift; sourceTree = "<group>"; };
 		7AD123E10271E71C8932B973 /* StockPreviewGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CAF441508B705CD27BE8D8 /* StockPreviewGrid.swift */; };
+		7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabRollFilter.swift; sourceTree = "<group>"; };
 		7B9B37171A7550B40803BEC1 /* FolderReach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderReach.swift; sourceTree = "<group>"; };
 		7B9DFB2BFA0F784E94342F95 /* MemoryLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F665C099579B0018EDCF397 /* MemoryLog.swift */; };
 		7BC2CAB9094C6A3F6E6AF09E /* Agent */ = {
@@ -1283,6 +1291,7 @@
 		8BE0CA9D7D07E66456FB4D03 /* MacWheelRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWheelRow.swift; sourceTree = "<group>"; };
 		8C1B96C5D2C355BF1F9D8F4F /* LensProfileReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensProfileReader.swift; sourceTree = "<group>"; };
 		8C2D12905261E08561AFAC84 /* ImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5830F76710A2DCEA70F461F /* ImportService.swift */; };
+		8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabExportLog.swift; sourceTree = "<group>"; };
 		8C72AAF1761476B9C849BCB6 /* MainWindowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6612F91AB847363573C055D3 /* MainWindowLayout.swift */; };
 		8D52DB36244D5893704D2B79 /* FilmEdge */ = {
 			isa = PBXGroup;
@@ -1363,6 +1372,7 @@
 		9440E515F0D842E30F295990 /* MacHDRChoiceCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 593EA219AF3B7E8313AB7258 /* MacHDRChoiceCheck.swift */; };
 		94679F406CF6BE708D50BE89 /* EditTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189D2B3A2C29A1E283E10E59 /* EditTool.swift */; };
 		947C954706C56517539C574E /* DevelopRevision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopRevision.swift; sourceTree = "<group>"; };
+		949DC9B2496450AEC0E04987 /* FilmLabRollFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */; };
 		955EE356EC441489A8C3F409 /* MacVariantActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68CDF1B276DE5467D1CB8EB4 /* MacVariantActions.swift */; };
 		9573AB442387013C4C635C94 /* Export */ = {
 			isa = PBXGroup;
@@ -1542,6 +1552,7 @@
 			sourceTree = "<group>";
 		};
 		9F3C16DBF37CD134278226AB /* FilmEdgeSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmEdgeSteps.swift; sourceTree = "<group>"; };
+		9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabBar.swift; sourceTree = "<group>"; };
 		9F5CBD1524E8DA1827B03413 /* MacFlowBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04171A8BD6053A51486176E9 /* MacFlowBar.swift */; };
 		A03C1901435B28D2CB26BBCD /* MacImportScan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportScan.swift; sourceTree = "<group>"; };
 		A0441D3924939B612631D2EF /* MaskPopovers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C838BC48226ABBC08E86FF /* MaskPopovers.swift */; };
@@ -2199,6 +2210,7 @@
 		F106739DC8980EECF5DAFD3D /* DevelopedPicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopedPicture.swift; sourceTree = "<group>"; };
 		F154C6E8C9F0FCEB3736F12A /* Supporters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supporters.swift; sourceTree = "<group>"; };
 		F2080FFCEBEDFECEA32FF678 /* Chips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chips.swift; sourceTree = "<group>"; };
+		F327F52B5308BEF31D70B261 /* FilmLabExportLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */; };
 		F3419AD5DDAB7E8EAC306487 /* BlackAndWhiteSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlackAndWhiteSnapshots.swift; sourceTree = "<group>"; };
 		F397A0E7F5C7BA94805F007F /* MacMaskToolsCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacMaskToolsCheck.swift; sourceTree = "<group>"; };
 		F3C73E4933C9B48268A67D46 /* Supporters.json in Resources */ = {isa = PBXBuildFile; fileRef = 9ADCF2687FF7DBD24500C0B5 /* Supporters.json */; };

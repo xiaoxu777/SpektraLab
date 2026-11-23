@@ -82,6 +82,16 @@ struct DecodeSection: View {
     }
 
     private var appliesFilm: Bool { session.edit.appliesFilm }
+
+    /// A part's name: 普通版's plain words for the two it shows (design A), the part's own name in 专业版.
+    private func partTitle(_ t: DecodeTool) -> String {
+        guard FeatureFlags.simpleWindow else { return t.title }
+        switch t {
+        case .exposure: return L("Brightness")
+        case .whiteBalance: return L("Warm or Cool")
+        case .curve: return t.title
+        }
+    }
     private func enabled(_ tool: DecodeTool) -> Bool { appliesFilm || !tool.isFilms }
 
     var body: some View {
@@ -95,7 +105,10 @@ struct DecodeSection: View {
     /// Each part under its name and its ↺, in the chips' order; folded, the title line alone.
     private var stackedBody: some View {
         VStack(spacing: 0) {
-            ColumnSectionHeader(title: L("Decode"), folded: prefs.decodeCollapsed, id: "decode",
+            // 普通版 says what the controls do, not where they sit in the pipeline (design A): 亮度和冷暖, 亮度, 冷暖.
+            ColumnSectionHeader(title: FeatureFlags.simpleWindow ? L("Brightness & Colour") : L("Decode"),
+                                folded: prefs.decodeCollapsed, id: "decode",
+                                value: [ClipboardGroup.filmExposure, .decodeTemperature].map { $0.summary(of: session.edit) }.joined(separator: Fmt.dot),
                                 toggleFold: { prefs.decodeCollapsed.toggle() })
             if !prefs.decodeCollapsed {
                 // 普通版 (FilmLab): Exposure and White Balance only; the curve, the enlarger and HDR are 专业版's.
@@ -113,7 +126,7 @@ struct DecodeSection: View {
                     } else {
                     // Each part's name under Decode's own (`FoldHeader.titleInset`), its controls Edit's 22 pt.
                     HStack(spacing: 6) {
-                        Text(t.title).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.secondaryText).lineLimit(1)
+                        Text(partTitle(t)).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.secondaryText).lineLimit(1)
                         Spacer(minLength: 0)
                         // White Balance's neutral-grey eyedropper (2026-11-11, `NeutralPick`): the RAW's own.
                         if t == .whiteBalance { NeutralPickButton(session: session, target: .decode, diameter: 22) }
@@ -168,8 +181,10 @@ struct DecodeSection: View {
     @ViewBuilder private func part(_ tool: DecodeTool) -> some View {
         switch tool {
         case .exposure:
-            EditSlider(title: L("Film Exposure"), value: session.binding(\.params.exposureCompensationEV),
-                       range: -8...8, text: { Fmt.signed($0) + " EV" }, detentAtRest: true, editing: session.editing(.shoot))
+            EditSlider(title: FeatureFlags.simpleWindow ? L("Brightness") : L("Film Exposure"),
+                       value: session.binding(\.params.exposureCompensationEV),
+                       range: -8...8, text: { Fmt.signed($0) + (FeatureFlags.simpleWindow ? " " + L("stops") : " EV") },
+                       detentAtRest: true, editing: session.editing(.shoot))
                 .padding(.horizontal, 16)
                 .frame(height: Self.exposureHeight, alignment: .top)
         case .whiteBalance:

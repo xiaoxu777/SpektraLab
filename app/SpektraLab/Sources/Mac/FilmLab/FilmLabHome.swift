@@ -23,10 +23,13 @@ import UIKit
 @Observable
 final class FilmLabHome {
     static let shared = FilmLabHome()
+
+    private init() { FilmLabCheckArgs.applyMode() }
     static let welcomedKey = "filmlab.welcomed"
 
     /// The home page is over the window. On at every launch.
-    var shown = true
+    /// On at every launch; `--no-home` leaves it off, for a check that captures the window itself (`--capture-window`).
+    var shown = !CommandLine.arguments.contains("--no-home")
     /// The welcome tour is over the window: the first launch, or asked for again (Help, the home page).
     var welcome = !UserDefaults.standard.bool(forKey: FilmLabHome.welcomedKey)
 
@@ -78,7 +81,7 @@ struct ProModeSwitch: View {
             .padding(.horizontal, MacMetric.pt(large ? 16 : 10))
             .frame(height: MacMetric.pt(large ? 30 : 20))
             .background {
-                if selected { Capsule().fill(Theme.accent).matchedGeometryEffect(id: "thumb", in: thumb) }
+                if selected { Capsule().fill(Theme.selection).matchedGeometryEffect(id: "thumb", in: thumb) }   // design A: selection is white
             }
             .contentShape(Capsule())
         }

@@ -84,6 +84,8 @@ final class AdjustLayout {
 struct AdjustColumn: View {
     let session: OpenFrameSession
     @Binding var state: AdjustState
+    /// What follows the tools, scrolling with them: 二级调色's effects on the Mac (`DevelopWorkspace.gradingHasEffects`).
+    var tail: AnyView? = nil
     private var layout: AdjustLayout { .shared }
 
     /// The section being dragged, and how far its layout place has moved under the pointer so far (the heights
@@ -105,6 +107,7 @@ struct AdjustColumn: View {
                             .offset(y: dragging == t ? travel - passed : 0)
                             .zIndex(dragging == t ? 1 : 0)
                     }
+                    if let tail { tail }
                     Rectangle().fill(Theme.rule).frame(height: 0.5)
                 }
                 .frame(maxWidth: .infinity, alignment: .top)

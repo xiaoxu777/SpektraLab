@@ -7,8 +7,30 @@
 //  click opens it from 图库. Its menu holds Copy Settings…, Paste to Selected and Paste to All.
 //
 //  The grid that takes the whole window (G, `MacLibraryBrowser.fullGrid`) is still the floating panel.
+//
+//  It runs under the picture only, never under the column at the left (the owner, 2026-11-23: "下边的照片栏不应该干扰到左侧
+//  的调参数的地方"): each page puts it in its own place under its picture (`ShellFilmStrip`) — the develop page in its
+//  filmstrip slot (`DevelopRegions`), the library under its viewer (`BrowserViewerSplit`) — so the column keeps the
+//  window's whole height.
 
 import SwiftUI
+
+/// The strip as a page puts it under its picture: the store's rows, read here so the page around it is not drawn again
+/// for every row that changes. Shown while the browser is on and the grid does not have the window.
+struct ShellFilmStrip: View {
+    /// A double click (图库: onto the develop page). Nil where a click already opens (冲洗: the chosen row is the page's).
+    var open: ((MacImage) -> Void)? = nil
+    @Environment(AppServices.self) private var model
+
+    static var shown: Bool { MacLibraryBrowser.shared.viewerShown && !MacLibraryBrowser.shared.fullGrid }
+
+    var body: some View {
+        let store = MacLibraryUI.store(model)
+        FilmStripBar(store: store, rows: FilmLabRollFilterState.shared.apply(store.images, library: model.library), open: { open?($0) })
+            .equatable()
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+}
 
 struct FilmStripBar: View, Equatable {
     let store: any MacLibraryData
@@ -60,7 +82,7 @@ struct FilmStripBar: View, Equatable {
             }
         }
         .frame(height: Self.height)
-        .background(Theme.rebate.opacity(0.92))
+        .background(Theme.chrome)
         .overlay(alignment: .top) { Rectangle().fill(Theme.wall).frame(height: 1) }
         .overlay {
             if rows.isEmpty {
@@ -108,6 +130,17 @@ struct FilmStripBar: View, Equatable {
         }
     }
 
+    /// A colour label from the menu: this picture, or every chosen one when it is among them (as a star is).
+    private func label(_ image: MacImage, _ c: MacColorLabel) {
+        guard store.selectedSource?.isHelperBacked == true else { return }
+        let ids = browser.selection.contains(image.id) && browser.selection.count > 1
+            ? rows.filter { browser.selection.contains($0.id) }.map(\.id) : [image.id]
+        Task {
+            do { try await store.setColorLabel(c, for: ids) }
+            catch { MacLibraryActions.shared.refusal = error.localizedDescription }
+        }
+    }
+
     @ViewBuilder private func menu(_ image: MacImage) -> some View {
         let actions = MacLibraryActions.shared
         Button(L("Open")) { open(image) }
@@ -116,6 +149,13 @@ struct FilmStripBar: View, Equatable {
             ForEach((0...5).reversed(), id: \.self) { r in
                 Button(MacWords.rating(r)) { rate(image, r == 0 ? image.rating : r) }
             }
+        }
+        Menu(L("Colour Label")) {
+            ForEach(MacColorLabel.allCases.filter { $0 != .unlabelled }, id: \.self) { c in
+                Button(MacWords.colorName(c.rawValue)) { label(image, c) }
+            }
+            Divider()
+            Button(L("No Label")) { label(image, .unlabelled) }
         }
         Divider()
         if let id = image.develop?.frameID {
@@ -157,8 +197,9 @@ private struct FilmStripCell: View {
         .background {
             RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous)
                 .fill(selected ? Theme.card : (hovering ? Theme.card.opacity(0.5) : .clear))
+                // Design A: selection is the white frame, never the accent (the accent is for actions and stars).
                 .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous)
-                    .strokeBorder(selected ? Theme.accent : .clear, lineWidth: 1.5))
+                    .strokeBorder(selected ? Theme.selectionFrame : .clear, lineWidth: 1.5))
         }
         .contentShape(Rectangle())
         .onHover { hovering = $0 }

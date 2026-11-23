@@ -228,6 +228,8 @@ final class MacExportRun {
                     line.state = .failed(L("Not saved") + (why.isEmpty ? "" : Fmt.dot + L(shown: why)))
                     if line.ended == nil { line.ended = now }
                 }
+                // FilmLab: a picture saved is a picture exported, when (`FilmLabExportLog`, 图库's 已导出).
+                if case .saved = line.state, let id = line.frameID, lines[i].state != line.state { FilmLabExportLog.shared.record(id) }
                 if line != lines[i] { lines[i] = line }
             }
             if batch.finished, !placing, lines.prefix(batch.items.count).allSatisfy(\.isEnded) {

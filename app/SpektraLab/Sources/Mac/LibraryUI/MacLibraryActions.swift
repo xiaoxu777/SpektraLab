@@ -341,6 +341,15 @@ final class MacLibraryActions {
     /// `stops`: how many Stops there had been when the paste was pressed. A Stop since leaves the rest of
     /// it undeveloped (a paste of 800 making its frames 500 at a time fed its second batch after a Stop):
     /// those frames are pasted, and marked out of date (`MacPreviewStaleness`) for Develop Previews.
+    /// 导出's "这次导出的 N 张都用这套片边" (design A, 2026-11-23): the film edge and the date back of `frame` as `edit`
+    /// has them, onto the other pictures being exported — pasted as a paste is (one step of history on each, a page's
+    /// own when it is open), without touching what the clipboard holds. A film edge is each picture's own setting.
+    func applyFilmEdge(of frame: LibraryFrame, edit: FrameEdit, onto ids: [LibraryFrame.ID], model: AppServices) {
+        let clip = SettingsClip(groups: [.filmEdgeAndDateBack], settings: edit, sourceName: frame.fileName,
+                                sourceAspect: SettingsClip.shownAspect(frame.originalSize, quarterTurns: edit.geometry.quarterTurns))
+        tell(paste(clip, onto: ids.filter { $0 != frame.id }, model: model, stops: stops))
+    }
+
     private func paste(_ clip: SettingsClip, onto frames: [LibraryFrame.ID], model: AppServices, stops generation: Int) -> Pasted {
         guard !frames.isEmpty else { return Pasted() }
         var library: Set<LibraryFrame.ID> = []
