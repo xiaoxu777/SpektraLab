@@ -79,7 +79,8 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     /// toggle had it). ⌘B, with ⌥⌘B retained as an alias; ⌘T folds the column.
     private var browserToggle: some View {
         Button { withAnimation(.smooth(duration: 0.2)) { browser.viewerShown.toggle() } } label: {
-            Image(systemName: browser.viewerShown ? "sidebar.right" : "sidebar.squares.right")
+            // FilmLab: the browser is the strip along the bottom (`FilmStripBar`).
+            Image(systemName: browser.viewerShown ? "rectangle.bottomthird.inset.filled" : "rectangle")
                 .font(MacMetric.font(14))
                 .foregroundStyle(browser.viewerShown ? Theme.text : Theme.secondaryText)
                 .frame(width: MacMetric.pt(26), height: MacMetric.pt(22))

@@ -33,6 +33,8 @@ enum RawExposure {
            let prepared = LibRawDecode.prepare(url, settings: settings, longEdge: longEdge, lens: lens) {
             return prepared
         }
+        // FilmLab: LibRaw's decode gave way to a cancel (`LibRawDecode.cancellable`): not Core Image's in its place.
+        if LibRawDecode.isCancelled { return nil }
         guard let filter = CIRAWFilter(imageURL: url) else { return nil }
         let asShot = (Double(filter.neutralTemperature), Double(filter.neutralTint))
         let baseline = filter.baselineExposure

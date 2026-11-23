@@ -11,14 +11,16 @@
 import SwiftUI
 
 enum WorkspaceMode: String, CaseIterable, Hashable {
-    case library, develop, export, edit
+    /// FilmLab's order (the owner, 2026-11-23): 二级调色 straight after 冲洗, 导出 last.
+    case library, develop, edit, export
 
     var title: String {
         switch self {
         case .library: L("Library")
         case .develop: L("Develop")
         case .export: L("Export")
-        case .edit: L("Edit")
+        // FilmLab: 编辑 is 二级调色, the grading after the film (the owner, 2026-11-23).
+        case .edit: L("Grading")
         }
     }
 

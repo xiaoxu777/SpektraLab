@@ -12,6 +12,7 @@
 		019A685312FE20CD6C47FD58 /* JobDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67795B6D2BBF81AD6D72197 /* JobDiagnostics.swift */; };
 		01E29EBC5303F94364138738 /* WindowLayoutRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutRule.swift; sourceTree = "<group>"; };
 		023FBC131F5CCD9463108E77 /* MacMaskFindCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83BEC5ADCD3C5CF12FD7391 /* MacMaskFindCheck.swift */; };
+		024A4CD8A2C36E2FD85A5932 /* FilmLabImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C5A19A1E1EB7336667C4D7 /* FilmLabImport.swift */; };
 		0251BA3150C8B651326A7921 /* LookTransactions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookTransactions.swift; sourceTree = "<group>"; };
 		028BABAE32D2064B188F28D3 /* HDRContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6151908490377E39F0C98590 /* HDRContainer.swift */; };
 		02E7045D35F848D4B8FF7D6E /* SizePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizePage.swift; sourceTree = "<group>"; };
@@ -147,8 +148,12 @@
 		1BA63E178A0434E45E6C8508 /* FilmLab */ = {
 			isa = PBXGroup;
 			children = (
+				A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */,
 				8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */,
+				E5C5A19A1E1EB7336667C4D7 /* FilmLabImport.swift */,
+				5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */,
 				07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */,
+				8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */,
 			);
 			path = FilmLab;
 			sourceTree = "<group>";
@@ -208,6 +213,7 @@
 		27F78D56440AD13EFD1AE51C /* Chips.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2080FFCEBEDFECEA32FF678 /* Chips.swift */; };
 		285269E9F2034AE86071A464 /* HalfFramePair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21C15140687B2D483A7B31CD /* HalfFramePair.swift */; };
 		28AADA651E1FAD0527CF9611 /* StockCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = StockCatalog.json; path = Resources/StockCatalog.json; sourceTree = "<group>"; };
+		2918D511AE485C203E1C9127 /* FilmLabCopier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */; };
 		297B1BA0A549F116C0DF90B9 /* ExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSheet.swift; sourceTree = "<group>"; };
 		29A50F109CE9CACCB80D2ED7 /* DevelopEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopEngine.swift; sourceTree = "<group>"; };
 		29B324599BA5B3E6294F0068 /* SchedulerTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerTypes.swift; sourceTree = "<group>"; };
@@ -328,6 +334,7 @@
 		3AAF0ABEE8747A2B20FA2D0E /* DIView-Cineon-to-ProPhoto.cube in Resources */ = {isa = PBXBuildFile; fileRef = 118EBCE8C1BD9A1EF7D22272 /* DIView-Cineon-to-ProPhoto.cube */; };
 		3ACD468BEE98427E6184291C /* MacMemoryCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1E1B5711C9AC5BC58A6677 /* MacMemoryCheck.swift */; };
 		3B047320A8AB1EA3FD75D4AA /* DrawnIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73C1C4218B1914A13ED2F03 /* DrawnIcons.swift */; };
+		3B0AB8287D50EE02A5F6F785 /* FilmStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */; };
 		3B18BBF6A60FCE6723EC5405 /* LightTableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B958A3085CF7DD11BA739C1 /* LightTableStore.swift */; };
 		3B896AB6571DA424CC845447 /* RawBlack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawBlack.swift; sourceTree = "<group>"; };
 		3B94B5E80C71B114C5D3C6F3 /* PrintLayers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintLayers.swift; sourceTree = "<group>"; };
@@ -821,8 +828,12 @@
 				48358155B913CE5C93A04BD8 /* MacExportPage.swift */,
 				C24ECB06AF3EAC6AFB855825 /* MacExportRun.swift */,
 				9440E515F0D842E30F295990 /* MacHDRChoiceCheck.swift */,
+				2918D511AE485C203E1C9127 /* FilmLabCopier.swift */,
 				E94324BF6880C02591FB83EC /* FilmLabHome.swift */,
+				024A4CD8A2C36E2FD85A5932 /* FilmLabImport.swift */,
+				A573EBB0EBF5CD18ACCBB6E4 /* FilmLabOpen.swift */,
 				7F38B2D7042763D9AB81F96E /* FilmLabWelcome.swift */,
+				3B0AB8287D50EE02A5F6F785 /* FilmStrip.swift */,
 				D51ED89E1FF8D9629574CD4E /* MacHistoryCheck.swift */,
 				5CCBEB8E89A3F0A443E184C5 /* MacHistoryPage.swift */,
 				BCD9B74B4A73E19A5A84AF39 /* MacHistoryPageCheck.swift */,
@@ -1049,6 +1060,7 @@
 		5F5870DAC8F30B1E1E3E2B59 /* AppBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackground.swift; sourceTree = "<group>"; };
 		5FC3890096B3E6CDA082DC2F /* CoexistingDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoexistingDrag.swift; sourceTree = "<group>"; };
 		5FDE665E7B3AE888C42ECC47 /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
+		5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabOpen.swift; sourceTree = "<group>"; };
 		6054AC077AF79ED35C451C78 /* MacLibraryDocuments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibraryDocuments.swift; sourceTree = "<group>"; };
 		606EB29EA5BB91E8D00DC3A2 /* HDRGrainGain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116747E86D4AD7A6E8315702 /* HDRGrainGain.swift */; };
 		60B82C4DA582F5C1896CC53B /* DoubleDevelop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C1160588DBE753E88182F26 /* DoubleDevelop.swift */; };
@@ -1261,6 +1273,7 @@
 		8A4791ADAEEB7DFF74273D93 /* LightTableExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AE5B7AF02C981FEAC5A1B5A /* LightTableExportSheet.swift */; };
 		8A4D4C6C2EBA2EFA5C2876EC /* PaneDividers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D1DA80476563F2C9E68A0F /* PaneDividers.swift */; };
 		8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabHome.swift; sourceTree = "<group>"; };
+		8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmStrip.swift; sourceTree = "<group>"; };
 		8AE5B7AF02C981FEAC5A1B5A /* LightTableExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableExportSheet.swift; sourceTree = "<group>"; };
 		8B1E856481F18198D4CBA87D /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
 		8B1F01B88A05C8AB8DDDDE32 /* StubPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39E0323F308011BC73380F6 /* StubPage.swift */; };
@@ -1576,7 +1589,9 @@
 		A52F1BB5C82D330698B63CA5 /* MacDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCA06923A9114B91B3F76D7 /* MacDisplay.swift */; };
 		A5431DC1F200C603D7039710 /* NeutralPickSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeutralPickSession.swift; sourceTree = "<group>"; };
 		A55625B7671690023A8A19B0 /* AgentServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0680150D30C4304643CEBC /* AgentServer.swift */; };
+		A573EBB0EBF5CD18ACCBB6E4 /* FilmLabOpen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */; };
 		A5B4441C6C89D05D521F91D4 /* HelperProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A41FF721D3AE50188B77B53 /* HelperProcess.swift */; };
+		A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabCopier.swift; sourceTree = "<group>"; };
 		A6614E213A5C8D14FEAEF766 /* LensDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6DCAE4B4E050D84BB9A841 /* LensDatabase.swift */; };
 		A671D8956FD4BE6A2CD7FC6E /* MacCatalogActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCatalogActions.swift; sourceTree = "<group>"; };
 		A69BBC1028968E7A9B0A64F3 /* MacLibraryMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27E074CEB9973C5386D30499 /* MacLibraryMove.swift */; };
@@ -2087,6 +2102,7 @@
 		E5830F76710A2DCEA70F461F /* ImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportService.swift; sourceTree = "<group>"; };
 		E58E3AB25F6D4121351CBC40 /* HDRZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7D3D529933DBF7910FE0B0 /* HDRZoneView.swift */; };
 		E5B59C2333841CC8B5A53D7E /* MacLightTablePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLightTablePanel.swift; sourceTree = "<group>"; };
+		E5C5A19A1E1EB7336667C4D7 /* FilmLabImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabImport.swift; sourceTree = "<group>"; };
 		E5D2A25697F7CBBD8DFEAA92 /* LightTableFullRead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableFullRead.swift; sourceTree = "<group>"; };
 		E7D46C7E7EAB01F4DF06CE1E /* LogRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogRecords.swift; sourceTree = "<group>"; };
 		E810538DBFBE802D5CBC75AB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };

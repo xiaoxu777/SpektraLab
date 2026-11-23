@@ -36,6 +36,29 @@ enum LibRawDecode {
 
     static var isAvailable: Bool { FileManager.default.isExecutableFile(atPath: executable.path) }
 
+    // MARK: giving way
+
+    /// FilmLab: a decode run inside `body` gives way when `check` turns true: the helper is ended (it is its own process,
+    /// so nothing of the app's is left half done) and the decode answers nil, without a fallback to Core Image's or to a
+    /// full size. The check is the thread's own, so decodes on other threads are not touched; the engine's job asks it
+    /// (`EngineHost.cancelled`).
+    static func cancellable<T>(_ check: @escaping () -> Bool, _ body: () throws -> T) rethrows -> T {
+        let thread = Thread.current.threadDictionary
+        let before = thread[cancelKey]
+        thread[cancelKey] = CancelCheck(check)
+        defer { thread[cancelKey] = before }
+        return try body()
+    }
+
+    /// Whether the decode under way on this thread has been asked to stop (`cancellable`). False outside one.
+    static var isCancelled: Bool { (Thread.current.threadDictionary[cancelKey] as? CancelCheck)?.check() ?? false }
+
+    private static let cancelKey = "spk.libraw.cancel"
+    private final class CancelCheck: NSObject {
+        let check: () -> Bool
+        init(_ check: @escaping () -> Bool) { self.check = check }
+    }
+
     /// The helper's LibRaw ("0.23.0-Snapshot202611"), asked once; nil when there is no helper that answers.
     static let version: String? = {
         guard isAvailable, let reply = try? run(["version"]), reply["ok"] as? Bool == true else { return nil }
@@ -106,7 +129,9 @@ enum LibRawDecode {
             args += ["--temperature", String(wb.temperature), "--tint", String(wb.tint)]
         }
         let reply: [String: Any]
-        do { reply = try run(args) } catch {
+        do { reply = try run(args) } catch Failure.cancelled {
+            return nil
+        } catch {
             report("LibRaw decode failed", ["file": url.lastPathComponent, "why": "\(error)"]); return nil
         }
         guard reply["ok"] as? Bool == true, let w = (reply["width"] as? Double).map(Int.init),
@@ -179,7 +204,7 @@ enum LibRawDecode {
             guard let longEdge, longEdge > 0, let frame = appleFrame(url) else { return false }
             return longEdge * 2 <= max(frame.width, frame.height)
         }()
-        guard let decoded = decode(url, settings: settings, half: half) ?? (half ? decode(url, settings: settings) : nil)
+        guard let decoded = decode(url, settings: settings, half: half) ?? (half && !isCancelled ? decode(url, settings: settings) : nil)
         else { return nil }
         var image = decoded.image
         let resolution = lens ?? LensResolver.current(url, decode: settings)
@@ -222,9 +247,10 @@ enum LibRawDecode {
     // MARK: the process
 
     enum Failure: Error, CustomStringConvertible {
-        case spawn(Int32), signalled(Int32), unreadable(String)
+        case spawn(Int32), signalled(Int32), unreadable(String), cancelled
         var description: String {
             switch self {
+            case .cancelled: "the decode gave way to another job"
             case .spawn(let rc): "could not start the helper (\(rc))"
             case .signalled(let s): "the helper stopped on signal \(s)"
             case .unreadable(let text): "unreadable reply: \(text.prefix(200))"
@@ -268,13 +294,24 @@ enum LibRawDecode {
         }
         var output = Data()
         var buffer = [UInt8](repeating: 0, count: 16 * 1024)
+        // The reply comes at the end of the decode; until then the pipe is watched every 20 ms for the job's cancel
+        // (`cancellable`), and a cancelled decode's helper is ended where it is.
+        var gaveWay = false
+        var watched = pollfd(fd: outPipe[0], events: Int16(POLLIN), revents: 0)
         while true {
+            let ready = poll(&watched, 1, 20)
+            if ready == 0 {
+                if isCancelled { gaveWay = true; kill(child, SIGKILL); break }
+                continue
+            }
+            if ready < 0 { if errno == EINTR { continue } else { break } }
             let n = read(outPipe[0], &buffer, buffer.count)
             if n > 0 { output.append(buffer, count: n) } else if n < 0, errno == EINTR { continue } else { break }
         }
         close(outPipe[0])
         var status: Int32 = 0
         while waitpid(child, &status, 0) == -1, errno == EINTR {}
+        if gaveWay { throw Failure.cancelled }
         let signal = status & 0x7f
         if signal != 0 { throw Failure.signalled(signal) }
         guard let object = try? JSONSerialization.jsonObject(with: output) as? [String: Any] else {

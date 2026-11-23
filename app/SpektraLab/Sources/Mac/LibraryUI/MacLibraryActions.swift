@@ -12,6 +12,10 @@ import SwiftUI
 
 @MainActor @Observable
 final class MacLibraryActions {
+    /// FilmLab (the owner, 2026-11-23: "应该支持 cmd 复制所有参数，同步到所有图像或者单独图像"): a paste asked for from a
+    /// menu, done by the window (`MainWindowLayout`), which knows the chosen and the shown pictures. `.all` asks first.
+    enum PasteRequest: Equatable { case selected, all }
+    var pasteRequest: PasteRequest?
     static let shared = MacLibraryActions()
 
     /// Why something was refused: a pair that cannot be made, a picture that cannot be opened.

@@ -16,6 +16,45 @@
 	     Where the log is sent, and the key that server asks for, are never here: where the checkout
 	     holds logs.local, gen_project.py writes build/Info-logs.plist, this file with SPKLogsURL and
 	     SPKLogsKey added, and any other build has neither key. -->
+	<!-- FilmLab: offered under Open With for photographs and folders (Finder, Adobe Bridge, Phocus…), never made the
+	     default app for them (Alternate). A file is opened where it is (`FilmLabOpen`). -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Photograph</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.hasselblad.3fr-raw-image</string>
+				<string>com.hasselblad.fff-raw-image</string>
+				<string>public.camera-raw-image</string>
+				<string>com.adobe.raw-image</string>
+				<string>public.jpeg</string>
+				<string>public.tiff</string>
+				<string>public.png</string>
+				<string>public.heic</string>
+				<string>public.heif</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Folder of Photographs</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.folder</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>SPKCommit</key>
 	<string>$(SPK_COMMIT)</string>
 	<!-- Where Check for Updates reads the latest Mac release (a small JSON manifest, `UpdateCheck`): a build

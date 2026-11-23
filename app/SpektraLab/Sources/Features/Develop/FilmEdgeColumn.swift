@@ -82,8 +82,6 @@ extension ColumnSectionHeader where Accessory == EmptyView {
 struct FilmEdgeColumn: View {
     let session: OpenFrameSession
     let frame: LibraryFrame
-    /// 普通版's (FilmLab): the Film Edge line and its switch, nothing under it and no date back.
-    var switchOnly = false
     @Environment(AppServices.self) private var model
     @Environment(AppRouter.self) private var router
     @Environment(AppSettings.self) private var settings
@@ -95,22 +93,8 @@ struct FilmEdgeColumn: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if switchOnly {
-                VStack(spacing: 0) {
-                    FoldRule()
-                    HStack {
-                        Text(L("Film Edge")).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.secondaryText)
-                        Spacer(minLength: 0)
-                        SpkToggle(isOn: Binding(get: { edge.active }, set: { setFilmEdge($0) }), size: .compact)
-                    }
-                    .padding(.leading, FoldHeader<EmptyView, EmptyView>.titleInset).padding(.trailing, 16)
-                    .frame(height: DecodeSection.partHeader + 4)
-                    .rowEnabled(appliesFilm)
-                }
-            } else {
-                if FeatureFlags.filmEdge { filmEdgeSection }
-                if FeatureFlags.dateBack { dateBackSection }
-            }
+            if FeatureFlags.filmEdge { filmEdgeSection }
+            if FeatureFlags.dateBack { dateBackSection }
         }
         .frame(maxWidth: .infinity)
         // The panels are drawn to a width (their cards wrap at it): the column's.

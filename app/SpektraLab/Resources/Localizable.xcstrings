@@ -221,6 +221,50 @@
         }
       }
     },
+    "%@ chosen" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚選択"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選 %@"
+          }
+        }
+      }
+    },
+    "%@ copied, %@ were already there. You can take the card out now." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚をコピーし、%@ 枚は読み込み済みでした。カードを抜いても大丈夫です。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制了 %@ 张，另有 %@ 张之前已导入过。现在可以拔卡了。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製了 %@ 張，另有 %@ 張之前已匯入過。現在可以拔卡了。"
+          }
+        }
+      }
+    },
     "%@ could not be developed now: they keep their earlier preview." : {
       "localizations" : {
         "ja" : {
@@ -1097,6 +1141,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@%"
+          }
+        }
+      }
+    },
+    "%@ photos copied. You can take the card out now." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚の写真をコピーしました。カードを抜いても大丈夫です。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已复制 %@ 张照片。现在可以拔卡了。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已複製 %@ 張照片。現在可以拔卡了。"
           }
         }
       }
@@ -3961,6 +4027,28 @@
         }
       }
     },
+    "Add a film border, or not" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの縁をつけるかどうか"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加不加胶片边框，一个开关"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加不加底片邊框，一個開關"
+          }
+        }
+      }
+    },
     "Add a frame to this hole" : {
       "localizations" : {
         "ja" : {
@@ -5897,6 +5985,28 @@
         }
       }
     },
+    "Bring in your photos" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込む"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片导进来"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片匯進來"
+          }
+        }
+      }
+    },
     "Bring to Top" : {
       "localizations" : {
         "ja" : {
@@ -6953,68 +7063,24 @@
         }
       }
     },
-    "Choose a film" : {
+    "Choose a folder and press Export. The photos are saved as JPEG files, ready to share or print. Your original files are never changed." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "フィルムを選ぶ"
+            "value" : "フォルダを選んで「書き出す」を押すと、JPEG で保存されます。そのまま共有や印刷に使えます。元のファイルは一切変更されません。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "挑一款胶卷"
+            "value" : "选一个文件夹，点「导出」。照片会存成 JPEG，可以直接发朋友圈或拿去打印。你的原片永远不会被改动。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "挑一款底片"
-          }
-        }
-      }
-    },
-    "Choose a film and a paper" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルムと印画紙を選ぶ"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选胶卷和相纸"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選底片和相紙"
-          }
-        }
-      }
-    },
-    "Choose a folder of pictures, such as an X1D card of 3FR files. FilmLab reads them where they are: nothing is copied, moved or changed." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "写真のフォルダ（X1D の 3FR カードなど）を選びます。FilmLab はその場で読み込み、コピーも移動も変更もしません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选一个照片文件夹，比如 X1D 的 3FR 存储卡。FilmLab 原地读取，不会复制、移动或修改任何文件。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選一個照片資料夾，比如 X1D 的 3FR 記憶卡。FilmLab 原地讀取，不會複製、移動或修改任何檔案。"
+            "value" : "選一個資料夾，點「匯出」。照片會存成 JPEG，可以直接分享或拿去列印。你的原檔永遠不會被改動。"
           }
         }
       }
@@ -7037,28 +7103,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇要匯入的檔案夾或影像。"
-          }
-        }
-      }
-    },
-    "Choose a folder, such as a card of Hasselblad 3FR files. The pictures are read where they are; nothing is copied or moved." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ハッセルブラッドの 3FR ファイルが入ったカードなど、フォルダを選んでください。写真はその場で読み込まれ、コピーも移動もされません。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择一个文件夹，例如装着哈苏 3FR 文件的存储卡。照片在原处读取，不会复制或移动。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇一個資料夾，例如裝著哈蘇 3FR 檔案的記憶卡。照片在原處讀取，不會複製或移動。"
           }
         }
       }
@@ -7169,28 +7213,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇要拷貝到的檔案夾。"
-          }
-        }
-      }
-    },
-    "Choose the format, the quality and the size, and where the files go. One button exports every picture you chose." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "形式、画質、サイズ、保存先を選び、ボタンひとつで選んだ写真をすべて書き出します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选格式、画质、尺寸和保存位置，一个按钮导出你选中的所有照片。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選格式、畫質、尺寸和儲存位置，一個按鈕匯出你選取的所有照片。"
           }
         }
       }
@@ -8471,6 +8493,28 @@
         }
       }
     },
+    "Copy to my photo folder (recommended)" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真フォルダにコピー（おすすめ）"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制到我的照片文件夹（推荐）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製到我的照片資料夾（推薦）"
+          }
+        }
+      }
+    },
     "Copying" : {
       "localizations" : {
         "ja" : {
@@ -8533,6 +8577,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在拷貝到 SpektraLab…"
+          }
+        }
+      }
+    },
+    "Copying to %@. Keep the card in until this is done." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ にコピー中です。終わるまでカードを抜かないでください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在复制到 %@。完成之前请不要拔卡。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在複製到 %@。完成之前請不要拔卡。"
+          }
+        }
+      }
+    },
+    "Copying “%@”…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「%@」をコピー中…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在复制「%@」…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在複製「%@」…"
           }
         }
       }
@@ -8995,6 +9083,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "曲線、色輪、HSL、通道與鏡頭屬於「底片」"
+          }
+        }
+      }
+    },
+    "Curves for the light and dark parts" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カーブで明るい部分と暗い部分を別々に"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曲线：分别调亮部和暗部"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曲線：分別調亮部和暗部"
           }
         }
       }
@@ -9923,28 +10033,6 @@
         }
       }
     },
-    "Develop your Hasselblad pictures as film: a real film's colour, its paper and its grain, worked out from the film makers' own data." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ハッセルブラッドの写真をフィルムのように現像します。本物のフィルムの色、印画紙、粒状を、メーカーのデータから計算します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "把哈苏照片冲洗成胶片：真实胶卷的色彩、相纸和颗粒，按胶片厂商公布的数据计算出来。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "把哈蘇照片沖洗成底片：真實底片的色彩、相紙和顆粒，按底片廠商公布的資料計算出來。"
-          }
-        }
-      }
-    },
     "Developed" : {
       "localizations" : {
         "ja" : {
@@ -10627,28 +10715,6 @@
         }
       }
     },
-    "Each card is your picture on that film. Pick one, then set the exposure and the white balance; the picture follows as you drag." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カードはそれぞれ、そのフィルムで撮ったあなたの写真です。1 枚選び、露出とホワイトバランスを調整すると、ドラッグに合わせて写真が変わります。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每张卡片就是你的照片在那款胶卷上的样子。选一张，再调曝光和白平衡，拖动时画面实时跟着变。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每張卡片就是你的照片在那款底片上的樣子。選一張，再調曝光和白平衡，拖動時畫面即時跟著變。"
-          }
-        }
-      }
-    },
     "Each catalog and session keeps the previews of its pictures inside it. Pictures in no library keep theirs on this Mac, in Preview copies." : {
       "localizations" : {
         "ja" : {
@@ -11001,6 +11067,28 @@
         }
       }
     },
+    "Each small picture shows your photo on a different film. Click the one you like. Then drag two sliders if you want: brightness, and warm or cool colour." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小さな写真はそれぞれ、別のフィルムで撮ったあなたの写真です。気に入ったものをクリック。必要なら 2 本のスライダーで明るさと色の暖かさを調整します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每张小图都是你的照片换上一款胶卷的样子，点你喜欢的那张就行。想再调的话，拖两个滑块：一个调亮暗，一个调冷暖。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每張小圖都是你的照片換上一款底片的樣子，點你喜歡的那張就行。想再調的話，拖兩個滑桿：一個調亮暗，一個調冷暖。"
+          }
+        }
+      }
+    },
     "Eared" : {
       "localizations" : {
         "ja" : {
@@ -11331,28 +11419,6 @@
         }
       }
     },
-    "Edit, layers, recipes and colour spaces" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編集、レイヤー、レシピ、色空間"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编辑、图层、导出配方和色彩空间"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "編輯、圖層、匯出配方和色彩空間"
-          }
-        }
-      }
-    },
     "Edited" : {
       "localizations" : {
         "ja" : {
@@ -11371,6 +11437,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已編輯"
+          }
+        }
+      }
+    },
+    "Edits to just one part, like the sky or a face" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空や顔など、一部分だけの調整"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只改一部分，比如天空或人脸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只改一部分，比如天空或人臉"
           }
         }
       }
@@ -11617,6 +11705,28 @@
         }
       }
     },
+    "Every picture shown in the browser takes the copied settings. Each one can be undone on its own page." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ブラウザに表示されているすべての写真にコピーした設定が適用されます。それぞれのページで取り消せます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浏览条里显示的每张照片都会用上复制的设置。每张都可以在它自己的页面里撤销。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽條裡顯示的每張照片都會用上複製的設定。每張都可以在它自己的頁面裡還原。"
+          }
+        }
+      }
+    },
     "Every size develops again from the original. " : {
       "localizations" : {
         "ja" : {
@@ -11661,24 +11771,24 @@
         }
       }
     },
-    "Everything in Simple" : {
+    "Everything in Simple, plus:" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "シンプルのすべて"
+            "value" : "シンプルのすべてに加えて："
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含普通版的全部"
+            "value" : "普通版的全部，再加上："
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "包含普通版的全部"
+            "value" : "普通版的全部，再加上："
           }
         }
       }
@@ -11815,50 +11925,6 @@
         }
       }
     },
-    "Export in one step" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ワンステップで書き出し"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一步导出"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一步匯出"
-          }
-        }
-      }
-    },
-    "Export the roll" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ロールを書き出す"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导出整卷"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯出整卷"
-          }
-        }
-      }
-    },
     "Exporting" : {
       "localizations" : {
         "ja" : {
@@ -11899,28 +11965,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "曝光"
-          }
-        }
-      }
-    },
-    "Exposure and white balance" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "露出とホワイトバランス"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "曝光和白平衡"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "曝光和白平衡"
           }
         }
       }
@@ -12761,28 +12805,6 @@
         }
       }
     },
-    "Film edge on or off" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルムの縁をオン・オフ"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片边一键开关"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "片邊一鍵開關"
-          }
-        }
-      }
-    },
     "Film edge on: place the picture under the film's gate. Straighten and perspective still apply." : {
       "localizations" : {
         "ja" : {
@@ -12845,6 +12867,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "底片模擬已開"
+          }
+        }
+      }
+    },
+    "Film grain and the glow around highlights" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの粒状と、明るい部分のにじみ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "胶片颗粒，和亮处周围的光晕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底片顆粒，和亮處周圍的光暈"
           }
         }
       }
@@ -13729,6 +13773,50 @@
         }
       }
     },
+    "For getting nice photos quickly" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手早くきれいな写真に仕上げたい人に"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想快速出好看的照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "想快速出好看的照片"
+          }
+        }
+      }
+    },
+    "For people who like to fine-tune" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "じっくり調整したい人に"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜欢细细调整的人"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜歡細細調整的人"
+          }
+        }
+      }
+    },
     "Format" : {
       "localizations" : {
         "ja" : {
@@ -14565,6 +14653,28 @@
         }
       }
     },
+    "Grading" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カラーグレーディング"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "二级调色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "二級調色"
+          }
+        }
+      }
+    },
     "Grain" : {
       "localizations" : {
         "ja" : {
@@ -14671,28 +14781,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顆粒分層"
-          }
-        }
-      }
-    },
-    "Grain, halation and film edge detail" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "粒状、ハレーション、フィルムの縁の詳細"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "颗粒、光晕和片边细节"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顆粒、光暈和片邊細節"
           }
         }
       }
@@ -15577,28 +15665,6 @@
         }
       }
     },
-    "How would you like to work?" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "どちらで使いますか？"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你想怎么用 FilmLab？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "你想怎麼用 FilmLab？"
-          }
-        }
-      }
-    },
     "Hue" : {
       "localizations" : {
         "ja" : {
@@ -15775,6 +15841,28 @@
         }
       }
     },
+    "Import Photos…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込む…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入照片…"
+          }
+        }
+      }
+    },
     "Import To" : {
       "localizations" : {
         "ja" : {
@@ -15793,6 +15881,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯入到"
+          }
+        }
+      }
+    },
+    "Import finished" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み完了"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入完成"
+          }
+        }
+      }
+    },
+    "Import stopped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み中止"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入已停止"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入已停止"
+          }
+        }
+      }
+    },
+    "Import your first photos" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最初の写真を読み込む"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入你的第一批照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入你的第一批照片"
           }
         }
       }
@@ -15859,6 +16013,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯入"
+          }
+        }
+      }
+    },
+    "Imports are copied to %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込んだ写真は %@ にコピーされます"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入的照片会复制到 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入的照片會複製到 %@"
+          }
+        }
+      }
+    },
+    "Imports stay where they are" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込み時、写真はコピーせず元の場所のまま"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入时照片留在原处，不复制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入時照片留在原處，不複製"
           }
         }
       }
@@ -17469,6 +17667,28 @@
         }
       }
     },
+    "Leave them where they are" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピーせず元の場所のまま"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留在原处，不复制"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留在原處，不複製"
+          }
+        }
+      }
+    },
     "Left empty, the recipe is named for what it makes." : {
       "localizations" : {
         "ja" : {
@@ -18657,6 +18877,72 @@
         }
       }
     },
+    "Make it brighter or darker" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明るく・暗くする"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调亮一点或暗一点"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調亮一點或暗一點"
+          }
+        }
+      }
+    },
+    "Make the colour warmer or cooler" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色を暖かく・涼しくする"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让颜色偏暖或偏冷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓顏色偏暖或偏冷"
+          }
+        }
+      }
+    },
+    "Make the photos from your Hasselblad look as if they were shot on real film. Colour and grain are copied from real films, from the makers' own data. It takes three steps." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハッセルブラッドで撮った写真を、本物のフィルムで撮ったような仕上がりに。色も粒状も、メーカーのデータをもとに再現します。手順は 3 つだけ。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让你用哈苏拍的照片，看起来像真的用胶卷拍出来的。颜色和颗粒都照着真实胶卷的厂商数据来做。只要三步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "讓你用哈蘇拍的照片，看起來像真的用底片拍出來的。顏色和顆粒都照著真實底片的廠商資料來做。只要三步。"
+          }
+        }
+      }
+    },
     "Making the Zip" : {
       "localizations" : {
         "ja" : {
@@ -19247,6 +19533,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多"
+          }
+        }
+      }
+    },
+    "More file types and colour settings for print" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "より多くのファイル形式と、印刷向けの色設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多文件格式，以及打印用的色彩设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多檔案格式，以及列印用的色彩設定"
           }
         }
       }
@@ -20571,6 +20879,28 @@
         }
       }
     },
+    "No pictures here" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真がありません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这里没有照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這裡沒有照片"
+          }
+        }
+      }
+    },
     "No pictures on the days ticked." : {
       "localizations" : {
         "ja" : {
@@ -21253,6 +21583,28 @@
         }
       }
     },
+    "Not sure? Start with Simple. You can switch at any time with the Simple | Pro switch at the top right of the window." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "迷ったらシンプルから始めましょう。ウインドウ右上の「シンプル | プロ」でいつでも切り替えられます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拿不准就先用普通版。随时可以在窗口右上角的「普通 | 专业」开关切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拿不準就先用普通版。隨時可以在視窗右上角的「普通 | 專業」開關切換。"
+          }
+        }
+      }
+    },
     "Not the same folder" : {
       "localizations" : {
         "ja" : {
@@ -21381,6 +21733,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "還沒有拷貝任何設定"
+          }
+        }
+      }
+    },
+    "Nothing is copied: FilmLab works from the folder you choose. The card has to stay in while you work." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピーせず、選んだフォルダのまま使います。作業中はカードを挿したままにしてください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不复制，直接用你选的文件夹。修图的时候存储卡不能拔。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不複製，直接用你選的資料夾。修圖的時候記憶卡不能拔。"
           }
         }
       }
@@ -21997,94 +22371,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "打開資料夾…"
-          }
-        }
-      }
-    },
-    "Open a Folder…" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダを開く…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开照片文件夹…"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開照片資料夾…"
-          }
-        }
-      }
-    },
-    "Open a folder" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フォルダを開く"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开文件夹"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開資料夾"
-          }
-        }
-      }
-    },
-    "Open a folder of photographs" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "写真のフォルダを開く"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开一个照片文件夹"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開一個照片資料夾"
-          }
-        }
-      }
-    },
-    "Open a folder of photographs, such as a card of Hasselblad 3FR files. Each folder becomes a project here; the pictures stay where they are." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "写真のフォルダ（ハッセルブラッドの 3FR が入ったカードなど）を開きます。フォルダごとにここでプロジェクトになり、写真はその場所のままです。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打开一个照片文件夹，比如一张装着哈苏 3FR 的存储卡。每个文件夹都会成为这里的一个项目，照片留在原处。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "打開一個照片資料夾，比如一張裝著哈蘇 3FR 的記憶卡。每個資料夾都會成為這裡的一個專案，照片留在原處。"
           }
         }
       }
@@ -22859,6 +23145,28 @@
         }
       }
     },
+    "Paste Settings to All Pictures…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての写真に設定をペースト…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴设置到全部照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上設定到全部照片…"
+          }
+        }
+      }
+    },
     "Paste and Match Style" : {
       "localizations" : {
         "ja" : {
@@ -22877,6 +23185,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "貼上並符合樣式"
+          }
+        }
+      }
+    },
+    "Paste the settings onto all %@ pictures?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚すべての写真に設定をペーストしますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把设置粘贴到全部 %@ 张照片？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把設定貼上到全部 %@ 張照片？"
+          }
+        }
+      }
+    },
+    "Paste to All" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてにペースト"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部粘贴"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部貼上"
+          }
+        }
+      }
+    },
+    "Paste to All Pictures…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての写真にペースト…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴到全部照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上到全部照片…"
+          }
+        }
+      }
+    },
+    "Paste to Selected Pictures" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した写真にペースト"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粘贴到所选照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貼上到所選照片"
           }
         }
       }
@@ -23123,6 +23519,28 @@
         }
       }
     },
+    "Photo folder" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真フォルダ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片資料夾"
+          }
+        }
+      }
+    },
     "Photograph" : {
       "localizations" : {
         "ja" : {
@@ -23163,6 +23581,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "「照片」未能提供原始檔。請等下載完成後重試。"
+          }
+        }
+      }
+    },
+    "Pick a film look" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの雰囲気を選ぶ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "挑一种胶片味道"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "挑一種底片味道"
+          }
+        }
+      }
+    },
+    "Pick a film look with one click" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリックひとつでフィルムの雰囲気に"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点一下就换一种胶片味道"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下就換一種底片味道"
           }
         }
       }
@@ -24113,24 +24575,24 @@
         }
       }
     },
-    "Pro: every tool — the curve, the enlarger, grain and halation, layers, recipes and colour spaces." : {
+    "Pro: every tool, for fine control — curves, grain, glow, local edits and more." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プロ：すべてのツール——カーブ、引き伸ばし機、粒状とハレーション、レイヤー、レシピ、色空間。"
+            "value" : "プロ：細かく調整できるすべてのツール——カーブ、粒状、にじみ、部分補正など。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "专业版：全部工具——曲线、放大机、颗粒与光晕、图层、导出配方和色彩空间。"
+            "value" : "专业版：全部工具，可以细调——曲线、颗粒、光晕、局部调整等等。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "專業版：全部工具——曲線、放大機、顆粒與光暈、圖層、匯出配方和色彩空間。"
+            "value" : "專業版：全部工具，可以細調——曲線、顆粒、光暈、局部調整等等。"
           }
         }
       }
@@ -24395,6 +24857,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "放下工具"
+          }
+        }
+      }
+    },
+    "Put the camera's card in this Mac and choose its folder of photos. Each import becomes a project here, like a roll of film." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラのカードを Mac に挿して、写真のフォルダを選びます。読み込むたびに、フィルム 1 本のようにここにプロジェクトができます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把相机的存储卡插到电脑上，选中里面的照片文件夹。每次导入都会在这里变成一个项目，就像一卷胶卷。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把相機的記憶卡插到電腦上，選取裡面的照片資料夾。每次匯入都會在這裡變成一個專案，就像一卷底片。"
+          }
+        }
+      }
+    },
+    "Put the camera's card in your Mac and press Import Photos. Your photos show up as small pictures; click one to start working on it." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラのカードを Mac に挿して「写真を読み込む」を押します。写真が小さく並ぶので、1 枚クリックすれば編集を始められます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把相机的存储卡插到电脑上，点「导入照片」。照片会以小图显示出来，点一张就可以开始修。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把相機的記憶卡插到電腦上，點「匯入照片」。照片會以小圖顯示出來，點一張就可以開始修。"
           }
         }
       }
@@ -26225,6 +26731,50 @@
         }
       }
     },
+    "Save as JPEG in one step" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワンステップで JPEG 保存"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一步存成 JPEG"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一步存成 JPEG"
+          }
+        }
+      }
+    },
+    "Save the finished photos" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仕上がった写真を保存する"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把修好的照片存下来"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把修好的照片存下來"
+          }
+        }
+      }
+    },
     "Save to" : {
       "localizations" : {
         "ja" : {
@@ -26551,28 +27101,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "場景安置"
-          }
-        }
-      }
-    },
-    "Scene curve, enlarger and HDR" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "シーンカーブ、引き伸ばし機、HDR"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "场景曲线、放大机和 HDR"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "場景曲線、放大機和 HDR"
           }
         }
       }
@@ -27831,6 +28359,28 @@
         }
       }
     },
+    "Simple or Pro?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプルとプロ、どちらにしますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版还是专业版？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版還是專業版？"
+          }
+        }
+      }
+    },
     "Simple shows the everyday controls; Pro shows every tool." : {
       "localizations" : {
         "ja" : {
@@ -27853,24 +28403,24 @@
         }
       }
     },
-    "Simple: choose a film, set the exposure and the white balance, and export." : {
+    "Simple: just the essentials — pick a film, adjust brightness and colour, export." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "シンプル：フィルムを選び、露出とホワイトバランスを整えて書き出すだけ。"
+            "value" : "シンプル：必要なものだけ——フィルムを選び、明るさと色を整えて書き出す。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "普通版：选一款胶卷，调曝光和白平衡，然后导出。"
+            "value" : "普通版：只留最常用的——挑胶卷、调亮度和颜色、导出。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "普通版：選一款底片，調曝光和白平衡，然後匯出。"
+            "value" : "普通版：只留最常用的——挑底片、調亮度和顏色、匯出。"
           }
         }
       }
@@ -30735,6 +31285,28 @@
         }
       }
     },
+    "The import was stopped. What was copied is kept." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込みを中止しました。コピー済みの写真は残ります。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入已停止，已经复制的照片会保留。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入已停止，已經複製的照片會保留。"
+          }
+        }
+      }
+    },
     "The interface scale applies to the library, the develop page and every page over them, at once. 100% is a little larger than SpektraLab was; 80% is about its old develop page." : {
       "localizations" : {
         "ja" : {
@@ -31285,6 +31857,28 @@
         }
       }
     },
+    "The photos are copied from the card onto this Mac. When it is done you can take the card out, and the photos are still here." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真をカードからこの Mac にコピーします。終わればカードを抜いても、写真は残ります。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片会从存储卡复制到这台 Mac 上。复制完就可以拔卡，照片还在电脑里。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片會從記憶卡複製到這台 Mac 上。複製完就可以拔卡，照片還在電腦裡。"
+          }
+        }
+      }
+    },
     "The picked frames fill its two holes" : {
       "localizations" : {
         "ja" : {
@@ -31787,6 +32381,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "它們的預覽正在沖洗。"
+          }
+        }
+      }
+    },
+    "There are no photographs in this folder." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このフォルダには写真がありません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这个文件夹里没有照片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個資料夾裡沒有照片。"
           }
         }
       }
@@ -34827,24 +35443,24 @@
         }
       }
     },
-    "Welcome back. Pick up a roll, or open a new folder." : {
+    "Welcome back. Pick up a roll, or import new photos." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "おかえりなさい。続きのロールを開くか、新しいフォルダを開きましょう。"
+            "value" : "おかえりなさい。前回の続きを開くか、新しい写真を読み込みましょう。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "欢迎回来。继续一卷，或者打开新的文件夹。"
+            "value" : "欢迎回来。继续修上次的照片，或者导入新的。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "歡迎回來。繼續一卷，或者打開新的資料夾。"
+            "value" : "歡迎回來。繼續修上次的照片，或者匯入新的。"
           }
         }
       }
@@ -34981,6 +35597,28 @@
         }
       }
     },
+    "When you import from a card, FilmLab can copy the photos onto this Mac first, so you can take the card out and keep working." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードから読み込むとき、FilmLab は写真をまずこの Mac にコピーできます。カードを抜いても作業を続けられます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从存储卡导入时，FilmLab 可以先把照片复制到这台 Mac 上。这样卡可以拔掉，照片也还在。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從記憶卡匯入時，FilmLab 可以先把照片複製到這台 Mac 上。這樣卡可以拔掉，照片也還在。"
+          }
+        }
+      }
+    },
     "Where" : {
       "localizations" : {
         "ja" : {
@@ -35043,6 +35681,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "存放位置"
+          }
+        }
+      }
+    },
+    "Where should imported photos go?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読み込んだ写真をどこに置きますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导入的照片放在哪里？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入的照片放在哪裡？"
+          }
+        }
+      }
+    },
+    "Where should your photos go?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真をどこに置きますか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片要放在哪里？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片要放在哪裡？"
           }
         }
       }
@@ -35663,24 +36345,24 @@
         }
       }
     },
-    "You can change this at any time with the switch at the top of the window." : {
+    "You can change this later on the home page." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ウインドウ上部のスイッチでいつでも切り替えられます。"
+            "value" : "あとからホームで変更できます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "随时可以用窗口顶部的开关切换。"
+            "value" : "以后可以在主页上改。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隨時可以用視窗頂部的開關切換。"
+            "value" : "以後可以在主頁上改。"
           }
         }
       }
@@ -37199,6 +37881,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "齒孔在上下"
+          }
+        }
+      }
+    },
+    "pictures" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "枚"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "張"
           }
         }
       }

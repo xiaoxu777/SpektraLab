@@ -182,10 +182,15 @@ struct DevelopPane: View {
         let next = session, model = model
         // The finder on the next frame at once (it only starts a task), so the last one's close finds it moved on.
         if let next { MaskFinding.shared.pageOpened(next) }
-        // Two frames: the display link's first callback after the commit may come before the frame is on the screen.
-        AfterFrame.run(after: 2) {
+        // FilmLab (2026-11-23, measured by the render-scheduling pass): two display frames after a switch were 0.2–0.47 s
+        // in practice — the main thread is drawing the new page, so the frames come late — and the develop waited all of
+        // it. It is asked on the next turn of the main queue now, once this update is over: ~30 ms of a graph flush
+        // against hundreds of ms of the picture's own develop. Letting the last frame go still waits for the frames.
+        DispatchQueue.main.async {
             // Still this page's (not left since, which `leave` says by letting go of it): its develop asked.
             if let next, next.isHeld { next.open() }
+        }
+        AfterFrame.run(after: 2) {
             Self.release(last, lastStrip, model: model)
             #if DEBUG && SPK_ENGINE
             TransitionMarks.mark("pane.followed")

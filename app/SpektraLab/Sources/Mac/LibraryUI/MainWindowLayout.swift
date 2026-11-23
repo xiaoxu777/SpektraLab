@@ -186,13 +186,28 @@ struct MainWindowLayout: View {
             // step — the hidden library page, its sidebar and viewer, and the grid with all its rows (2026-11-22,
             // measured: a resize stalled the main thread for seconds).
             GeometryReader { geo in
-                HStack(spacing: 0) {
-                    ShellContent(develop: develop)
-                        .equatable()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    if browser.viewerShown {
+                if browser.fullGrid {
+                    // The grid that takes the window (G): the floating panel, whole.
+                    HStack(spacing: 0) {
+                        ShellContent(develop: develop)
+                            .equatable()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         panel(store, rows, inDevelop: develop != nil, room: geo.size, factor: f)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
+                } else {
+                    // FilmLab (the owner, 2026-11-23): the browser is a strip along the bottom, with its stars, in every
+                    // mode (`FilmStripBar`).
+                    VStack(spacing: 0) {
+                        ShellContent(develop: develop)
+                            .equatable()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if browser.viewerShown {
+                            FilmStripBar(store: store, rows: rows, open: { row in openRow(row, store: store) })
+                                .equatable()
+                                .interfaceScaled(.macPoints)
+                                .frame(height: FilmStripBar.height * f)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 }
             }
@@ -219,6 +234,7 @@ struct MainWindowLayout: View {
         .background { OwnReads { shellKeys(store, rows) } }
         .background { OwnReads { ratingKeys(store, rows) } }
         .background { OwnReads { developWatch(store, rows) } }
+        .background { OwnReads { pasteRequests(store, rows) } }
         // A click anywhere outside the field being edited ends its editing (the owner, 2026-10-26: the
         // search and filter fields "never leave their editing state … it blocks the keyboard").
         .modifier(MacEndEditingOnClick())
@@ -298,7 +314,7 @@ struct MainWindowLayout: View {
         return !browser.typing && !browser.modal && router.cover == nil && router.sheets.isEmpty
             && MacShellPath.split(router.path).stacked.isEmpty && MacShellBar.shared.develop?.inCrop != true
             && !actions.confirmingRemoval && actions.refusal == nil && !MacVariantActions.shared.confirmingDelete
-            && !FilmLabHome.shared.shown && !FilmLabHome.shared.welcome
+            && !FilmLabHome.shared.shown && !FilmLabHome.shared.welcome && FilmLabImport.shared.run == nil
     }
 
     @ViewBuilder private func shellKeys(_ store: any MacLibraryData, _ rows: [MacImage]) -> some View {
@@ -340,6 +356,10 @@ struct MainWindowLayout: View {
         }
         MacShortcutButton(.paste, enabled: free && library.clipboard != nil && (dev != nil || !browser.selection.isEmpty)) {
             pasteSettings(store, rows, dev)
+        }
+        MacShortcutButton(.pasteAll, enabled: free && library.clipboard != nil && !rows.isEmpty) {
+            if MacAppKitEdit.isKeyRepeat { return }
+            actions.pasteRequest = .all
         }
         MacShortcutButton(.reset, enabled: free && dev?.resetEnabled == true) { dev?.reset() }
         MacShortcutButton(.export, enabled: free && (dev != nil || !browser.selection.isEmpty)) {
@@ -385,6 +405,28 @@ struct MainWindowLayout: View {
         actions.pasteSettings(onto: chosen, store: store, model: model)
     }
 
+    /// A paste asked for from a menu (`MacLibraryActions.pasteRequest`): onto the chosen pictures at once, or onto
+    /// every picture the browser shows once the person has said yes.
+    @ViewBuilder private func pasteRequests(_ store: any MacLibraryData, _ rows: [MacImage]) -> some View {
+        let dev = bar.develop
+        Color.clear
+            .onChange(of: actions.pasteRequest) { _, asked in
+                guard asked == .selected else { return }
+                actions.pasteRequest = nil
+                pasteSettings(store, rows, dev)
+            }
+            .alert(L("Paste the settings onto all \(rows.count) pictures?"),
+                   isPresented: Binding(get: { actions.pasteRequest == .all }, set: { if !$0 { actions.pasteRequest = nil } })) {
+                Button(L("Cancel"), role: .cancel) { actions.pasteRequest = nil }
+                Button(L("Paste to All")) {
+                    actions.pasteRequest = nil
+                    actions.pasteSettings(onto: rows, store: store, model: model)
+                }
+            } message: {
+                Text(L("Every picture shown in the browser takes the copied settings. Each one can be undone on its own page."))
+            }
+    }
+
     /// 0–5 on the chosen pictures, in every mode (the owner, 2026-10-27: the stars could not be changed in
     /// 冲洗 and 编辑 — the digits lived on the library page, which keeps no keys while hidden). Off while a
     /// field has the keyboard or a full-window page is over the shell.
@@ -413,6 +455,11 @@ struct MainWindowLayout: View {
             }
             if home.welcome {
                 FilmLabWelcome()
+                    .interfaceScaled(.macPoints)
+                    .transition(.opacity)
+            }
+            if let run = FilmLabImport.shared.run {
+                ImportProgressCard(run: run)
                     .interfaceScaled(.macPoints)
                     .transition(.opacity)
             }
@@ -651,7 +698,13 @@ struct MacDevelopActions: View {
                 Button(L("Reset") + (bar.resetTitle.map { " " + $0 } ?? ""), action: bar.reset)
                     .disabled(!bar.resetEnabled)
                 Divider()
-                Button(L("Copy Settings"), action: bar.copySettings)
+                // Copy: which groups is asked on the sheet; paste onto the chosen pictures, or onto all of them.
+                Button(L("Copy Settings…"), action: bar.copySettings)
+                Button(L("Paste to Selected Pictures")) { MacLibraryActions.shared.pasteRequest = .selected }
+                    .disabled(!bar.pasteEnabled)
+                Button(L("Paste to All Pictures…")) { MacLibraryActions.shared.pasteRequest = .all }
+                    .disabled(!bar.pasteEnabled)
+                Divider()
                 Button(L("Presets"), action: bar.presets)
                 Divider()
                 // The space the canvas shows its picture in (`CanvasGamut`, 2.2.1): a proof, never an edit. This is

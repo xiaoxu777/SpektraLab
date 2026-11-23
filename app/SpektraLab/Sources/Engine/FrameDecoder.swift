@@ -137,6 +137,11 @@ final class FrameDecoder {
     /// The frame, and what the decode learned. `cancelled` is asked between
     /// bands: a decode of a large file is most of a second.
     func decode(_ ask: DecodeAsk, cancelled: () -> Bool = { false }) throws -> (frame: DecodedFrame, report: DecodeReport) {
+        // FilmLab: LibRaw's helper is asked too (`LibRawDecode.cancellable`): it is most of a RAW's decode.
+        try withoutActuallyEscaping(cancelled) { asked in try LibRawDecode.cancellable(asked) { try decodeAsked(ask, cancelled: asked) } }
+    }
+
+    private func decodeAsked(_ ask: DecodeAsk, cancelled: () -> Bool) throws -> (frame: DecodedFrame, report: DecodeReport) {
         let context = try readied()
         // Core Image keeps what it peaked at until its caches are cleared.
         defer { context.clearCaches() }
@@ -149,7 +154,10 @@ final class FrameDecoder {
         } else {
             made = picture(ask.url, isRAW: ask.isRAW, settings: ask.settings, longEdge: ask.longEdge, lens: ask.lens, report: &report)
         }
-        guard var image = made else { throw EngineError.failed("the picture could not be decoded") }
+        guard var image = made else {
+            if cancelled() { throw EngineError.cancelled }
+            throw EngineError.failed("the picture could not be decoded")
+        }
         if let cut = ask.cut { image = HostCut.image(image, by: cut) }
 
         let extent = image.extent.integral

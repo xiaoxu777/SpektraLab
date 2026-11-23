@@ -167,9 +167,18 @@ protocol DevelopEngine: AnyObject, Sendable {
     /// jobs closes too — unless it is `keeping`'s, whose next reprint it is — then the pool is
     /// trimmed. Returns the bytes freed.
     @discardableResult func reclaim(keeping frameID: UUID?) async -> UInt64
+
+    /// FilmLab: decode `job`'s frame now, beside the render under way, so that its run opens what is already
+    /// decoded (`RenderQueue.decodeAhead`): the decode is the CPU's (LibRaw's helper, Core Image) and the render the
+    /// GPU's, and one after the other each waited for the other. One at a time; nothing where the engine has none.
+    func decodeAhead(_ job: RenderJob)
+    /// The decode made ahead for `jobID` is not wanted (the job went, or another runs first): stopped, or let go.
+    func dropAhead(_ jobID: UUID)
 }
 
 extension DevelopEngine {
     var makesPictures: Bool { true }
     @discardableResult func reclaim(keeping frameID: UUID?) async -> UInt64 { await trim() }
+    func decodeAhead(_ job: RenderJob) {}
+    func dropAhead(_ jobID: UUID) {}
 }

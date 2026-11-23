@@ -27,6 +27,10 @@ struct SpektraLabApp: App {
     var body: some Scene {
         WindowGroup {
             RootView().appEnvironment(model)
+                // FilmLab: a photograph or a folder opened with FilmLab (Finder's or Bridge's Open With, the Dock): the
+                // window already open takes it, not a new one (`FilmLabOpen`).
+                .onOpenURL { FilmLabOpen.received($0, model: model) }
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
         // the operating system's menu bar: the app's places and their keys (AppMenuCommands.swift).
         .commands {

@@ -207,6 +207,15 @@ final class RenderQueue {
     @ObservationIgnored var previewsGiveWayAtOnce = true
     @ObservationIgnored var previewsWaitForTheQueue = true
     @ObservationIgnored var previewsCoalesce = true
+    /// FilmLab: **a frame left behind waits for the open frame's cards.** A strip asks for its next card when the
+    /// last has ended, a turn of the main thread later (30-50 ms), and in that gap the queue started whatever else
+    /// was waiting — the develops of the frames stepped past (`OpenFrameSession.close`), the library's thumbnails —
+    /// in front of the frame being looked at (measured 2026-11-22: after five quick steps, three develops of frames
+    /// left behind, 0.54 s, ran before the open frame's first card). For this long after a card ends, a
+    /// thumbnail or a frame's own develop (`importDevelop`) does not start; the next card does.
+    @ObservationIgnored var cardTurn = 0.15
+    /// FilmLab: **the next job's decode is made while this one renders** (`decodeAhead`). Off only to measure it.
+    @ObservationIgnored var decodesAhead = true
 
     let engine: any DevelopEngine
     @ObservationIgnored private(set) var costModel: CostModel
@@ -250,6 +259,10 @@ final class RenderQueue {
     @ObservationIgnored private var forcedStoppedAt: [UUID: Date] = [:]
     /// When the camera, as it is set now, last delivered a photo.
     @ObservationIgnored private var lastPhotoLanded: Date?
+    /// When a strip's card last ended (`cardTurn`).
+    @ObservationIgnored private var lastCardEnded: Date?
+    /// The job whose decode the engine is making ahead (`decodeAhead`).
+    @ObservationIgnored private var aheadJob: UUID?
 
     /// The session has delivered a photo lately: the next one grows the
     /// camera's memory by much less than its first did (`BudgetTuning`).
@@ -313,9 +326,13 @@ final class RenderQueue {
         snapshots.append(snapshot)
         onUpdate?(snapshot)
         // Anything more urgent than what is running: the running job gives way — a strip's card at once.
-        // (A card does not stop the library's develop under way: it is next, and that develop is a moment.)
-        if let r = running, r.job.kind.priority > job.kind.priority, !(job.kind == .stockPreview && r.job.kind == .importDevelop) {
-            yield(r, to: "a more urgent job", force: r.job.kind == .stockPreview && previewsGiveWayAtOnce)
+        // (A card does not stop its own frame's develop under way: it is next, and that develop is a moment.)
+        // FilmLab: it does stop another frame's — one stepped past (`cardTurn`) — at once: that develop's decode now
+        // stops where it is (`EngineHost.cancelled`), and the frame being looked at is the one waited for.
+        let leftBehind = job.kind == .stockPreview && running.map { $0.job.kind == .importDevelop && $0.job.frameID != job.frameID } == true
+        if let r = running, r.job.kind.priority > job.kind.priority,
+           !(job.kind == .stockPreview && r.job.kind == .importDevelop && !leftBehind) {
+            yield(r, to: "a more urgent job", force: (r.job.kind == .stockPreview && previewsGiveWayAtOnce) || leftBehind)
         }
         pump()
         return job.id
@@ -368,6 +385,7 @@ final class RenderQueue {
     /// the watch below.
     func memoryPressure(_ level: Pressure) {
         log.notice("memory pressure: \(level == .critical ? "critical" : "warning", privacy: .public)")
+        dropAhead()
         onTrimCaches?()
         let engine = self.engine
         Task { await engine.trim() }
@@ -410,6 +428,7 @@ final class RenderQueue {
     /// 2026-10-21) — so what the darkroom holds goes back: the frontend's caches, then the engine's
     /// editing session and pool. The page opens its session again when the app is back.
     private func leftFront() {
+        dropAhead()
         guard reclaimsForAsked else { return }
         onTrimCaches?()
         onReclaim?()
@@ -469,6 +488,12 @@ final class RenderQueue {
             if job.kind == .stockPreview, othersQueued, previewsWaitForTheQueue {
                 if waits[job.id]?.last != .queued { waits[job.id, default: []].append(.queued) }
                 update(job.id) { $0.state = .waiting(.queued); $0.mode = nil }
+                continue
+            }
+            // The open frame's next card is on its way: what was left behind waits for it (`cardTurn`).
+            if job.kind == .importDevelop || job.kind == .thumbnail, let ended = lastCardEnded,
+               case let left = cardTurn - Date().timeIntervalSince(ended), left > 0 {
+                soonest = min(soonest ?? left, left)
                 continue
             }
             let plan = Planner.plan(job, budget: job.kind.isAsked || inFront ? askedBudget : budget, frontend: frontend, model: costModel,
@@ -598,6 +623,48 @@ final class RenderQueue {
         // every job someone waits on. A canvas job is one piece whatever its budget, so cancelling it frees
         // nothing a retry would not take again.
         if job.tier == .full { watch(asked: job.kind.isAsked && reclaimsForAsked && !frontend.cameraLive && frontend.scene == .active) }
+        decodeAhead(beside: job, plan)
+    }
+
+    /// A decode made ahead goes back now (pressure, the app leaving the front); its job decodes in its turn.
+    private func dropAhead() {
+        guard let held = aheadJob else { return }
+        aheadJob = nil
+        engine.dropAhead(held)
+    }
+
+    /// FilmLab: the job next in line has its frame decoded now, beside `running`'s render (`DevelopEngine.decodeAhead`).
+    /// Measured 2026-11-22 on the M5 Max with X1D II 3FR: the CPU and the GPU took turns — a decode (LibRaw's helper
+    /// and Core Image, 0.3 s at preview size, 1.3-2.5 s at full) and then a render (0.1 s, 0.9 s at full), one job
+    /// after another — so a run of develops or an export of several frames kept each idle half the time.
+    ///
+    /// Only where it is known to be the next to run and to be wanted: the first of the queue, of a kind that decodes a
+    /// file of its own and nothing of the page's (a frame's develop, an export, the zoom's full render, a shot — never
+    /// a canvas job, whose decode the page and its strip share, nor a card, which opens the strip's) and not a piece of
+    /// several pictures. **Within the budget (G1)**: the running job's price and the next one's whole price together
+    /// within what the running one was planned against, on both sides; otherwise it decodes in its turn, as ever.
+    private func decodeAhead(beside running: RenderJob, _ plan: RenderPlan) {
+        // One at a time: a job decoded ahead and still queued keeps its decode while others go first (a strip's
+        // cards, the page's develop) — it runs after them, and the decode was paid for within the budget when it began.
+        // It goes only with the job (`finish`).
+        if let held = aheadJob, held != running.id, queue.contains(where: { $0.id == held }) { return }
+        aheadJob = nil
+        // Never beside the page's own picture: nothing takes from the frame being looked at, not even the CPU.
+        guard decodesAhead, !running.kind.isCanvas, frontend.scene == .active, !frontend.cameraLive else { return }
+        let ordered = queue.sorted {
+            $0.kind.priority != $1.kind.priority ? $0.kind.priority < $1.kind.priority : $0.submitted < $1.submitted
+        }
+        guard let next = ordered.first, next.decodesOriginal, next.composition == nil, next.printLayers == 0,
+              [.importDevelop, .export, .fullView, .shot].contains(next.kind) else { return }
+        let price = costModel.estimate(next, mode: .whole)
+        let budget = plan.budget
+        guard plan.estimate.peakBytes + price.peakBytes <= budget.appBytes,
+              plan.estimate.phoneBytes + price.phoneBytes <= budget.phoneBytes else {
+            log.info("no decode ahead for \(next.kind.rawValue, privacy: .public): \((plan.estimate.peakBytes + price.peakBytes).megabytes, format: .fixed(precision: 0)) MB with the running job, of \(budget.appBytes.megabytes, format: .fixed(precision: 0)) MB")
+            return
+        }
+        aheadJob = next.id
+        engine.decodeAhead(next)
     }
 
     /// Jobs started past the host's headroom (`forcedPlan`): the watch stops them, and they wait.
@@ -797,6 +864,12 @@ final class RenderQueue {
     }
 
     private func finish(_ job: RenderJob, _ outcome: JobOutcome) {
+        if job.kind == .stockPreview, case .finished = outcome { lastCardEnded = Date() }
+        if aheadJob == job.id {
+            // Ended before it ran (cancelled, or failed in its plan): its decode made ahead goes.
+            aheadJob = nil
+            engine.dropAhead(job.id)
+        }
         if let i = snapshots.firstIndex(where: { $0.id == job.id }) {
             var s = snapshots.remove(at: i)
             switch outcome {

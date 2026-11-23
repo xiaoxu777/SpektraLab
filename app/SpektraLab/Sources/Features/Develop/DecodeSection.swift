@@ -129,12 +129,8 @@ struct DecodeSection: View {
                     part(t).rowEnabled(enabled(t))
                     }
                 }
-                if FeatureFlags.simpleWindow {
-                    // 片边 as one switch: its formats, holes and date back are 专业版's 导出 page.
-                    if frame.pair == nil, session.layerPiece.isSingle {
-                        FilmEdgeColumn(session: session, frame: frame, switchOnly: true)
-                    }
-                } else {
+                // 普通版: the curve, the enlarger and HDR are 专业版's. 片边 is 导出's in both (the owner, 2026-11-23).
+                if !FeatureFlags.simpleWindow {
                     EnlargerGroup(session: session)
                     HighDynamicRangeGroup(session: session)
                 }

@@ -216,6 +216,16 @@ final class SpkEngine: DevelopEngine, @unchecked Sendable {
     /// job does (and as every such job did before 2026-10-03).
     var keepsEverySession = false
 
+    /// FilmLab: the one decode made ahead of its job (`decodeAhead`), on a queue of its own, and its end. Touched under `lock`.
+    private final class Ahead {
+        let job: UUID
+        let done = DispatchGroup()
+        var result: Result<DecodedFrame, Error>?
+        init(job: UUID) { self.job = job; done.enter() }
+    }
+    private var ahead: Ahead?
+    private let aheadQueue = DispatchQueue(label: "com.spektralab.engine.decode-ahead", qos: .userInitiated)
+
     /// The frame being edited: its session stays open between canvas jobs, so
     /// a print-side edit reprints from the cached negative. Touched on `work`.
     private struct Editing {
@@ -282,6 +292,51 @@ final class SpkEngine: DevelopEngine, @unchecked Sendable {
                 done.resume(with: Result { try autoreleasepool { try self.render(job, mode, progress) } })
             }
         }
+    }
+
+    func decodeAhead(_ job: RenderJob) {
+        lock.lock()
+        guard ahead == nil, !cancelled.contains(job.id) else { lock.unlock(); return }
+        let slot = Ahead(job: job.id)
+        ahead = slot
+        lock.unlock()
+        aheadQueue.async {
+            // Its own autorelease pool: what Core Image made of the decode goes now, the buffer stays with the slot.
+            let result: Result<DecodedFrame, Error> = autoreleasepool {
+                Result { try self.source.decode(job, device: self.device) }
+            }
+            self.lock.lock()
+            slot.result = result
+            // Let go of meanwhile (`dropAhead`): its buffer goes with it, and its cancel is forgotten here.
+            if self.ahead !== slot {
+                self.cancelled.remove(job.id)
+                self.cancelAsked[job.id] = nil
+            }
+            self.lock.unlock()
+            slot.done.leave()
+        }
+    }
+
+    func dropAhead(_ jobID: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        guard let slot = ahead, slot.job == jobID else { return }
+        ahead = nil
+        // Still decoding: stopped where it is (`EngineHost.cancelled`); its cancel is forgotten when it ends.
+        if slot.result == nil { cancelled.insert(jobID) }
+    }
+
+    /// The decode made ahead for this job, waited for if it is still being made; nil where there is none, or where it
+    /// failed or was stopped (the job then decodes as ever).
+    private func takeAhead(_ jobID: UUID) -> DecodedFrame? {
+        lock.lock()
+        guard let slot = ahead, slot.job == jobID else { lock.unlock(); return nil }
+        lock.unlock()
+        slot.done.wait()
+        lock.lock()
+        if ahead === slot { ahead = nil }
+        lock.unlock()
+        if case .success(let frame)? = slot.result { return frame }
+        return nil
     }
 
     /// Whether `cancel` has reached the job: for a host's own long work inside `deliver` (the zoom's
@@ -816,7 +871,7 @@ final class SpkEngine: DevelopEngine, @unchecked Sendable {
         // borrows it for the call and keeps its own 3-channel source.
         try autoreleasepool {
             let t = Self.now()
-            let frame = try source.decode(job, device: device)
+            let frame = try takeAhead(job.id) ?? source.decode(job, device: device)
             decodeSeconds = Self.since(t)
             size = frame.size
             how = frame.how

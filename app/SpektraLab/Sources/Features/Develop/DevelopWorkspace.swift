@@ -227,9 +227,11 @@ struct DevelopWorkspace: View {
                     // FilmLab's 导出 mode: the export's settings and its button first, whatever the film emulation is,
                     // then the format they export (`ExportModeSection`).
                     ExportModeSection(frameIDs: exportIDs)
-                    // 普通版 (FilmLab): the export alone; the frame, the film edge's own controls and the effects are
-                    // 专业版's (the film edge's switch is in 冲洗).
-                    if !FeatureFlags.simpleWindow {
+                    // 片边 and 日期后背 are 导出's in both modes, every part of them (the owner, 2026-11-23: "专业和普通版，
+                    // 加片边的功能都应该放在导出的界面，并且应该都要支持自定义"). 普通版 has nothing else under the export.
+                    if FeatureFlags.simpleWindow {
+                        if pair == nil, let filmEdgeColumn { filmEdgeColumn.rowEnabled(session.edit.appliesFilm) }
+                    } else {
                     VStack(spacing: 0) {
                         // 胶片 picked (a picture's row has its own page, `LayerPictureColumn`): a pair's piece, a
                         // double's own section over the format, or a photograph's format.

@@ -6,7 +6,7 @@ import SwiftUI
 import UIKit
 
 enum MacShortcut: String, CaseIterable {
-    case browser, column, grid, crop, lightTable, compare, copy, copyChoosing, paste, reset, export
+    case browser, column, grid, crop, lightTable, compare, copy, copyChoosing, paste, pasteAll, reset, export
     case selectAll, selectNone, invert, previous, next, first, last, filters
     case libraryTab, filtersTab, infoTab, fit, actualSize, zoomIn, zoomOut, fullScreen
     case tableDrag, tableClick, tableLoupe, tableFit, tableActual, tableZoomIn, tableZoomOut
@@ -39,6 +39,8 @@ enum MacShortcut: String, CaseIterable {
         case .copy: return [k("c", .command)]
         case .copyChoosing: return [k("c", [.command, .shift])]
         case .paste: return [k("v", .command), k("v", [.command, .shift])]
+        // FilmLab: the settings onto every picture the browser shows, after asking (`MacLibraryActions.PasteRequest`).
+        case .pasteAll: return [k("v", [.command, .alternate])]
         case .reset: return [k("r", .command)]
         case .export: return [k("d", [.command, .shift])]
         case .selectAll: return [k("a", .command)]
@@ -86,6 +88,7 @@ enum MacShortcut: String, CaseIterable {
         case .copy: L("Copy Settings")
         case .copyChoosing: L("Copy Settings…")
         case .paste: L("Paste Settings")
+        case .pasteAll: L("Paste Settings to All Pictures…")
         case .reset: L("Reset")
         case .export: L("Export")
         case .selectAll: L("Select All")

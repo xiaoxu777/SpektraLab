@@ -387,6 +387,15 @@ final class EngineHost: FrameSource, @unchecked Sendable {
 
     // MARK: FrameSource (the engine's queue)
 
+    /// FilmLab: whether the job has been cancelled, asked by the decode as it goes (between Core Image's bands, and every
+    /// 20 ms of LibRaw's helper, which is then ended). A decode was the one part of a job that could not be stopped:
+    /// stepping through RAWs, each frame left behind ran its decode to the end (0.3-0.5 s at preview size, 1.3-2.5 s
+    /// at full size) before the frame stepped to could start (measured 2026-11-22, X1D II 3FR).
+    private func cancelled(_ job: RenderJob) -> () -> Bool {
+        let id = job.id
+        return { [weak self] in self?.engine?.isCancelled(id) ?? false }
+    }
+
     func decode(_ job: RenderJob, device: MTLDevice) throws -> DecodedFrame {
         guard let r = request(job.id) else { throw EngineError.failed("no frame was handed over for this job") }
         let generation = r.sourceGeneration ?? feed(for: r.frameID)?.source.generation
@@ -401,7 +410,7 @@ final class EngineHost: FrameSource, @unchecked Sendable {
             let (frame, report) = try decoder.decode(piece, meter: { picture, asked in
                 guard let engine = self.engine else { throw EngineError.failed("the engine has gone") }
                 return try engine.meterOnQueue(picture, wire: asked.meterWire)
-            })
+            }, cancelled: cancelled(job))
             for reading in report.readings {
                 onDelivery?(.metered(pair: r.frameID, index: reading.index, ev: reading.ev, key: reading.key))
             }
@@ -431,7 +440,8 @@ final class EngineHost: FrameSource, @unchecked Sendable {
                 throw EngineError.resource(StripSource.givenBack)
             }
             let (frame, report) = try decoder.decode(DecodeAsk(url: r.source, isRAW: r.isRAW, settings: r.decode,
-                                                               longEdge: r.longEdge, cut: r.cut, proxy: r.proxy, lens: r.lens))
+                                                               longEdge: r.longEdge, cut: r.cut, proxy: r.proxy, lens: r.lens),
+                                                     cancelled: cancelled(job))
             if let facts = report.rawExposure { onDelivery?(.rawExposure(frame: r.frameID, facts: facts)) }
             if let event = report.proxy { onDelivery?(.proxy(frame: r.frameID, event: event)) }
             if let generation {
@@ -458,7 +468,8 @@ final class EngineHost: FrameSource, @unchecked Sendable {
             return kept
         }
         let (frame, report) = try decoder.decode(DecodeAsk(url: r.source, isRAW: r.isRAW, settings: r.decode, longEdge: r.longEdge,
-                                                           cut: r.cut, proxy: r.proxy, lens: r.lens))
+                                                           cut: r.cut, proxy: r.proxy, lens: r.lens),
+                                                 cancelled: cancelled(job))
         if let facts = report.rawExposure { onDelivery?(.rawExposure(frame: r.frameID, facts: facts)) }
         if let event = report.proxy { onDelivery?(.proxy(frame: r.frameID, event: event)) }
         if let wb = report.asShot, r.decode.readsCamera {

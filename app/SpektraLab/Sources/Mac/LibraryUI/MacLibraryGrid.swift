@@ -249,15 +249,13 @@ struct MacLibraryGrid: View {
                     // No catalog yet (2026-10-24: the SpektraLab Library is the person's catalogs).
                     // FilmLab: a folder first. It is read where it is (nothing is copied or moved), so a card's
                     // or a disk's folder of 3FR files is open in one step; a catalog stays the second way in.
-                    Text(L("Open a folder of photographs")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                    Text(L("Choose a folder, such as a card of Hasselblad 3FR files. The pictures are read where they are; nothing is copied or moved."))
+                    Text(L("Import your first photos")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
+                    Text(L("Put the camera's card in this Mac and choose its folder of photos. Each import becomes a project here, like a roll of film."))
                         .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                    Button(L("Open Folder…")) {
-                        Task {
-                            guard let url = await MacOpenPanel.choose(multiple: false)?.first else { return }
-                            do { _ = try await store.open(url) } catch { notMade = error.localizedDescription }
-                        }
+                    // FilmLab's import: copied to the photo folder, or opened where it is (`FilmLabImport`).
+                    Button(L("Import Photos…")) {
+                        FilmLabImport.shared.importPhotos(store: store, router: router)
                     }
                     .font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.accent).buttonStyle(.plain)
                     Button(L("New Catalog…")) { Task { notMade = await MacCatalogActions.newCatalog(store) } }

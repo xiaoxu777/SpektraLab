@@ -14,7 +14,7 @@ struct FilmLabWelcome: View {
     @State private var forward = true
     @State private var refused: String?
 
-    private static let pages = 5
+    private static let pages = 6
     private var home: FilmLabHome { .shared }
 
     var body: some View {
@@ -60,24 +60,26 @@ struct FilmLabWelcome: View {
             WelcomePage(art: AnyView(WelcomeArt()),
                         eyebrow: nil,
                         title: L("Welcome to FilmLab"),
-                        text: L("Develop your Hasselblad pictures as film: a real film's colour, its paper and its grain, worked out from the film makers' own data."))
+                        text: L("Make the photos from your Hasselblad look as if they were shot on real film. Colour and grain are copied from real films, from the makers' own data. It takes three steps."))
         case 1:
             WelcomePage(art: AnyView(LibraryArt()),
                         eyebrow: L("Step 1 · Library"),
-                        title: L("Open a folder"),
-                        text: L("Choose a folder of pictures, such as an X1D card of 3FR files. FilmLab reads them where they are: nothing is copied, moved or changed."))
+                        title: L("Bring in your photos"),
+                        text: L("Put the camera's card in your Mac and press Import Photos. Your photos show up as small pictures; click one to start working on it."))
         case 2:
             WelcomePage(art: AnyView(DevelopArt()),
                         eyebrow: L("Step 2 · Develop"),
-                        title: L("Choose a film"),
-                        text: L("Each card is your picture on that film. Pick one, then set the exposure and the white balance; the picture follows as you drag."))
+                        title: L("Pick a film look"),
+                        text: L("Each small picture shows your photo on a different film. Click the one you like. Then drag two sliders if you want: brightness, and warm or cool colour."))
         case 3:
             WelcomePage(art: AnyView(ExportArt()),
                         eyebrow: L("Step 3 · Export"),
-                        title: L("Export the roll"),
-                        text: L("Choose the format, the quality and the size, and where the files go. One button exports every picture you chose."))
+                        title: L("Save the finished photos"),
+                        text: L("Choose a folder and press Export. The photos are saved as JPEG files, ready to share or print. Your original files are never changed."))
+        case 4:
+            ChooseModePage(refused: nil)
         default:
-            ChooseModePage(refused: refused)
+            StoragePage(refused: refused)
         }
     }
 
@@ -124,7 +126,7 @@ struct FilmLabWelcome: View {
                     }
                     .buttonStyle(PressScale())
                     Button { openFolder() } label: {
-                        Text(L("Open a Folder…")).font(MacMetric.font(13, .semibold))
+                        Text(L("Import Photos…")).font(MacMetric.font(13, .semibold))
                             .foregroundStyle(Theme.onSelection)
                             .padding(.horizontal, MacMetric.pt(22)).frame(height: MacMetric.pt(36))
                             .background(Capsule().fill(Theme.accent))
@@ -145,20 +147,11 @@ struct FilmLabWelcome: View {
         withAnimation(.spring(duration: 0.5, bounce: 0.15)) { page = next }
     }
 
+    /// The first import, as the home page's Import Photos… does it (`FilmLabImport`); the tour ends as it begins.
     private func openFolder() {
         refused = nil
-        let store = MacLibraryUI.store(model)
-        Task {
-            guard let url = await MacOpenPanel.choose(multiple: false)?.first else { return }
-            do {
-                _ = try await store.open(url)
-                if MacShellPath.develop(router.path) != nil { router.toLibrary() }
-                home.finishWelcome()
-                home.hideHome()
-            } catch {
-                refused = error.localizedDescription
-            }
-        }
+        home.finishWelcome()
+        FilmLabImport.shared.importPhotos(store: MacLibraryUI.store(model), router: router)
     }
 }
 
@@ -206,16 +199,17 @@ private struct ChooseModePage: View {
 
     var body: some View {
         VStack(spacing: MacMetric.pt(14)) {
-            Text(L("How would you like to work?")).font(MacMetric.font(28, .bold)).foregroundStyle(Theme.text)
+            Text(L("Simple or Pro?")).font(MacMetric.font(28, .bold)).foregroundStyle(Theme.text)
                 .multilineTextAlignment(.center)
-            Text(L("You can change this at any time with the switch at the top of the window."))
+            Text(L("Not sure? Start with Simple. You can switch at any time with the Simple | Pro switch at the top right of the window."))
                 .font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)
             HStack(spacing: MacMetric.pt(18)) {
-                card(pro: false, symbol: "sparkles", title: L("Simple"),
-                     lines: [L("Choose a film and a paper"), L("Exposure and white balance"), L("Film edge on or off"), L("Export in one step")])
-                card(pro: true, symbol: "slider.horizontal.3", title: L("Pro"),
-                     lines: [L("Everything in Simple"), L("Scene curve, enlarger and HDR"), L("Grain, halation and film edge detail"),
-                             L("Edit, layers, recipes and colour spaces")])
+                card(pro: false, symbol: "sparkles", title: L("Simple"), who: L("For getting nice photos quickly"),
+                     lines: [L("Pick a film look with one click"), L("Make it brighter or darker"), L("Make the colour warmer or cooler"),
+                             L("Add a film border, or not"), L("Save as JPEG in one step")])
+                card(pro: true, symbol: "slider.horizontal.3", title: L("Pro"), who: L("For people who like to fine-tune"),
+                     lines: [L("Everything in Simple, plus:"), L("Curves for the light and dark parts"), L("Film grain and the glow around highlights"),
+                             L("Edits to just one part, like the sky or a face"), L("More file types and colour settings for print")])
             }
             .padding(.top, MacMetric.pt(16))
             if let refused {
@@ -227,7 +221,7 @@ private struct ChooseModePage: View {
         .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.2)) { shown = true } }
     }
 
-    private func card(pro: Bool, symbol: String, title: String, lines: [String]) -> some View {
+    private func card(pro: Bool, symbol: String, title: String, who: String, lines: [String]) -> some View {
         let chosen = ProMode.shared.on == pro
         return Button { FilmLabHome.shared.setPro(pro) } label: {
             VStack(alignment: .leading, spacing: MacMetric.pt(10)) {
@@ -239,7 +233,10 @@ private struct ChooseModePage: View {
                         .font(MacMetric.font(18)).foregroundStyle(chosen ? Theme.accent : Theme.dim)
                         .contentTransition(.symbolEffect(.replace))
                 }
-                Text(title).font(MacMetric.font(18, .bold)).foregroundStyle(Theme.text)
+                VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
+                    Text(title).font(MacMetric.font(18, .bold)).foregroundStyle(Theme.text)
+                    Text(who).font(MacMetric.font(12, .medium)).foregroundStyle(chosen ? Theme.accent : Theme.dim)
+                }
                 VStack(alignment: .leading, spacing: MacMetric.pt(5)) {
                     ForEach(lines, id: \.self) { line in
                         HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
@@ -252,7 +249,7 @@ private struct ChooseModePage: View {
                 Spacer(minLength: 0)
             }
             .padding(MacMetric.pt(18))
-            .frame(width: MacMetric.pt(250), height: MacMetric.pt(210), alignment: .topLeading)
+            .frame(width: MacMetric.pt(270), height: MacMetric.pt(250), alignment: .topLeading)
             .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.panel.opacity(0.92)))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(chosen ? Theme.accent : Theme.wall, lineWidth: chosen ? 2 : 1))
@@ -264,6 +261,33 @@ private struct ChooseModePage: View {
         .buttonStyle(PressScale())
         .accessibilityAddTraits(chosen ? .isSelected : [])
         .accessibilityIdentifier(pro ? "filmlab.welcome.pro" : "filmlab.welcome.simple")
+    }
+}
+
+/// The last page: where imported photos go (`StorageChoice`); Import Photos… is the button under it.
+private struct StoragePage: View {
+    let refused: String?
+    @State private var shown = false
+
+    var body: some View {
+        VStack(spacing: MacMetric.pt(14)) {
+            Text(L("Where should your photos go?")).font(MacMetric.font(28, .bold)).foregroundStyle(Theme.text)
+                .multilineTextAlignment(.center)
+            Text(L("When you import from a card, FilmLab can copy the photos onto this Mac first, so you can take the card out and keep working."))
+                .font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)
+                .frame(maxWidth: MacMetric.pt(520)).fixedSize(horizontal: false, vertical: true)
+            StorageChoice()
+                .frame(maxWidth: MacMetric.pt(520))
+                .padding(.top, MacMetric.pt(10))
+            Text(L("You can change this later on the home page."))
+                .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
+            if let refused {
+                Text(L(shown: refused)).font(MacMetric.font(12)).foregroundStyle(Theme.danger)
+            }
+        }
+        .padding(.horizontal, MacMetric.pt(24))
+        .opacity(shown ? 1 : 0).scaleEffect(shown ? 1 : 0.96)
+        .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.2)) { shown = true } }
     }
 }
 
@@ -391,7 +415,7 @@ private struct DevelopArt: View {
                             .animation(.spring(duration: 0.35, bounce: 0.4), value: pick)
                     }
                 }
-                SliderSketch(label: L("Exposure"), period: 3.2)
+                SliderSketch(label: L("Brightness"), period: 3.2)
             }
         }
     }

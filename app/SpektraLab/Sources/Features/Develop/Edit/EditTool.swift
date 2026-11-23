@@ -23,7 +23,7 @@ enum DevelopSurface: String, CaseIterable, Codable, Sendable, Identifiable {
     var title: String {
         switch self {
         case .develop: L("Develop")
-        case .edit: L("Edit")
+        case .edit: L("Grading")      // FilmLab: 二级调色
         }
     }
 }

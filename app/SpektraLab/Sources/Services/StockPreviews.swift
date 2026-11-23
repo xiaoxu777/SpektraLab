@@ -11,10 +11,11 @@
 //    page's develop or anything else, and is budgeted like any job — one that
 //    cannot fit waits. Nothing runs while the camera is open (the scheduler's
 //    hold, and this service asks for nothing then).
-//  - **One card in the scheduler at a time**, the next asked for when the last
-//    has ended, from the cards on screen in the order they are shown — so a
-//    card scrolled away is never asked for, the one running when it leaves is
-//    cancelled, and each job is priced for exactly what it does.
+//  - **Two cards in the scheduler at most** (FilmLab, `depth`: one running, the
+//    next queued behind it so the GPU does not wait a main-thread turn between
+//    them), each asked for from the cards on screen in the order they are shown —
+//    so a card scrolled away is never asked for, one in the scheduler when it
+//    leaves is cancelled, and each job is priced for exactly what it does.
 //  - **The strip's picture is decoded once** (`StripSource`), at the meter's
 //    size (`EngineRouter.cardPlan`) — and where it can be, not decoded at all: the
 //    page's own develop decodes the same pixels, and that decode is made the
@@ -100,6 +101,14 @@ final class StockStrip {
     @ObservationIgnored fileprivate var lastShown = Date.distantPast
     @ObservationIgnored fileprivate var settling: Task<Void, Never>?
     @ObservationIgnored fileprivate var editPending = false
+    /// FilmLab: the page's own develop of this frame has not ended yet (`StockPreviews.foregroundDeveloped`). Its cards
+    /// wait for it: it decodes the frame anyway and hands the strip that decode (`EngineRouter.feedStrip`), and a card
+    /// that started first decoded the same file for itself, in front of the page's picture — measured 2026-11-22, a
+    /// step to a fresh X1D II frame: the strip's first card took the engine 0.17 s before the page asked, and the
+    /// page's develop waited 0.27 s for it. Cards read back from memory or disk do not wait.
+    @ObservationIgnored fileprivate var awaitsPage = true
+    @ObservationIgnored fileprivate let created = Date()
+    @ObservationIgnored fileprivate var pageWait: Task<Void, Never>?
 
     init(frameID: LibraryFrame.ID, edit: FrameEdit) {
         self.frameID = frameID
@@ -185,7 +194,14 @@ final class StockPreviews {
         var key: String
         var source: String
     }
-    @ObservationIgnored private var inFlight: InFlight?
+    /// The cards in the scheduler: the one being made, and — once the strip's decode is here — the next behind it
+    /// (`depth`).
+    @ObservationIgnored private var inFlight: [InFlight] = []
+    /// FilmLab: two cards in the scheduler, not one. The next was asked for only when the last had ended, a turn of
+    /// the main thread later, and the GPU sat idle in between: measured 2026-11-22, a median 39 ms after each card of
+    /// 100 ms. The second waits in the queue (a card is the last of all jobs, and gives way at once) and starts as the
+    /// first ends. Only a card that opens the strip's decode goes second: one that decodes the file waits its turn.
+    static let depth = 2
     /// Cards whose make failed, by memory key: not asked for again until their key moves.
     @ObservationIgnored private var failed: Set<String> = []
     @ObservationIgnored let source = StripSource()
@@ -218,11 +234,19 @@ final class StockPreviews {
             _ = scheduler.frontend
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
-                self?.observeFrontend()
-                self?.pump()
+                guard let self else { return }
+                let dragging: Bool = { if case .dragging = self.scheduler.frontend.interaction { true } else { false } }()
+                if self.wasDragging, !dragging { self.lastDragEnded = Date() }
+                self.wasDragging = dragging
+                self.observeFrontend()
+                self.pump()
             }
         }
     }
+
+    /// When a finger last left a control (`editChanged`'s settle).
+    @ObservationIgnored private var lastDragEnded: Date?
+    @ObservationIgnored private var wasDragging = false
 
     /// The frame's strips; the same object for as long as a page holds it.
     func strip(for frameID: LibraryFrame.ID) -> StockStrip {
@@ -231,8 +255,19 @@ final class StockPreviews {
         s.owner = self
         strips[frameID] = s
         feed(s)
+        // The page's develop is asked two frames after the strip appears (`DevelopPane.switchSession`): the cards
+        // look again once that has had its time, and wait on only while it is queued or running (`pump`).
+        s.pageWait = Task { [weak self, weak s] in
+            do { try await Task.sleep(nanoseconds: UInt64(Self.pageAsksWithin * 1e9)) } catch { return }
+            guard let self, let s, self.strips[s.frameID] === s, s.awaitsPage else { return }
+            self.pump()
+        }
         return s
     }
+
+    /// How long after a strip appears its page has asked for its own develop, if it is going to
+    /// (`StockStrip.awaitsPage`): two display frames, on a main thread that is drawing the new page.
+    static let pageAsksWithin = 0.4
 
     /// The page's develop decodes the frame anyway: the strip takes that
     /// decode, made its size (`EngineRouter.feedStrip`), when the pixels are the
@@ -245,7 +280,7 @@ final class StockPreviews {
     // MARK: what the strips tell
 
     fileprivate func shownChanged(_ strip: StockStrip) {
-        if let f = inFlight, f.frame == strip.frameID, !strip.shown.contains(f.card) {
+        for f in inFlight where f.frame == strip.frameID && !strip.shown.contains(f.card) {
             scheduler.cancel(f.job)                       // scrolled away
         }
         pump()
@@ -266,11 +301,19 @@ final class StockPreviews {
         strip.settling?.cancel()
         // The canvas gets the first turn. Moving a dial does not price and
         // prepare a new set of material pairs for every intermediate value.
-        if let f = inFlight, f.frame == strip.frameID { scheduler.cancel(f.job) }
+        for f in inFlight where f.frame == strip.frameID { scheduler.cancel(f.job) }
+        // FilmLab: 0.8 s, not 0.2: a card is 130–160 ms of GPU that cannot be taken back once begun, so at 0.2 s a
+        // pause in a drag started the strip (16–22 cards, 2–3 s) under the next movement of the finger. An edit made
+        // with no finger on a control and none lifted lately — a card clicked, the camera's white balance read at the
+        // frame's first decode (`OpenFrameSession.readAsShot`), which moved every fresh frame's cards back by 0.8 s —
+        // settles for 0.1 s: there is no next movement to wait for.
+        let afterDrag: Bool = {
+            if case .dragging = scheduler.frontend.interaction { return true }
+            return lastDragEnded.map { Date().timeIntervalSince($0) < 1.0 } ?? false
+        }()
+        let settle: UInt64 = afterDrag ? 800_000_000 : 100_000_000
         strip.settling = Task { [weak self, weak strip] in
-            // FilmLab: 0.8 s, not 0.2: a card is 130–160 ms of GPU that cannot be taken back once begun, so at 0.2 s a
-            // pause in a drag started the strip (16–22 cards, 2–3 s) under the next movement of the finger.
-            do { try await Task.sleep(nanoseconds: 800_000_000) } catch { return }
+            do { try await Task.sleep(nanoseconds: settle) } catch { return }
             guard let self, let strip, self.strips[strip.frameID] === strip else { return }
             strip.editPending = false; strip.settling = nil
             self.feed(strip)
@@ -281,16 +324,17 @@ final class StockPreviews {
     fileprivate func leave(_ strip: StockStrip) {
         guard strips[strip.frameID] === strip else { return }
         strip.settling?.cancel(); strip.settling = nil; strip.editPending = false
+        strip.pageWait?.cancel(); strip.pageWait = nil
         strips[strip.frameID] = nil
         darkroom.feedStrip(nil, frame: strip.frameID, plan: nil)
-        if let f = inFlight, f.frame == strip.frameID { scheduler.cancel(f.job) }
+        for f in inFlight where f.frame == strip.frameID { scheduler.cancel(f.job) }
         if run?.frame == strip.frameID { endRun("left") }
         if strips.isEmpty { source.drop() }
         hold(sparing: nil)
     }
 
     fileprivate func progress(_ strip: StockStrip, _ card: StockPreviewCard) -> Double? {
-        guard let f = inFlight, f.frame == strip.frameID, f.card == card,
+        guard let f = inFlight.first(where: { $0.frame == strip.frameID && $0.card == card }),
               let snapshot = scheduler.snapshots.first(where: { $0.id == f.job }),
               case .running(let p) = snapshot.state else { return nil }
         return p.fraction
@@ -307,7 +351,7 @@ final class StockPreviews {
         awaitsForegroundRAW = true
         sourceRefillRequested = false
         for strip in strips.values { strip.forgetUnshown() }
-        if let f = inFlight { scheduler.cancel(f.job) }
+        for f in inFlight { scheduler.cancel(f.job) }
         if !scheduler.frontend.cameraLive { pump() }
     }
 
@@ -320,6 +364,11 @@ final class StockPreviews {
     /// a session of strip runs, no card made, the posture on since the
     /// launch's own camera).
     func foregroundDeveloped(_ frame: LibraryFrame.ID) {
+        if let strip = strips[frame], strip.awaitsPage {
+            strip.awaitsPage = false
+            strip.pageWait?.cancel(); strip.pageWait = nil
+            pump()
+        }
         guard awaitsForegroundRAW, strips[frame] != nil else { return }
         awaitsForegroundRAW = false
         sourceRefillRequested = false
@@ -343,16 +392,16 @@ final class StockPreviews {
     // MARK: the work
 
     /// The next card to make, or to read back: from the strips shown last, in
-    /// the order their cards are on screen. One card in the scheduler at a time.
+    /// the order their cards are on screen. Two cards in the scheduler at most (`depth`).
     private func pump() {
         // FilmLab: no card while a finger is on a control, and the one being made gives way as the finger lands. The
         // canvas has the GPU to itself for as long as the drag lasts; the frontend's change back to idle wakes this
         // (`observeFrontend`), and a cancelled card is asked for again then.
         if case .dragging = scheduler.frontend.interaction {
-            if let f = inFlight { scheduler.cancel(f.job) }
+            for f in inFlight { scheduler.cancel(f.job) }
             return
         }
-        guard inFlight == nil, !scheduler.frontend.cameraLive, scheduler.frontend.scene == .active else { return }
+        guard inFlight.count < Self.depth, !scheduler.frontend.cameraLive, scheduler.frontend.scene == .active else { return }
         for strip in strips.values.sorted(by: { $0.lastShown > $1.lastShown }) {
             guard !strip.editPending, let frame = library.frame(strip.frameID) else { continue }
             for card in strip.shown {
@@ -385,6 +434,17 @@ final class StockPreviews {
                 }
                 // An original in Photos that is not here yet: the page's own develop brings it.
                 if darkroom.needsBringing(frame, edit: strip.edit) { continue }
+                // Already in the scheduler (`depth`).
+                if inFlight.contains(where: { $0.frame == frame.id && $0.card == card }) { continue }
+                // Behind another card, only one that opens the strip's decode (`depth`).
+                if !inFlight.isEmpty, !source.holds(plan.strip) { return }
+                // The page's own develop first: it decodes the frame for the strip as well (`StockStrip.awaitsPage`).
+                // A page that asks for none (its session already developed, nothing to develop from) holds nothing.
+                if strip.awaitsPage {
+                    let asked = scheduler.snapshot(frameID: frame.id, where: { $0.kind.isCanvas }) != nil
+                    if asked || Date().timeIntervalSince(strip.created) < Self.pageAsksWithin { continue }
+                    strip.awaitsPage = false
+                }
                 let containsRAW = frame.developsFromRAW || (plan.piece?.pictures.contains(where: \.isRAW) ?? false)
                 // A RAW whose proxy is here is opened from it: there is no foreground decode to wait for.
                 if awaitsForegroundRAW, containsRAW, !source.holds(plan.strip),
@@ -394,12 +454,15 @@ final class StockPreviews {
                     }
                     continue
                 }
-                if make(card, of: frame, strip: strip, plan: plan) { return }
+                if make(card, of: frame, strip: strip, plan: plan) {
+                    if inFlight.count >= Self.depth { return }
+                    continue
+                }
                 strip.set(card, .failed)
             }
         }
         // Nothing left to make: the run is over.
-        if run != nil, reading.isEmpty { endRun("done") }
+        if run != nil, reading.isEmpty, inFlight.isEmpty { endRun("done") }
     }
 
     private func make(_ card: StockPreviewCard, of frame: LibraryFrame, strip: StockStrip, plan: EngineRouter.CardPlan) -> Bool {
@@ -412,7 +475,7 @@ final class StockPreviews {
         guard darkroom.prepareCard(job, frame: frame, edit: edit, plan: plan, strip: source, decodes: decodes) else { return false }
         beginRun(frame.id, strip: strip, canvas: plan.canvas)
         let id = scheduler.submit(job)
-        inFlight = InFlight(job: id, frame: frame.id, card: card, key: plan.key, source: plan.source)
+        inFlight.append(InFlight(job: id, frame: frame.id, card: card, key: plan.key, source: plan.source))
         Task { [weak self] in
             guard let self else { return }
             let outcome = await self.scheduler.outcome(of: id)
@@ -422,8 +485,8 @@ final class StockPreviews {
     }
 
     private func ended(_ id: UUID, _ outcome: JobOutcome) {
-        guard let f = inFlight, f.job == id else { darkroom.forget(id); return }
-        inFlight = nil
+        guard let at = inFlight.firstIndex(where: { $0.job == id }) else { darkroom.forget(id); return }
+        let f = inFlight.remove(at: at)
         let image = darkroom.takeCard(id)
         darkroom.forget(id)
         let records = scheduler.records.filter { $0.jobID == id }
