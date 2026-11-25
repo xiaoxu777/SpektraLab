@@ -134,7 +134,7 @@ struct FilmLabCopyButton: View {
         .opacity(frameID == nil ? Theme.disabledOpacity : 1)
         .help(L("Copy settings (⌘C); choose which (⇧⌘C)"))
         .accessibilityIdentifier("filmlab.bar.copy")
-        .onAppear { FilmLabCheckArgs.openPanel() }
+        .onAppear { FilmLabCheckArgs.openPanel(); FilmLabResizeProbe.startIfAsked() }
         .popover(isPresented: $ui.copyShown, arrowEdge: .bottom) {
             if let frameID {
                 // A popover is a presentation of its own: the app's objects are handed on again (as the covers do).
@@ -468,6 +468,25 @@ enum FilmLabCheckArgs {
         case "grade": MacDevelopWanted.surface = .edit
         case "export": MacDevelopWanted.surface = .develop; MacDevelopWanted.step = .format
         default: break
+        }
+    }
+
+    /// A page asked for, for `--capture-window` (design A round 7): `--filmlab-show lighttable` opens the Light Table as it
+    /// stands (nothing is put on it), `--filmlab-show import --filmlab-show-path <folder>` opens the import page with that
+    /// folder picked, as Finder's panel would hand it over. Nothing is imported: that takes the page's own Import button.
+    static func showPage(model: AppServices) {
+        guard let page = value("--filmlab-show") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            switch page {
+            case "lighttable":
+                model.router.toLibrary()
+                model.router.open(.lightTable)
+            case "import":
+                guard let path = value("--filmlab-show-path") else { return }
+                MacLibraryBrowser.shared.finderPicks = [URL(fileURLWithPath: path, isDirectory: true)]
+                MacLibraryBrowser.shared.importAsked = true
+            default: break
+            }
         }
     }
 

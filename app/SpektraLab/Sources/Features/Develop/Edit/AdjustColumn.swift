@@ -84,6 +84,8 @@ final class AdjustLayout {
 struct AdjustColumn: View {
     let session: OpenFrameSession
     @Binding var state: AdjustState
+    /// Which tools it shows: all, or 二级调色's tab's (`FilmLabGradeTab.shows`).
+    var tools: (AdjustTool) -> Bool = { _ in true }
     /// What follows the tools, scrolling with them: 二级调色's effects on the Mac (`DevelopWorkspace.gradingHasEffects`).
     var tail: AnyView? = nil
     private var layout: AdjustLayout { .shared }
@@ -100,7 +102,7 @@ struct AdjustColumn: View {
         ScrollViewReader { reader in
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
-                    ForEach(layout.order) { t in
+                    ForEach(layout.order.filter(tools)) { t in
                         section(t)
                             .id(t)
                             .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { heights[t] = $0 }

@@ -58,6 +58,8 @@ extension RoundButton where Glyph == Icon {
 struct Disc<Glyph: View>: View {
     var diameter: CGFloat = Theme.Metric.roundButton
     var lit: Color? = nil
+    /// FilmLab 暗房 (design A): a rounded square of this corner in place of the circle (the Light Table's tools).
+    var corner: CGFloat? = nil
     @ViewBuilder var glyph: () -> Glyph
 
     /// An SF Symbol's point size on a disc: 18 on the 44 pt disc, scaled with it.
@@ -67,7 +69,7 @@ struct Disc<Glyph: View>: View {
         glyph()
             .foregroundStyle(lit == nil ? Theme.text : Theme.onSelection)
             .frame(width: diameter, height: diameter)
-            .background(lit ?? Theme.card, in: Circle())
+            .background(lit ?? Theme.card, in: corner.map { AnyShape(RoundedRectangle(cornerRadius: $0, style: .continuous)) } ?? AnyShape(Circle()))
     }
 }
 
@@ -91,11 +93,21 @@ struct CapsuleButton: View {
                 .lineLimit(1)
                 .frame(maxWidth: width == nil ? .infinity : nil)
                 .frame(width: width, height: height)
-                .background(Capsule().fill(primary ? Theme.accent : Theme.card))
-                .contentShape(Capsule())
+                .background(Self.shape.fill(primary ? Theme.accent : Theme.card))
+                .contentShape(Self.shape)
         }
         .buttonStyle(PressStyle(scale: 0.98))
         .rowEnabled(enabled)
+    }
+
+    /// FilmLab 暗房 (design A, 2026-11-24): on the Mac a button's corners are squared to 8, as the bar's 导出 and the
+    /// columns' buttons are; the touch layout keeps its capsule.
+    static var shape: AnyShape {
+        #if targetEnvironment(macCatalyst)
+        AnyShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        #else
+        AnyShape(Capsule())
+        #endif
     }
 }
 

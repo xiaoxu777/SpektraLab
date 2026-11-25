@@ -14,10 +14,10 @@ struct SliderMapping: Equatable {
     var step: Double? = nil
     var detentAtRest = false
 
-    /// A press this near the knob's middle takes the knob (it is 9 pt wide; a little to spare either side).
-    static let grabHalfWidth: CGFloat = 8
-    /// The knob's half width, as `SliderTrack` draws it.
-    static let knobHalfWidth: CGFloat = 4.5
+    /// A press this near the knob's middle takes the knob (it is 13 pt wide; a little to spare either side).
+    static let grabHalfWidth: CGFloat = 9
+    /// The knob's half width, as `SliderTrack` draws it (FilmLab 暗房: a 13 pt round knob; was a 9 pt bar).
+    static let knobHalfWidth: CGFloat = 6.5
 
     var span: Double { max(range.upperBound - range.lowerBound, .ulpOfOne) }
 

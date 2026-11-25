@@ -44,6 +44,9 @@ final class LightTableRenderer: @unchecked Sendable {
     static let clear = MTLClearColor(red: 0.913, green: 0.913, blue: 0.922, alpha: 1)
     /// The dark desk's: the app's black (`Theme.background`).
     static let clearDark = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+    /// FilmLab 暗房 (design A, 2026-11-24): the dark desk on screen is the app's well (`Theme.well`, #111214), not black;
+    /// a shared picture of the table keeps `clearDark`.
+    static let clearDarkScreen = MTLClearColor(red: 17 / 255, green: 18 / 255, blue: 20 / 255, alpha: 1)
 
     let device: MTLDevice
     let queue: MTLCommandQueue
@@ -225,11 +228,11 @@ final class LightTableRenderer: @unchecked Sendable {
         }
     }
 
-    private func pass(_ texture: MTLTexture, dark: Bool = false) -> MTLRenderPassDescriptor {
+    private func pass(_ texture: MTLTexture, dark: Bool = false, screen: Bool = false) -> MTLRenderPassDescriptor {
         let d = MTLRenderPassDescriptor()
         d.colorAttachments[0].texture = texture
         d.colorAttachments[0].loadAction = .clear
-        d.colorAttachments[0].clearColor = dark ? Self.clearDark : Self.clear
+        d.colorAttachments[0].clearColor = dark ? (screen ? Self.clearDarkScreen : Self.clearDark) : Self.clear
         d.colorAttachments[0].storeAction = .store
         return d
     }
@@ -250,7 +253,7 @@ final class LightTableRenderer: @unchecked Sendable {
                 lensTexture = target
             }
         }
-        guard let enc = cb.makeRenderCommandEncoder(descriptor: pass(drawable, dark: scene.darkDesk)) else { return }
+        guard let enc = cb.makeRenderCommandEncoder(descriptor: pass(drawable, dark: scene.darkDesk, screen: true)) else { return }
         enc.label = "light table"
         encode(scene, Camera(centre: centre, spanMM: CGSize(width: view.width / s, height: view.height / s), bias: -0.35), enc)
         if let loupe, let lensTexture {

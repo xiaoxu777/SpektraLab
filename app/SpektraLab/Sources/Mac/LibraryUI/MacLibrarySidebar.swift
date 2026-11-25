@@ -60,7 +60,7 @@ struct MacLibrarySidebar: View {
             Rectangle().fill(Theme.wall).frame(height: 1)
             bottomBar
         }
-        .background(Theme.panel.ignoresSafeArea())
+        .background(Theme.background.ignoresSafeArea())   // FilmLab 暗房: the column's ground, as 冲洗's
         .onChange(of: filtering) { _, on in browser.typing = on }
         #if DEBUG
         // `--settings-check` presses the "+" menu's Settings and Sources as the items do.
@@ -127,8 +127,8 @@ struct MacLibrarySidebar: View {
                 .accessibilityIdentifier("mac.library.tab.\(tab.rawValue)")
             }
             Spacer(minLength: 0)
-            // Import (a Finder panel, then the import page) and Export (the chosen pictures), 2026-10-24.
-            barButton(L("Import"), "square.and.arrow.down", id: "mac.library.import") { browser.askImport(store) }
+            // FilmLab (the owner, 2026-11-24: "进入到项目后图库页面仅针对看图选图"): no Import here — projects are made and
+            // filled on the home page, or by dropping photos on the grid. Export (the chosen pictures) stays.
             barButton(L("Export"), "square.and.arrow.up", id: "mac.library.export") { browser.exportAsked = true }
                 .disabled(browser.selection.isEmpty)
         }
@@ -152,28 +152,168 @@ struct MacLibrarySidebar: View {
 
     // MARK: Library
 
+    /// FilmLab (the owner, 2026-11-24): inside a project 图库 is for looking at photos and picking them. The project's
+    /// name with the way home over the roll's filters and colour labels; no source picker, no catalog tree (目录汇总,
+    /// 最近导入, 文件夹, 废纸篓) and no "+" — projects are made and filled on the home page (FilmLabProjects.swift).
     private var libraryPane: some View {
         VStack(spacing: 0) {
-            HStack(spacing: MacMetric.pt(4)) {
-                sourcePicker
-                barButton(L("Open Catalog or Folder…"), "plus", id: "mac.library.add-source", action: openSource)
-                    .disabled(picking || store.activity.working != nil)
-            }
+            projectHeader
                 .padding(.horizontal, MacMetric.pt(8))
                 .padding(.vertical, MacMetric.pt(6))
-            // FilmLab 暗房: the roll's quick filters first (`FilmLabRollFilters`), then the catalog's tree.
-            FilmLabRollFilters(rows: store.images)
-            Rectangle().fill(Theme.wall).frame(height: 1).padding(.horizontal, MacMetric.pt(10))
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    // The Light Table is entered from the grid's header (its loupe, beside the viewer), with the
-                    // chosen pictures, for every source alike; it was a row here for the app library only.
-                    ForEach(outline) { row in outlineRow(row) }
-                }
-                .padding(.bottom, MacMetric.pt(8))
+                FilmLabRollFilters(rows: store.images)
+                    .padding(.bottom, MacMetric.pt(8))
             }
             .scrollIndicators(.automatic)
+            chosenFoot
         }
+        // The whole project, whatever collection of its tree was chosen before the tree left the sidebar.
+        .task(id: store.selectedSourceID) { await showWholeProject() }
+        // A check's launch (`--filmlab-pick-first 1`, for `--capture-window`): the first photo chosen, so the foot shows.
+        .task(id: rows.first?.id) {
+            guard FilmLabCheckArgs.value("--filmlab-pick-first") != nil, browser.selection.isEmpty, let id = rows.first?.id else { return }
+            browser.selection = [id]
+            browser.focus = id
+        }
+    }
+
+    /// Design A (2026-11-24): the chosen photo at the sidebar's foot — 图库 has no right-hand column, so its name, stars
+    /// and label (set here as in the Info tab) and the few facts worth a glance live under the roll's filters.
+    @ViewBuilder private var chosenFoot: some View {
+        if let image = browser.primary(rows) {
+            let count = browser.selection.count
+            let chosen = rows.filter { browser.selection.contains($0.id) }
+            VStack(alignment: .leading, spacing: MacMetric.pt(8)) {
+                HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
+                    Text(image.fileName).font(MacMetric.font(12.5, .semibold)).foregroundStyle(Theme.text)
+                        .lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: MacMetric.pt(4))
+                    if count > 1 {
+                        Text(L("\(count) chosen")).font(MacMetric.font(11)).foregroundStyle(Theme.dim).fixedSize()
+                    }
+                }
+                footMarks(image, ids: (chosen.isEmpty ? [image] : chosen).map(\.id))
+                VStack(alignment: .leading, spacing: MacMetric.pt(4)) {
+                    ForEach(footRows(image), id: \.0) { row in
+                        HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(8)) {
+                            Text(row.0).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
+                                .lineLimit(1).fixedSize()
+                                .frame(minWidth: MacMetric.pt(58), alignment: .leading)
+                            Text(row.1).font(MacMetric.font(11.5)).foregroundStyle(Theme.secondaryText)
+                                .lineLimit(1).truncationMode(.middle)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, MacMetric.pt(14))
+            .padding(.vertical, MacMetric.pt(12))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .top) { Rectangle().fill(Theme.rule).frame(height: 1) }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("filmlab.library.chosen")
+        }
+    }
+
+    /// Five stars and the five colour labels, pressed straight (the same star or label again takes it off); for every
+    /// chosen photo, as the strip's stars are.
+    private func footMarks(_ image: MacImage, ids: [MacImage.ID]) -> some View {
+        let editable = store.selectedSource?.isHelperBacked == true
+        return HStack(spacing: MacMetric.pt(2)) {
+            ForEach(1...5, id: \.self) { r in
+                Button { mark { try await store.setRating(image.rating == r ? 0 : r, for: ids) } } label: {
+                    Image(systemName: "star.fill").font(.system(size: MacMetric.pt(13), weight: .semibold))
+                        .foregroundStyle(r <= image.rating ? Theme.accent : Theme.starOff)
+                        .frame(width: MacMetric.pt(18), height: MacMetric.pt(20)).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(MacWords.rating(r))
+            }
+            Spacer(minLength: MacMetric.pt(8))
+            ForEach(FilmLabRollFilterState.labels, id: \.self) { label in
+                let on = image.colorLabel == label
+                Button { mark { try await store.setColorLabel(on ? .unlabelled : label, for: ids) } } label: {
+                    Circle().fill(MacWords.color(label.rawValue) ?? Theme.dim)
+                        .frame(width: MacMetric.pt(11), height: MacMetric.pt(11))
+                        .padding(MacMetric.pt(3))
+                        .overlay { if on { Circle().strokeBorder(Theme.text, lineWidth: 1.5) } }
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(MacWords.colorName(label.rawValue))
+                .accessibilityLabel(MacWords.colorName(label.rawValue))
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .disabled(!editable)
+        .opacity(editable ? 1 : Theme.disabledOpacity)
+    }
+
+    private func mark(_ body: @escaping () async throws -> Void) {
+        Task {
+            do { try await body() }
+            catch { MacLibraryActions.shared.refusal = error.localizedDescription }
+        }
+    }
+
+    private func footRows(_ i: MacImage) -> [(String, String)] {
+        var rows: [(String, String)] = []
+        let camera = [i.cameraModel, i.lens].compactMap { $0 }.joined(separator: " · ")
+        if !camera.isEmpty { rows.append((L("Camera"), camera)) }
+        if let e = i.exposure { rows.append((L("Exposure"), e)) }
+        var size = i.url.pathExtension.uppercased()
+        if let s = i.pixelSize, s.width > 0 { size = "\(s.width) × \(s.height) · " + size }
+        rows.append((L("Size"), size))
+        if let d = i.develop {
+            rows.append((L("Film"), [d.film, d.paper].compactMap { $0 }.joined(separator: " → ")))
+        } else {
+            rows.append((L("Film"), L("Not developed")))
+        }
+        if let d = i.captureDate { rows.append((L("Taken"), d.formatted(date: .numeric, time: .shortened))) }
+        return rows
+    }
+
+    /// The house (the home page, where projects are) and the project's name, what it is and how many pictures.
+    private var projectHeader: some View {
+        HStack(spacing: MacMetric.pt(8)) {
+            Button { FilmLabHome.shared.showHome() } label: {
+                Image(systemName: "chevron.left").font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.secondaryText)
+                    .frame(width: MacMetric.pt(24), height: MacMetric.pt(24))
+                    .background(Theme.card, in: RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L("All projects"))
+            .accessibilityLabel(L("All projects"))
+            .accessibilityIdentifier("filmlab.library.home")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(store.selectedSource?.name ?? "").font(MacMetric.font(13.5, .semibold)).foregroundStyle(Theme.text)
+                    .lineLimit(1).truncationMode(.middle)
+                if let s = store.selectedSource {
+                    Text(projectLine(s)).font(MacMetric.font(10.5)).foregroundStyle(Theme.dim).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+            if store.activity.working != nil { ProgressView().controlSize(.mini) }
+        }
+        .frame(minHeight: MacMetric.pt(32))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("mac.library.source")
+    }
+
+    private func projectLine(_ s: MacSource) -> String {
+        let kind: String = switch s.kind {
+        case .folder: L("Folder")
+        case .catalog, .appLibrary: L("Catalog")
+        case .session: L("Session")
+        case .captureOneCatalog, .captureOneSession: "Capture One"
+        }
+        return kind + " · " + L("\(store.total) pictures")
+    }
+
+    /// The tree's All Images, where another of its collections is chosen.
+    private func showWholeProject() async {
+        guard let all = store.tree.fixed.first(where: { $0.kind == .allImages }), store.selectedCollectionID != all.id else { return }
+        await store.select(collection: all.id)
     }
 
     private func sourceName(_ s: MacSource) -> String {
@@ -289,9 +429,9 @@ struct MacLibrarySidebar: View {
             SidebarLine(depth: row.depth, selected: on,
                         disclosure: n.children.isEmpty ? nil : !browser.folded.contains(n.id),
                         disclose: { fold(n.id) }) {
-                Image(systemName: MacWords.symbol(n)).font(MacMetric.font(12)).foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
+                Image(systemName: MacWords.symbol(n)).font(MacMetric.font(12)).foregroundStyle(on ? Theme.accent : Theme.secondaryText)
             } label: {
-                Text(MacWords.title(n)).font(MacMetric.font(13)).foregroundStyle(on ? Theme.onSelection : Theme.text)
+                Text(MacWords.title(n)).font(MacMetric.font(13)).foregroundStyle(Theme.text)
             } trailing: {
                 if let c = Self.count(n) { Count(value: c, selected: on) }
             } action: {
@@ -534,26 +674,7 @@ struct MacLibrarySidebar: View {
     private var bottomBar: some View {
         @Bindable var browser = browser
         return HStack(spacing: MacMetric.pt(6)) {
-            Menu {
-                Button(action: openSource) { Label(L("Open Catalog or Folder…"), systemImage: "camera.aperture") }
-                // The Mac's import flow (a Finder panel, then the import page, `MacImportFlow`), not the window's sheet.
-                Button { browser.askImport(store) } label: { Label(L("Import…"), systemImage: "square.and.arrow.down") }
-                Button { run { await MacCatalogActions.newCatalog(store) } } label: { Label(L("New Catalog…"), systemImage: "plus.rectangle.on.folder") }
-                catalogCommands
-                if let s = store.selectedSource {
-                    Button { Task { await store.synchronize(s.id) } } label: { Label(L("Read Again"), systemImage: "arrow.clockwise") }
-                    Button(role: .destructive) { store.remove(source: s.id) } label: { Label(L("Remove from List"), systemImage: "minus.circle") }
-                }
-                Divider()
-                // The Mac's Settings page (Sources/Mac/Settings), on its Sources section or its first.
-                Button(action: plusSources) { Label(L("Sources"), systemImage: "externaldrive") }
-                Button(action: plusSettings) { Label(L("Settings"), systemImage: "gearshape") }
-            } label: {
-                Image(systemName: "plus").font(MacMetric.font(11, .medium)).foregroundStyle(Theme.secondaryText)
-                    .frame(width: MacMetric.pt(22), height: MacMetric.pt(20)).contentShape(Rectangle())
-            }
-            .menuIndicator(.hidden)
-            .accessibilityLabel(L("Add"))
+            // FilmLab: no "+" menu — catalogs, folders and imports are the home page's; the Filter field stays.
             HStack(spacing: MacMetric.pt(4)) {
                 Image(systemName: "line.3.horizontal.decrease").font(MacMetric.font(9)).foregroundStyle(Theme.dim)
                 TextField(L("Filter"), text: $browser.rowFilter)
@@ -630,7 +751,7 @@ private struct SidebarLine<Glyph: View, Label: View, Trailing: View>: View {
                     Button(action: disclose) {
                         Image(systemName: "chevron.right")
                             .font(MacMetric.font(9, .bold))
-                            .foregroundStyle(selected ? Theme.onSelection.opacity(0.7) : Theme.dim)
+                            .foregroundStyle(Theme.dim)
                             .rotationEffect(.degrees(disclosure ? 90 : 0))
                             .frame(width: MacMetric.pt(14), height: MacMetric.pt(20)).contentShape(Rectangle())
                     }
@@ -655,7 +776,8 @@ private struct SidebarLine<Glyph: View, Label: View, Trailing: View>: View {
         .padding(.leading, MacMetric.pt(2))
         .padding(.trailing, MacMetric.pt(8))
         .background {
-            if selected { RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous).fill(Theme.selection) }
+            // FilmLab 暗房 (design A): the chosen line raised, its glyph amber — not filled white.
+            if selected { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.card) }
         }
         .padding(.horizontal, MacMetric.pt(6))
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -667,7 +789,7 @@ private struct Count: View {
     let selected: Bool
     var body: some View {
         Text(value.formatted()).font(MacMetric.font(12)).monospacedDigit()
-            .foregroundStyle(selected ? Theme.onSelection.opacity(0.6) : Theme.dim)
+            .foregroundStyle(Theme.dim)
             .fixedSize()
     }
 }

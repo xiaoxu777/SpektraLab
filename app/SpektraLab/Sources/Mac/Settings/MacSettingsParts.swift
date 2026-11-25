@@ -44,7 +44,8 @@ struct MacSettingsGroup<Content: View, Accessory: View>: View {
         VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
             if let title {
                 HStack(alignment: .lastTextBaseline, spacing: MacMetric.pt(8)) {
-                    Text(capitals ? title.uppercased() : title).font(MacMetric.font(capitals ? 11 : 12, .semibold)).tracking(capitals ? 0.4 : 0).foregroundStyle(Theme.dim)
+                    // Design A: group titles in their own case, quiet, as the column's sections (2026-11-24).
+                    Text(title).font(MacMetric.font(12, .semibold)).foregroundStyle(Theme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     Spacer(minLength: 0)
@@ -54,8 +55,8 @@ struct MacSettingsGroup<Content: View, Accessory: View>: View {
             }
             VStack(spacing: 0) { content() }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.panel, in: RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).strokeBorder(Theme.wall, lineWidth: 1))
+                .background(Theme.background.opacity(0.55), in: RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous).strokeBorder(Theme.rule, lineWidth: 1))
             if let footer {
                 MacSettingsCaption(footer).padding(.horizontal, MacMetric.pt(4))
             }

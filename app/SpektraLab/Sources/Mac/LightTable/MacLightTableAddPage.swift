@@ -70,20 +70,20 @@ struct MacLightTableAddPage: View {
             Text(L("Add to Light Table")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
                 .frame(maxWidth: .infinity)
                 .frame(height: MacMetric.pt(MacMetric.gridHeader))
-                .background(Theme.panel)
+                .background(Theme.chrome)   // design A, as the import page
                 .accessibilityAddTraits(.isHeader)
             Rectangle().fill(Theme.wall).frame(height: 1)
             HStack(spacing: 0) {
                 column(days)
                     .frame(width: MacMetric.pt(Self.columnWidth))
-                    .background(Theme.panel)
+                    .background(Theme.background)
                 Rectangle().fill(Theme.wall).frame(width: 1)
                 VStack(spacing: 0) {
                     header(rows)
                     Rectangle().fill(Theme.wall).frame(height: 1)
                     if rows.isEmpty { emptyGrid(days.isEmpty) } else { grid(rows) }
                 }
-                .background(Theme.background)
+                .background(Theme.well)
             }
             Rectangle().fill(Theme.wall).frame(height: 1)
             bottomBar(rows, chosen: chosen)
@@ -159,7 +159,7 @@ struct MacLightTableAddPage: View {
     }
 
     private func heading(_ title: String) -> some View {
-        Text(title.uppercased()).font(MacMetric.font(11, .semibold)).tracking(0.4).foregroundStyle(Theme.dim)
+        Text(title).font(MacMetric.font(12.5, .semibold)).foregroundStyle(Theme.text)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, MacMetric.pt(12))
             .padding(.top, MacMetric.pt(12))
@@ -173,8 +173,7 @@ struct MacLightTableAddPage: View {
             if on { hiddenDays.insert(d.day) } else { hiddenDays.remove(d.day) }
         } label: {
             HStack(spacing: MacMetric.pt(7)) {
-                Image(systemName: on ? "checkmark.square.fill" : "square")
-                    .font(MacMetric.font(13)).foregroundStyle(on ? Theme.accent : Theme.dim)
+                FilmLabCheckMark(on: on)
                     .frame(width: MacMetric.pt(16))
                 Text(d.day.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(Language.shared.current.locale)))
                     .font(MacMetric.font(13)).foregroundStyle(Theme.text)
@@ -217,7 +216,7 @@ struct MacLightTableAddPage: View {
         }
         .padding(.horizontal, MacMetric.pt(10))
         .frame(height: MacMetric.pt(MacMetric.gridHeader))
-        .background(Theme.panel)
+        .background(Theme.background)
     }
 
     private func emptyGrid(_ none: Bool) -> some View {
@@ -341,8 +340,8 @@ struct MacLightTableAddPage: View {
         }
         .padding(.horizontal, MacMetric.pt(14))
         .frame(maxWidth: .infinity)
-        .frame(height: MacMetric.pt(44))
-        .background(Theme.panel)
+        .frame(height: MacMetric.pt(46))
+        .background(Theme.chrome)
     }
 
     /// The selection's keys, as the library's and the import page's.
@@ -404,9 +403,9 @@ private struct MacAddButtonStyle: ButtonStyle {
             .font(MacMetric.font(13, kind == .primary ? .semibold : .medium))
             .foregroundStyle(kind == .primary ? Theme.onSelection : Theme.text)
             .padding(.horizontal, MacMetric.pt(14))
-            .frame(height: MacMetric.pt(28))
+            .frame(height: MacMetric.pt(30))
             .background(kind == .primary ? Theme.accent : Theme.card,
-                        in: RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous))
+                        in: RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous))
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : Theme.disabledOpacity)
             .fixedSize()
             .contentShape(Rectangle())

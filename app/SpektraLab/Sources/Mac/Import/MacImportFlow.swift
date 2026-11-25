@@ -293,7 +293,7 @@ private struct MacImportPage: View {
             HStack(spacing: 0) {
                 MacImportColumn(session: session, choose: ask, naming: $naming)
                     .frame(width: MacMetric.pt(Self.columnWidth))
-                    .background(Theme.panel)
+                    .background(Theme.background)   // design A: as 图库's sidebar
                 Rectangle().fill(Theme.wall).frame(width: 1)
                 MacImportBrowser(session: session)
             }
@@ -399,10 +399,13 @@ private struct MacImportPage: View {
     // MARK: the bars
 
     private var titleBar: some View {
-        Text(L("Import Images")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
+        HStack(spacing: MacMetric.pt(8)) {
+            Image(systemName: "square.and.arrow.down").font(MacMetric.font(12, .semibold)).foregroundStyle(Theme.accent)
+            Text(L("Import Images")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
+        }
             .frame(maxWidth: .infinity)
             .frame(height: MacMetric.pt(MacMetric.gridHeader))
-            .background(Theme.panel)
+            .background(Theme.chrome)
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -444,8 +447,8 @@ private struct MacImportPage: View {
         }
         .padding(.horizontal, MacMetric.pt(14))
         .frame(maxWidth: .infinity)
-        .frame(height: MacMetric.pt(44))
-        .background(Theme.panel)
+        .frame(height: MacMetric.pt(46))
+        .background(Theme.chrome)
     }
 
     /// The run's progress, the scan's, or why the import cannot start.
@@ -573,7 +576,7 @@ private struct MacImportColumn: View {
 
     private var importFrom: some View {
         VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            MacImportHeading(title: L("Import From"))
+            MacImportHeading(title: L("Import From"), value: session.files.isEmpty ? nil : L("\(session.files.count.formatted()) pictures"), rule: false)
             HStack(spacing: MacMetric.pt(8)) {
                 Image(systemName: "folder").font(MacMetric.font(13)).foregroundStyle(Theme.secondaryText).frame(width: MacMetric.pt(16))
                 VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
@@ -619,7 +622,7 @@ private struct MacImportColumn: View {
 
     private var importTo: some View {
         VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            MacImportHeading(title: L("Import To"))
+            MacImportHeading(title: L("Import To"), value: session.destinationSource?.name)
             destinationMenu
                 .padding(.horizontal, MacMetric.pt(12))
                 .padding(.vertical, MacMetric.pt(3))
@@ -679,7 +682,9 @@ private struct MacImportColumn: View {
             }
             .padding(.horizontal, MacMetric.pt(8))
             .frame(minHeight: MacMetric.pt(24))
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous))
+            .frame(minHeight: MacMetric.pt(28))
+            .background(Theme.well, in: RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).strokeBorder(Theme.rule, lineWidth: 1))
         }
         .menuIndicator(.hidden)
         .accessibilityLabel(L("Import To"))
@@ -718,8 +723,9 @@ private struct MacImportColumn: View {
 
     private var filters: some View {
         VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            MacImportHeading(title: L("Filters"))
-            Text(L("Format")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
+            MacImportHeading(title: L("Filters"), value: session.formats.count + session.days.count > 0
+                             ? L("\((session.formats.count + session.days.count).formatted()) on") : nil)
+            Text(L("Format")).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
                 .padding(.horizontal, MacMetric.pt(12)).padding(.top, MacMetric.pt(2))
             ForEach(session.formatCounts, id: \.format) { f in
                 MacImportCheckRow(title: f.format, count: f.count, on: Binding(
@@ -728,7 +734,7 @@ private struct MacImportColumn: View {
             }
             let days = session.dayCounts
             if !days.isEmpty {
-                Text(L("Date Taken")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
+                Text(L("Date Taken")).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
                     .padding(.horizontal, MacMetric.pt(12)).padding(.top, MacMetric.pt(6))
                 ForEach(days, id: \.day) { d in
                     MacImportCheckRow(title: Self.dayTitle(d.day), count: d.count, on: Binding(
@@ -778,7 +784,7 @@ private struct MacImportBrowser: View {
                 content
             }
         }
-        .background(Theme.background)
+        .background(Theme.well)
     }
 
     /// The least the viewer keeps beside the browser, Mac points (the floating browser's, `FloatingBrowser.limit`).
@@ -839,7 +845,7 @@ private struct MacImportBrowser: View {
         }
         .padding(.horizontal, MacMetric.pt(10))
         .frame(height: MacMetric.pt(MacMetric.gridHeader))
-        .background(Theme.panel)
+        .background(Theme.background)
     }
 
     @ViewBuilder private var content: some View {
@@ -914,7 +920,7 @@ private struct MacImportBrowser: View {
                     .padding(.bottom, MacMetric.pt(24))
                 }
                 .scrollIndicators(.automatic)
-                .background(Theme.background)
+                .background(Theme.well)   // design A: the pictures on the well, as 图库's grid
                 .onChange(of: browser.scrollTarget) { _, id in
                     guard let id else { return }
                     proxy.scrollTo(id)
@@ -966,10 +972,14 @@ private struct MacImportCheckBox: View {
     }
 
     var body: some View {
-        Image(systemName: on ? "checkmark.square.fill" : "square")
-            .font(MacMetric.font(14, .medium))
-            .foregroundStyle(on ? Theme.accent : Theme.text.opacity(0.85))
-            .background { RoundedRectangle(cornerRadius: MacMetric.pt(3), style: .continuous).fill(Color.black.opacity(on ? 0 : 0.35)).padding(1) }
+        ZStack {
+            if on {
+                FilmLabCheckMark(on: true, size: 15)
+            } else {
+                RoundedRectangle(cornerRadius: MacMetric.pt(4), style: .continuous).fill(Color.black.opacity(0.35))
+                RoundedRectangle(cornerRadius: MacMetric.pt(4), style: .continuous).strokeBorder(Color.white.opacity(0.85), lineWidth: 1.5)
+            }
+        }
             .frame(width: Self.box, height: Self.box)
             .padding(Self.margin)
             .contentShape(Rectangle())
@@ -997,16 +1007,59 @@ private struct MacImportDebugFrame: ViewModifier {
     }
 }
 
-/// A section's heading: small capitals in `dim`, as the sidebar's.
+/// A section's heading (design A, 2026-11-24): the column's own — its title in its own case, what it is set to at the
+/// right, a hairline above it (none over the first).
 private struct MacImportHeading: View {
     let title: String
+    var value: String? = nil
+    var rule = true
     var body: some View {
-        Text(title.uppercased()).font(MacMetric.font(11, .semibold)).tracking(0.4).foregroundStyle(Theme.dim)
-            .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 0) {
+            if rule { Rectangle().fill(Theme.rule).frame(height: 1).padding(.top, MacMetric.pt(10)) }
+            HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(8)) {
+                Text(title).font(MacMetric.font(12.5, .semibold)).foregroundStyle(Theme.text)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: MacMetric.pt(6))
+                if let value {
+                    Text(value).font(MacMetric.font(11.5)).monospacedDigit().foregroundStyle(Theme.dim).lineLimit(1)
+                }
+            }
             .padding(.horizontal, MacMetric.pt(12))
-            .padding(.top, MacMetric.pt(12))
-            .frame(minHeight: MacMetric.pt(24), alignment: .bottomLeading)
-            .accessibilityAddTraits(.isHeader)
+            .padding(.top, MacMetric.pt(10))
+            .padding(.bottom, MacMetric.pt(4))
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// Design A's check box: a 14 pt rounded square, a hairline when off, amber with a dark tick when on.
+struct FilmLabCheckMark: View {
+    let on: Bool
+    var size: CGFloat = 14
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: MacMetric.pt(size * 0.29), style: .continuous)
+        ZStack {
+            if on {
+                shape.fill(Theme.accent)
+                Image(systemName: "checkmark").font(.system(size: MacMetric.pt(size * 0.62), weight: .heavy))
+                    .foregroundStyle(Theme.onSelection)
+            } else {
+                shape.strokeBorder(Theme.dim, lineWidth: 1.5)
+            }
+        }
+        .frame(width: MacMetric.pt(size), height: MacMetric.pt(size))
+    }
+}
+
+/// Design A's radio button: a ring, amber with a dot when on.
+struct FilmLabRadioMark: View {
+    let on: Bool
+    var body: some View {
+        ZStack {
+            Circle().strokeBorder(on ? Theme.accent : Theme.dim, lineWidth: 1.5)
+            if on { Circle().fill(Theme.accent).padding(MacMetric.pt(3.5)) }
+        }
+        .frame(width: MacMetric.pt(14), height: MacMetric.pt(14))
     }
 }
 
@@ -1021,8 +1074,7 @@ private struct MacImportCheckRow: View {
     var body: some View {
         Button { on.toggle() } label: {
             HStack(spacing: MacMetric.pt(7)) {
-                Image(systemName: on ? "checkmark.square.fill" : "square")
-                    .font(MacMetric.font(13)).foregroundStyle(on ? Theme.accent : Theme.dim)
+                FilmLabCheckMark(on: on)
                     .frame(width: MacMetric.pt(16))
                 Text(title).font(MacMetric.font(13)).foregroundStyle(Theme.text)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1050,10 +1102,10 @@ private struct MacImportRadioRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(7)) {
-                Image(systemName: on ? "largecircle.fill.circle" : "circle")
-                    .font(MacMetric.font(13)).foregroundStyle(on ? Theme.accent : Theme.dim)
+            HStack(alignment: .top, spacing: MacMetric.pt(7)) {
+                FilmLabRadioMark(on: on)
                     .frame(width: MacMetric.pt(16))
+                    .padding(.top, MacMetric.pt(2))
                 VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
                     Text(title).font(MacMetric.font(13)).foregroundStyle(Theme.text)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1086,10 +1138,10 @@ struct MacImportButtonStyle: ButtonStyle {
         configuration.label
             .font(MacMetric.font(small ? 11 : 13, kind == .primary ? .semibold : .medium))
             .foregroundStyle(kind == .primary ? Theme.onSelection : Theme.text)
-            .padding(.horizontal, MacMetric.pt(small ? 8 : 14))
-            .frame(height: MacMetric.pt(small ? 20 : 28))
+            .padding(.horizontal, MacMetric.pt(small ? 9 : 16))
+            .frame(height: MacMetric.pt(small ? 22 : 30))
             .background(kind == .primary ? Theme.accent : Theme.card,
-                        in: RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous))
+                        in: RoundedRectangle(cornerRadius: MacMetric.pt(small ? 6 : 8), style: .continuous))
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : Theme.disabledOpacity)
             .fixedSize()
             .contentShape(Rectangle())

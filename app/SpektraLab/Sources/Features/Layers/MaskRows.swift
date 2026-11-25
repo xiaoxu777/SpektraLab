@@ -211,7 +211,7 @@ struct MaskToolRow: View {
     private func slot(_ tool: MaskTool) -> some View {
         let lit = tools.lit == tool
         return Button { tools.click(tool) } label: {
-            MaskGlyph(symbol: tool.symbol, size: 13, color: lit ? Theme.onSelection : Theme.secondaryText)
+            MaskGlyph(symbol: tool.symbol, size: 13, color: lit ? Theme.text : Theme.secondaryText)
                 .frame(width: 28, height: 24)
                 .background { if lit { RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.accent) } }
                 .frame(width: 30, height: 28).contentShape(Rectangle())
@@ -242,7 +242,7 @@ struct MaskLayerRowView: View {
     private var thumbnails: MaskThumbnails { .shared }
 
     private var off: Bool { row.eye == .off }
-    private var ink: Color { picked ? Theme.onSelection : Theme.text }
+    private var ink: Color { picked ? Theme.text : Theme.text }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -251,7 +251,7 @@ struct MaskLayerRowView: View {
                 .frame(width: 30, height: 20)
                 .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .strokeBorder(picked ? Theme.onSelection.opacity(0.35) : Theme.rule, lineWidth: 0.5))
+                    .strokeBorder(picked ? Theme.text.opacity(0.35) : Theme.rule, lineWidth: 0.5))
                 .opacity(off && !picked ? Theme.disabledOpacity : 1)
                 .padding(.leading, 6)
             name.padding(.leading, 10)
@@ -261,8 +261,10 @@ struct MaskLayerRowView: View {
         .padding(.leading, 6).padding(.trailing, 10)
         .frame(height: 28)
         .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(picked ? Theme.selection : hovering ? Theme.card.opacity(0.5) : .clear)
+            // FilmLab 暗房 (design A): the picked row raised with a hairline, not filled white.
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(picked ? Theme.field : .clear, lineWidth: 1)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(picked ? Theme.card : hovering ? Theme.card.opacity(0.5) : .clear))
         }
         .contentShape(Rectangle())
         .onTapGesture(count: 2) { startRenaming() }
@@ -309,7 +311,7 @@ struct MaskLayerRowView: View {
     private var eye: some View {
         Button { session.setLayerOn(layer.id, !layer.on) } label: {
             Image(systemName: off ? "eye.slash" : "eye").font(.system(size: 11, weight: .medium))
-                .foregroundStyle(picked ? Theme.onSelection.opacity(off ? 0.45 : 0.8) : Theme.secondaryText.opacity(off ? 0.6 : 0.75))
+                .foregroundStyle(picked ? Theme.text.opacity(off ? 0.45 : 0.8) : Theme.secondaryText.opacity(off ? 0.6 : 0.75))
                 .frame(width: 20, height: 28).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -356,10 +358,10 @@ struct MaskLayerRowView: View {
             }
             if let opacity = row.opacityText {
                 Text(opacity).font(Theme.Font.ui(12, .medium).monospacedDigit())
-                    .foregroundStyle(picked ? Theme.onSelection.opacity(0.75) : Theme.secondaryText).lineLimit(1)
+                    .foregroundStyle(picked ? Theme.text.opacity(0.75) : Theme.secondaryText).lineLimit(1)
             }
             Text(MaskRules.word(layer.stage)).font(Theme.Font.ui(12, .medium))
-                .foregroundStyle(picked ? Theme.onSelection.opacity(0.75) : Theme.dim).lineLimit(1)
+                .foregroundStyle(picked ? Theme.text.opacity(0.75) : Theme.dim).lineLimit(1)
         }
         .opacity(off && !picked ? Theme.disabledOpacity : 1)
     }

@@ -420,6 +420,13 @@ struct MacImportDropZone: UIViewRepresentable {
 
         func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
             let v = verdict(session), ok = MacImportDrop.accepts(router)
+            // FilmLab: the home page, the new-project sheet and an open project take the photos themselves
+            // (`FilmLabDrop`), with no 松手即导入 note of the import page's.
+            if v.takes, ok, FilmLabDrop.shared.routes() {
+                watch.apply { $0.exited() }
+                if let host { FilmLabDrop.shared.moved(to: session.location(in: host)) }
+                return UIDropProposal(operation: .copy)
+            }
             // An update after a click took the note down brings nothing back (`MacDropNoteState.updated`).
             watch.apply { $0.updated(v, accepting: ok) }
             return UIDropProposal(operation: v.takes && ok ? .copy : .forbidden)
@@ -427,16 +434,23 @@ struct MacImportDropZone: UIViewRepresentable {
 
         func dropInteraction(_ interaction: UIDropInteraction, sessionDidExit session: UIDropSession) {
             watch.apply { $0.exited() }
+            FilmLabDrop.shared.left()
         }
 
         func dropInteraction(_ interaction: UIDropInteraction, sessionDidEnd session: UIDropSession) {
             watch.apply { $0.ended() }
+            FilmLabDrop.shared.left()
         }
 
         func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
             Log.note(.library, "mac drop: dropped", ["verdict": verdict(session).rawValue, "items": session.items.count])
             watch.apply { $0.dropped() }
             guard verdict(session).takes else { return }
+            if MacImportDrop.accepts(router), FilmLabDrop.shared.routes() {
+                if let host { FilmLabDrop.shared.moved(to: session.location(in: host)) }
+                FilmLabDrop.shared.perform(session.items.map(\.itemProvider), router: router)
+                return
+            }
             _ = MacImportDrop.perform(session.items.map(\.itemProvider), router: router)
         }
     }

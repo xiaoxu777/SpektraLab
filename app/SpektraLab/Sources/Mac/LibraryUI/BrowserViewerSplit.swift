@@ -200,8 +200,9 @@ struct MacColorTag: View {
     let label: MacColorLabel?
     var body: some View {
         if let label, let colour = MacWords.color(label.rawValue) {
-            RoundedRectangle(cornerRadius: MacMetric.pt(1.5), style: .continuous).fill(colour)
-                .frame(width: MacMetric.pt(8), height: MacMetric.pt(8))
+            // FilmLab 暗房 (design A): a short bar, never read as a film's dot.
+            Capsule().fill(colour)
+                .frame(width: MacMetric.pt(16), height: MacMetric.pt(4))
                 .accessibilityLabel(MacWords.colorName(label.rawValue))
         }
     }

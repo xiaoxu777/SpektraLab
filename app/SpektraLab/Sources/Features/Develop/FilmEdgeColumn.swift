@@ -48,8 +48,8 @@ struct ColumnSectionHeader<Accessory: View>: View {
     /// The hairline above it; a section folding inside another has none.
     var rule = true
     var indent: CGFloat = 0
-    /// FilmLab 暗房 (design A): what the section is set to, said beside its name while it is folded ("+0.3 EV · 5500 K"),
-    /// so a folded section still tells what it holds. Nil or empty: nothing.
+    /// FilmLab 暗房 (design A): what the section is set to, at the header's right, folded or open ("+0.3 EV · 5500 K"),
+    /// so a section tells what it holds at a glance. Nil or empty: nothing.
     var value: String? = nil
     let toggleFold: () -> Void
     @ViewBuilder var accessory: () -> Accessory
@@ -63,8 +63,9 @@ struct ColumnSectionHeader<Accessory: View>: View {
             FoldHeader(open: !folded, indent: indent, toggle: fold) {
                 HStack(spacing: 8) {
                     FoldTitle(title, open: !folded)
-                    if folded, let value, !value.isEmpty {
-                        Text(value).font(Theme.Font.note).foregroundStyle(Theme.dim)
+                    if let value, !value.isEmpty {
+                        Spacer(minLength: 8)
+                        Text(value).font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
                             .lineLimit(1).truncationMode(.tail)
                     }
                 }

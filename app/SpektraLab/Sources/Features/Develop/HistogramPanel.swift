@@ -59,10 +59,10 @@ struct HistogramPanel: View {
                 footer.frame(height: Self.footer)
             }
         }
-        .padding(.horizontal, 14)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.plot))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(.horizontal, 12).padding(.vertical, Self.margin)
+        // FilmLab 暗房 (design A): a flat section of the column, no card — the column's margin, a hairline under it.
+        .padding(.horizontal, 16)
+        .padding(.vertical, Self.margin)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 0.5) }
         .onChange(of: collapsed) { _, folded in
             if folded { session.layer2.releaseHistogram(holder) } else { session.layer2.holdHistogram(holder) }
         }
@@ -124,7 +124,7 @@ struct HistogramPanel: View {
         return HStack(spacing: 0) {
             ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
                 if i > 0 { Spacer(minLength: 8) }
-                Text(part).font(Theme.Font.ui(11, .medium)).foregroundStyle(Theme.secondaryText).lineLimit(1)
+                Text(part).font(Theme.Font.ui(10.5, .medium)).monospacedDigit().foregroundStyle(Theme.dim).lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, alignment: parts.count == 1 ? .leading : .center)

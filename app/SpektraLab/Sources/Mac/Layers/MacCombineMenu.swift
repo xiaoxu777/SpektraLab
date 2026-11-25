@@ -65,10 +65,10 @@ struct MacCombineMenu: View {
                 Image(systemName: "chevron.down").font(.system(size: MacMetric.pt(8), weight: .bold)).foregroundStyle(Theme.secondaryText)
             }
             .foregroundStyle(Theme.text)
-            .padding(.horizontal, MacMetric.pt(11))
-            .frame(height: MacMetric.pt(28))
-            .background(Capsule().fill(Theme.card))
-            .contentShape(Capsule())
+            .padding(.horizontal, MacMetric.pt(9))
+            .frame(height: MacMetric.pt(24))
+            .background(RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.card))   // design A: as Copy / Paste
+            .contentShape(Rectangle())
         }
         .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
         .accessibilityLabel(L("Combine"))

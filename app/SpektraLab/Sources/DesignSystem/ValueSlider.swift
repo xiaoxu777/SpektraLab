@@ -179,18 +179,27 @@ struct SliderTrack: View {
             let _ = SliderProbe.laidOut()
             #endif
             ZStack(alignment: .leading) {
-                // The bar: the same grey as Capture One's, or the control's own colours.
-                Rectangle().fill(fill).frame(height: 3)
+                // FilmLab 暗房 (design A): a 4 pt rounded bar — the control's own colours, or grey with the stretch
+                // from rest to the value lit — a tick at rest, and a round light knob.
+                Capsule().fill(fill).frame(height: 4)
+                if colours == nil, tint == nil, range.contains(rest) {
+                    let a = m.x(rest), b = knobX
+                    Capsule().fill(Theme.dim)
+                        .frame(width: max(abs(b - a), 0), height: 4)
+                        .offset(x: min(a, b))
+                        .allowsHitTesting(false)
+                }
                 if showsRest, range.contains(rest) {
                     Rectangle().fill(Theme.secondaryText.opacity(0.55))
-                        .frame(width: 1, height: 11)
+                        .frame(width: 1, height: 10)
                         .offset(x: m.x(rest))
                         .allowsHitTesting(false)
                 }
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Theme.selection)
-                    .frame(width: 9, height: 19)
-                    .shadow(color: .black.opacity(0.28), radius: 1.5, y: 0.5)
+                Circle()
+                    .fill(Theme.knob)
+                    .frame(width: 2 * SliderMapping.knobHalfWidth, height: 2 * SliderMapping.knobHalfWidth)
+                    .shadow(color: .black.opacity(0.45), radius: 1.5, y: 1)
+                    .overlay { Circle().stroke(Color.black.opacity(0.12), lineWidth: 0.5) }
                     .scaleEffect(drag != nil && !calm ? 1.12 : 1)
                     .offset(x: knobX - SliderMapping.knobHalfWidth)
             }

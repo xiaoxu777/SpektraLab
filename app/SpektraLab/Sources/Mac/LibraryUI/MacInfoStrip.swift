@@ -68,8 +68,7 @@ struct MacInfoStrip: View {
                 .frame(width: geo.size.width, height: geo.size.height)
         }
         .frame(height: Self.height)
-        .background(Theme.well)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.wall).frame(height: 1) }
+        .background(Theme.well)   // design A: a quiet line in the well under the picture, no rule above it
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("mac.infostrip")
     }
@@ -101,7 +100,7 @@ struct MacInfoStrip: View {
             #if DEBUG
             let _ = MacInfoStrip.drawn = (status?.text, fit.status, width)
             #endif
-            let name = Text(image.fileName).font(MacMetric.font(Self.size, .medium)).foregroundStyle(Theme.text).fixedSize()
+            let name = Text(image.fileName).font(MacMetric.font(Self.size, .medium)).foregroundStyle(Theme.secondaryText).fixedSize()
             ZStack {
                 HStack(spacing: 0) {
                     leading(fit)
@@ -124,14 +123,14 @@ struct MacInfoStrip: View {
     /// The exposure and the develop's line, as far as they fit.
     @ViewBuilder private func leading(_ fit: Fit) -> some View {
         if !fit.exposure.isEmpty {
-            Text(fit.exposure).font(MacMetric.font(Self.size)).foregroundStyle(Theme.secondaryText).fixedSize()
+            Text(fit.exposure).font(MacMetric.font(Self.size)).monospacedDigit().foregroundStyle(Theme.dim).fixedSize()
             Spacer().frame(width: gap)
         }
         if let line = fit.status {
             HStack(spacing: MacMetric.pt(5)) {
                 Circle().fill(status?.busy == true ? Theme.accent : Theme.secondaryText)
                     .frame(width: MacMetric.pt(6), height: MacMetric.pt(6))
-                Text(line).font(MacMetric.font(Self.size)).foregroundStyle(Theme.secondaryText).fixedSize()
+                Text(line).font(MacMetric.font(Self.size)).foregroundStyle(Theme.dim).fixedSize()
             }
             Spacer().frame(width: gap)
         }

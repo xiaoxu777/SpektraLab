@@ -100,19 +100,26 @@ final class FilmLabImport {
 
     private func copy(_ source: URL, store: any MacLibraryData, router: AppRouter, done: @escaping () -> Void) {
         let target = folder.appendingPathComponent(source.lastPathComponent, isDirectory: true)
-        run = Run(name: source.lastPathComponent)
+        copyItems([source], into: target, name: source.lastPathComponent) { [weak self] in
+            await self?.open(target, store: store, router: router, done: done)
+        }
+    }
+
+    /// Every picture among `items` — a dropped file as it is, a folder's pictures with their sub-folders — copied
+    /// into `target`, then `landed` (when anything is there). Skips what is there already; never overwrites.
+    private func copyItems(_ items: [URL], into target: URL, name: String, landed: @escaping () async -> Void) {
+        run = Run(name: name)
         task = Task {
-            let files = await Task.detached(priority: .userInitiated) { Self.pictures(under: source) }.value
-            run?.total = files.count
-            guard !files.isEmpty else {
+            let jobs = await Task.detached(priority: .userInitiated) { Self.jobs(items, into: target) }.value
+            run?.total = jobs.count
+            guard !jobs.isEmpty else {
                 run?.finished = true
                 run?.problem = L("There are no photographs in this folder.")
                 return
             }
-            for file in files {
+            for (file, dest) in jobs {
                 if Task.isCancelled { break }
-                let rel = String(file.path.dropFirst(source.path.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                let outcome = await Task.detached(priority: .userInitiated) { Self.copyOne(file, to: target.appendingPathComponent(rel)) }.value
+                let outcome = await Task.detached(priority: .userInitiated) { Self.copyOne(file, to: dest) }.value
                 switch outcome {
                 case .copied: run?.copied += 1
                 case .skipped: run?.skipped += 1
@@ -125,15 +132,103 @@ final class FilmLabImport {
             let stopped = Task.isCancelled
             run?.finished = true
             if stopped { run?.problem = L("The import was stopped. What was copied is kept.") }
-            if (run?.copied ?? 0) + (run?.skipped ?? 0) > 0 {
-                await open(target, store: store, router: router, done: done)
-            }
+            if (run?.copied ?? 0) + (run?.skipped ?? 0) > 0 { await landed() }
+            MacImportDrop.discard(items)   // a drop's temporary copies (another app's promise), if any; else nothing
             // The note stays a moment, so "you can take the card out" is read.
             if !stopped, run?.problem == nil {
                 try? await Task.sleep(for: .seconds(2.5))
                 if run?.finished == true, run?.problem == nil { run = nil }
             }
         }
+    }
+
+    /// Each picture of `items` and where it goes under `target`: a file at the top, a folder's with its own sub-folders.
+    private nonisolated static func jobs(_ items: [URL], into target: URL) -> [(URL, URL)] {
+        var out: [(URL, URL)] = []
+        for item in items {
+            var dir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: item.path, isDirectory: &dir) else { continue }
+            if dir.boolValue {
+                for file in pictures(under: item) {
+                    let rel = String(file.path.dropFirst(item.path.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                    out.append((file, target.appendingPathComponent(rel)))
+                }
+            } else if FilmLabCopier.pictureExtensions.contains(item.pathExtension.lowercased()) {
+                out.append((item, target.appendingPathComponent(item.lastPathComponent)))
+            }
+        }
+        return out
+    }
+
+    // MARK: projects (the owner, 2026-11-24: "在[主页]来创建项目，然后可以把图拖进项目里")
+
+    /// 新建项目's 创建: copied into `<photo folder>/<name>` and opened as the project; or, leaving them where they are,
+    /// the one folder dropped opened as it is. Loose files are always copied: a project is a folder, and they have none.
+    func createProject(named name: String, items: [URL], copies: Bool, store: any MacLibraryData, router: AppRouter) {
+        guard run?.finished != false, !items.isEmpty else { return }
+        let folders = items.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+        if mode == .inPlace, !copies, items.count == 1, let only = folders.first {
+            Task { await open(only, store: store, router: router, done: {}) }
+            return
+        }
+        let target = Self.freeFolder(folder.appendingPathComponent(Self.folderName(name), isDirectory: true))
+        copyItems(items, into: target, name: name) { [weak self] in
+            await self?.open(target, store: store, router: router, done: {})
+        }
+    }
+
+    /// Whether a project takes photos dropped on it: a folder (copied into it), or a SpektraLab catalog or session
+    /// (imported as it imports, `MacLibraryData.importFiles`). A Capture One catalog is read-only; one offline is away.
+    static func takesPhotos(_ source: MacSource) -> Bool {
+        guard source.url != nil, source.status != .offline else { return false }
+        return source.kind == .folder || source.kind == .catalog || source.kind == .session
+    }
+
+    /// Photos dropped on a project's card, or on 图库's grid: into that project, which is then looked at again.
+    func add(_ items: [URL], to source: MacSource, store: any MacLibraryData) {
+        guard run?.finished != false, Self.takesPhotos(source), let url = source.url else { return }
+        if source.kind == .folder {
+            copyItems(items, into: url, name: source.name) {
+                ProjectCovers.shared.forget(source)
+                await store.synchronize(source.id)
+            }
+        } else {
+            run = Run(name: source.name)
+            task = Task {
+                let files = await Task.detached(priority: .userInitiated) { Self.jobs(items, into: url).map(\.0) }.value
+                run?.total = files.count
+                do {
+                    let n = try await store.importFiles(files, into: source.id, mode: nil)
+                    run?.copied = n
+                    run?.skipped = max(files.count - n, 0)
+                    run?.finished = true
+                    ProjectCovers.shared.forget(source)
+                    try? await Task.sleep(for: .seconds(2.5))
+                    if run?.finished == true, run?.problem == nil { run = nil }
+                } catch {
+                    run?.finished = true
+                    run?.problem = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    /// A project's name as a folder's: no slash or colon, not empty.
+    nonisolated static func folderName(_ name: String) -> String {
+        let cleaned = name.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? L("Untitled Project") : cleaned
+    }
+
+    /// `wanted`, or "wanted 2", "wanted 3"… where a folder of that name already holds something else.
+    nonisolated static func freeFolder(_ wanted: URL) -> URL {
+        let fm = FileManager.default
+        var url = wanted, n = 2
+        while let inside = try? fm.contentsOfDirectory(atPath: url.path), !inside.filter({ !$0.hasPrefix(".") }).isEmpty {
+            url = wanted.deletingLastPathComponent().appendingPathComponent("\(wanted.lastPathComponent) \(n)", isDirectory: true)
+            n += 1
+        }
+        return url
     }
 
     func dismiss() { if run?.finished == true { run = nil } }

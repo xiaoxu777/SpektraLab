@@ -95,13 +95,13 @@ final class LightTableMetalView: MTKView, MTKViewDelegate {
         super.init(frame: .zero, device: controller.renderer?.device)
         colorPixelFormat = LightTableRenderer.pixelFormat
         framebufferOnly = true
-        clearColor = controller.darkDesk ? LightTableRenderer.clearDark : LightTableRenderer.clear
+        clearColor = controller.darkDesk ? LightTableRenderer.clearDarkScreen : LightTableRenderer.clear
         (layer as? CAMetalLayer)?.colorspace = CGColorSpace(name: CGColorSpace.displayP3)
         isOpaque = true
         // A picture of the old shape, while the host turns, is shown at its own size, not
         // stretched to the new one (the table is never drawn out of its proportions).
         layer.contentsGravity = .center
-        backgroundColor = controller.darkDesk ? .black : UIColor(red: 0.913, green: 0.913, blue: 0.922, alpha: 1)
+        backgroundColor = controller.darkDesk ? UIColor(red: 17 / 255, green: 18 / 255, blue: 20 / 255, alpha: 1) : UIColor(red: 0.913, green: 0.913, blue: 0.922, alpha: 1)
         isPaused = true
         enableSetNeedsDisplay = true
         autoResizeDrawable = true

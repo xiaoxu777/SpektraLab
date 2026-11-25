@@ -315,13 +315,20 @@ struct MacLibraryGrid: View {
                     .padding(.bottom, MacMetric.pt(24))
                 }
                 .scrollIndicators(.automatic)
-                .background(Theme.background)
+                .background(Theme.well)
                 .onChange(of: browser.scrollTarget) { _, id in
                     guard let id else { return }
                     if let i = rows.firstIndex(where: { $0.id == id }) { proxy.scrollTo(MacRowLayout.RowID(i / layout.columns)) }
                     browser.scrollTarget = nil
                 }
-                .onAppear { browser.columns = layout.columns }
+                .onAppear {
+                    browser.columns = layout.columns
+                    // FilmLab (2026-11-24): a grid made again (the hidden page under 冲洗 is taken out while the window
+                    // is resized, `ShellContent`) opens on the photo in focus, not at the top.
+                    if let id = browser.focus, let i = rows.firstIndex(where: { $0.id == id }) {
+                        proxy.scrollTo(MacRowLayout.RowID(i / max(layout.columns, 1)), anchor: .center)
+                    }
+                }
                 .onChange(of: layout.columns) { _, n in browser.columns = n }
             }
         }
@@ -537,7 +544,7 @@ struct MacBadgeLine: View {
         MacBadgeRow(gap: MacMetric.pt(4)) {
             HStack(spacing: MacMetric.pt(4)) {
                 if let id = image.develop?.frameID, let frame = library.frame(id) {
-                    StockDot(color: StockCatalog.shared.stock(frame.edit.params.filmStock)?.color ?? Theme.card, diameter: MacMetric.pt(6))
+                    // The film is named on the picture's chip (`MacBrowserCell.filmChip`); the dot is gone.
                     // Its preview is of an edit it no longer has (`MacPreviewStaleness`): Develop Previews.
                     if MacPreviewStaleness.outOfDate(frame, model: model) {
                         Image(systemName: "arrow.triangle.2.circlepath").font(MacMetric.font(9)).foregroundStyle(Theme.secondaryText)
@@ -551,12 +558,19 @@ struct MacBadgeLine: View {
                 }
             }
             .fixedSize()
-            if image.rating > 0 {
-                Text(compactStars ? "★\(image.rating)" : String(repeating: "★", count: image.rating))
-                    .font(MacMetric.font(9)).foregroundStyle(Theme.secondaryText)
+            // FilmLab 暗房 (design A): five stars, the rated ones amber, so a rating is a click away and read at a glance.
+            if compactStars {
+                Text(image.rating > 0 ? "★\(image.rating)" : "")
+                    .font(MacMetric.font(9)).foregroundStyle(Theme.accent)
                     .fixedSize()
             } else {
-                Color.clear.frame(width: 0, height: 0)
+                HStack(spacing: MacMetric.pt(1)) {
+                    ForEach(1...5, id: \.self) { n in
+                        Text("★").font(MacMetric.font(9))
+                            .foregroundStyle(n <= image.rating ? Theme.accent : Theme.starOff)
+                    }
+                }
+                .fixedSize()
             }
             HStack(spacing: MacMetric.pt(4)) {
                 MacColorTag(label: image.colorLabel)
@@ -908,20 +922,38 @@ struct MacBrowserCell: View {
     @Environment(AppServices.self) private var model
 
     var body: some View {
+        // FilmLab 暗房 (design A): the picture with rounded corners, a ring round the picture itself when chosen (not a
+        // card behind the cell), the film it was developed with on a small dark chip at its foot.
+        let radius = MacMetric.pt(4)
         VStack(spacing: 0) {
             shown.frame(width: picture.width, height: picture.height)
+                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .overlay(alignment: .bottomLeading) { filmChip }
+                .overlay {
+                    if selected {
+                        RoundedRectangle(cornerRadius: radius + MacMetric.pt(3), style: .continuous)
+                            .strokeBorder(Theme.selectionFrame, lineWidth: focused ? 2.5 : 2)
+                            .padding(-MacMetric.pt(4))
+                    }
+                }
                 .frame(width: side, height: side)
             MacBadgeLine(image: image).frame(width: side, height: line)
         }
         .padding(pad)
-        .background {
-            if selected {
-                RoundedRectangle(cornerRadius: MacMetric.pt(4), style: .continuous).fill(Theme.card)
-                    .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(4), style: .continuous)
-                        .strokeBorder(Theme.selectionFrame, lineWidth: focused ? 2 : 1.5))
-            }
-        }
         .contentShape(Rectangle())
+    }
+
+    /// The film's short name, where the picture was developed with one and the cell has room for it.
+    @ViewBuilder private var filmChip: some View {
+        if picture.width >= MacMetric.pt(90), let id = image.develop?.frameID, let frame = library.frame(id),
+           frame.edit.appliesFilm, let stock = StockCatalog.shared.stock(frame.edit.params.filmStock) {
+            Text(stock.shortName)
+                .font(MacMetric.font(9, .medium)).foregroundStyle(Color.white.opacity(0.92)).lineLimit(1)
+                .padding(.horizontal, MacMetric.pt(5)).padding(.vertical, MacMetric.pt(1.5))
+                .background(Color.black.opacity(0.6), in: Capsule())
+                .padding(MacMetric.pt(5))
+                .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder private var shown: some View {

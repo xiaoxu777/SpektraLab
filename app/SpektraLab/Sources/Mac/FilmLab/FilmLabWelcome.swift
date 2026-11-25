@@ -89,7 +89,7 @@ struct FilmLabWelcome: View {
                 Button { go(page - 1) } label: {
                     Text(L("Back")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
                         .padding(.horizontal, MacMetric.pt(18)).frame(height: MacMetric.pt(36))
-                        .background(Capsule().fill(Theme.card)).contentShape(Capsule())
+                        .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card)).contentShape(Rectangle())
                 }
                 .buttonStyle(PressScale())
             } else {
@@ -110,9 +110,8 @@ struct FilmLabWelcome: View {
                     Text(page == 0 ? L("Get Started") : L("Next")).font(MacMetric.font(13, .semibold))
                         .foregroundStyle(Theme.onSelection)
                         .padding(.horizontal, MacMetric.pt(22)).frame(height: MacMetric.pt(36))
-                        .background(Capsule().fill(Theme.accent))
-                        .shadow(color: Theme.accent.opacity(0.35), radius: 10, y: 4)
-                        .contentShape(Capsule())
+                        .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.accent))
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PressScale())
                 .keyboardShortcut(.return, modifiers: [])
@@ -122,16 +121,15 @@ struct FilmLabWelcome: View {
                     Button { home.finishWelcome() } label: {
                         Text(L("Later")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
                             .padding(.horizontal, MacMetric.pt(18)).frame(height: MacMetric.pt(36))
-                            .background(Capsule().fill(Theme.card)).contentShape(Capsule())
+                            .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card)).contentShape(Rectangle())
                     }
                     .buttonStyle(PressScale())
                     Button { openFolder() } label: {
                         Text(L("Import Photos…")).font(MacMetric.font(13, .semibold))
                             .foregroundStyle(Theme.onSelection)
                             .padding(.horizontal, MacMetric.pt(22)).frame(height: MacMetric.pt(36))
-                            .background(Capsule().fill(Theme.accent))
-                            .shadow(color: Theme.accent.opacity(0.35), radius: 10, y: 4)
-                            .contentShape(Capsule())
+                            .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.accent))
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(PressScale())
                     .keyboardShortcut(.return, modifiers: [])

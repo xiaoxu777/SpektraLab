@@ -62,6 +62,10 @@ enum Theme {
     static let latitudeInsideEdge = tone(dark: 0xD6D5D2, light: 0x5B5F66)
     static let latitudeBeyond = ground(dark: 0x41464E, light: 0xCCD0D6)
     /// An off switch's track (the operating system's own `#3A3A3C`).
+    /// A slider's round knob (design A): near-white on both grounds, lifted by its shadow.
+    static let knob = tone(dark: 0xF2F0EC, light: 0xFFFFFF)
+    /// A star not given, in the grid's five (design A): seen on the well in both modes, quieter than a given one.
+    static let starOff = tone(dark: 0x3A3C41, light: 0xB4B6BB)
     static let toggleOff = ground(dark: 0x44464B, light: 0xC9CBCF)
     /// The film strip, as an inverted overscan reads (research/overscan/recreate).
     static let rebate = Color(hex: 0x1B120C)

@@ -161,9 +161,10 @@ struct LayersPanel: View {
                 }
             }
         }
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.plot))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(.horizontal, 12).padding(.bottom, Self.margin)
+        // FilmLab 暗房 (design A): a flat section, as the histogram over it.
+        .padding(.horizontal, 2)
+        .padding(.bottom, Self.margin)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 0.5) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("layers.panel")
         // An exposure that has gone takes its eye with it.
@@ -307,7 +308,7 @@ struct LayerRowView: View {
                 .padding(.leading, 6)
             Text(row.name)
                 .font(Theme.Font.ui(13, picked ? .semibold : .medium))
-                .foregroundStyle(picked ? Theme.onSelection : row.isEmpty ? Theme.secondaryText : Theme.text)
+                .foregroundStyle(picked ? Theme.text : row.isEmpty ? Theme.secondaryText : Theme.text)
                 .lineLimit(1)
                 .padding(.leading, 10)
             Spacer(minLength: 8)
@@ -316,8 +317,10 @@ struct LayerRowView: View {
         .padding(.leading, 6).padding(.trailing, 10)
         .frame(height: 28)
         .background {
+            // FilmLab 暗房 (design A): the picked row raised with a hairline, not filled white.
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(picked ? Theme.selection : hovering ? Theme.card : .clear)
+                .strokeBorder(picked ? Theme.field : .clear, lineWidth: 1)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(picked ? Theme.card : hovering ? Theme.card : .clear))
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: pick)
@@ -351,7 +354,7 @@ struct LayerRowView: View {
             Button(action: eye) {
                 Image(systemName: row.eye == .out ? "eye.slash" : "eye")
                     .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(row.eye == .alone ? Theme.accent : picked ? Theme.onSelection.opacity(row.eye == .out ? 0.45 : 0.8)
+                    .foregroundStyle(row.eye == .alone ? Theme.accent : picked ? Theme.text.opacity(row.eye == .out ? 0.45 : 0.8)
                                      : row.eye == .out ? Theme.dim : Theme.secondaryText)
                     .frame(width: 20, height: 28).contentShape(Rectangle())
             }
@@ -366,9 +369,9 @@ struct LayerRowView: View {
         switch row.content {
         case .film:
             ZStack {
-                (picked ? Theme.onSelection.opacity(0.12) : Theme.card)
+                (picked ? Theme.text.opacity(0.12) : Theme.card)
                 Image(systemName: "film").font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(picked ? Theme.onSelection : Theme.secondaryText)
+                    .foregroundStyle(picked ? Theme.accent : Theme.secondaryText)
             }
         case .photograph:
             if let picture { FramePicture(picture: picture, pointSize: 30) } else { Theme.card }
@@ -379,7 +382,7 @@ struct LayerRowView: View {
             }
         case .empty:
             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .strokeBorder(picked ? Theme.onSelection.opacity(0.5) : Theme.dim, style: StrokeStyle(lineWidth: 1, dash: [3, 2]))        case .mask, .watermark:
+                .strokeBorder(picked ? Theme.text.opacity(0.5) : Theme.dim, style: StrokeStyle(lineWidth: 1, dash: [3, 2]))        case .mask, .watermark:
             // A mask layer's row is `MaskLayerRowView`'s, a watermark's `WatermarkLayerRowView`'s, never this one's.
             Color.black
         }
@@ -389,7 +392,7 @@ struct LayerRowView: View {
         if row.isEmpty {
             Button(action: add) {
                 Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(picked ? Theme.onSelection : Theme.accent)
+                    .foregroundStyle(picked ? Theme.text : Theme.accent)
                     .frame(width: 24, height: 24).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -398,10 +401,10 @@ struct LayerRowView: View {
             .accessibilityIdentifier("layers.add." + row.pick.key)
         } else if case .missing = row.content {
             Text(L("Not in the library")).font(Theme.Font.ui(12, .medium))
-                .foregroundStyle(picked ? Theme.onSelection.opacity(0.7) : Theme.dim).lineLimit(1)
+                .foregroundStyle(picked ? Theme.text.opacity(0.7) : Theme.dim).lineLimit(1)
         } else if let share = row.shareText {
             Text(share).font(Theme.Font.ui(12, .medium).monospacedDigit())
-                .foregroundStyle(picked ? Theme.onSelection.opacity(0.75) : Theme.secondaryText).lineLimit(1)
+                .foregroundStyle(picked ? Theme.text.opacity(0.75) : Theme.secondaryText).lineLimit(1)
         }
     }
 }

@@ -1079,6 +1079,22 @@
         }
       }
     },
+    "%@ on" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已开 %@ 项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已開 %@ 項"
+          }
+        }
+      }
+    },
     "%@ on this Mac" : {
       "localizations" : {
         "ja" : {
@@ -1141,6 +1157,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@%"
+          }
+        }
+      }
+    },
+    "%@ photos" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 張照片"
           }
         }
       }
@@ -2861,6 +2893,22 @@
         }
       }
     },
+    "1 folder" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 个文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 個資料夾"
+          }
+        }
+      }
+    },
     "1 frame" : {
       "localizations" : {
         "ja" : {
@@ -2923,6 +2971,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2 格中的 1 格"
+          }
+        }
+      }
+    },
+    "1 photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 张照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 張照片"
           }
         }
       }
@@ -4203,6 +4267,22 @@
         }
       }
     },
+    "Add to this project" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入这个项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入這個專案"
+          }
+        }
+      }
+    },
     "Add {a mask's join}" : {
       "localizations" : {
         "ja" : {
@@ -4627,6 +4707,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部照片"
+          }
+        }
+      }
+    },
+    "All projects" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部專案"
           }
         }
       }
@@ -7121,6 +7217,22 @@
         }
       }
     },
+    "Choose Photos…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇照片…"
+          }
+        }
+      }
+    },
     "Choose a Folder…" : {
       "localizations" : {
         "ja" : {
@@ -8177,6 +8289,22 @@
         }
       }
     },
+    "Continue developing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续冲洗"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續沖洗"
+          }
+        }
+      }
+    },
     "Contrast" : {
       "localizations" : {
         "ja" : {
@@ -8529,6 +8657,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拷貝到 SpektraLab"
+          }
+        }
+      }
+    },
+    "Copy into my photo folder" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷贝到我的照片文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拷貝到我的照片資料夾"
           }
         }
       }
@@ -10633,6 +10777,22 @@
         }
       }
     },
+    "Drag a card or a folder here. 3FR, DNG and JPEG all work." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把存储卡或文件夹拖到这里。3FR、DNG、JPEG 都可以。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把記憶卡或資料夾拖到這裡。3FR、DNG、JPEG 都可以。"
+          }
+        }
+      }
+    },
     "Drag a film to move it" : {
       "localizations" : {
         "ja" : {
@@ -10695,6 +10855,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拖移、兩指開合來擺放畫面。↻ 轉動底片。"
+          }
+        }
+      }
+    },
+    "Drag photos onto the page, or click to choose" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片拖到这一页，或点按选择"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片拖到這一頁，或點按選擇"
+          }
+        }
+      }
+    },
+    "Drag photos or folders here" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片或文件夹拖到这里"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把照片或資料夾拖到這裡"
           }
         }
       }
@@ -10831,6 +11023,22 @@
         }
       }
     },
+    "Drop more here to add them" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续拖进来可以再添加"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續拖進來可以再加入"
+          }
+        }
+      }
+    },
     "Drop to Import" : {
       "localizations" : {
         "ja" : {
@@ -10849,6 +11057,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "放開即匯入"
+          }
+        }
+      }
+    },
+    "Drop to add to “%@”" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "松手加入「%@」"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放開加入「%@」"
           }
         }
       }
@@ -14333,6 +14557,22 @@
         }
       }
     },
+    "From Finder, Bridge or a card. RAW, 3FR, DNG, JPEG, TIFF and HEIC." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以从访达、Bridge 或存储卡拖进来。支持 RAW、3FR、DNG、JPEG、TIFF 和 HEIC。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可以從 Finder、Bridge 或記憶卡拖進來。支援 RAW、3FR、DNG、JPEG、TIFF 和 HEIC。"
+          }
+        }
+      }
+    },
     "From now on your library is a SpektraLab catalog, a .spkcatalog you place where you like, as a Capture One catalog is. You can have several, and the one you used last opens." : {
       "localizations" : {
         "ja" : {
@@ -15005,6 +15245,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顆粒分層"
+          }
+        }
+      }
+    },
+    "Grain · Halation" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "颗粒·光晕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顆粒·光暈"
           }
         }
       }
@@ -16385,6 +16641,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在沖洗和編輯中，空白鍵顯示原始影像：按住時顯示，或每按一次在原始影像與成品之間切換。"
+          }
+        }
+      }
+    },
+    "In Layers above, add Subject, Background or People, or paint one with the brush, a linear or a radial gradient. Pick the layer, and its own adjustments take this column." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在上面的「图层」里添加主体、背景或人物，或者用画笔、线性渐变、径向渐变画一个。选中这个图层，它自己的调整就会出现在这一栏。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在上面的「圖層」裡加入主體、背景或人物，或者用畫筆、線性漸層、放射漸層畫一個。選取這個圖層，它自己的調整就會出現在這一欄。"
           }
         }
       }
@@ -18655,6 +18927,38 @@
         }
       }
     },
+    "Local" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部"
+          }
+        }
+      }
+    },
+    "Local adjustments are layers" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部调整就是图层"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部調整就是圖層"
+          }
+        }
+      }
+    },
     "Log" : {
       "localizations" : {
         "ja" : {
@@ -20327,6 +20631,22 @@
         }
       }
     },
+    "New Project" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增專案"
+          }
+        }
+      }
+    },
     "New Recipe" : {
       "localizations" : {
         "ja" : {
@@ -20927,6 +21247,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "觀片台上還沒有底片。"
+          }
+        }
+      }
+    },
+    "No folder yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没选文件夹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒選資料夾"
           }
         }
       }
@@ -21959,6 +22295,22 @@
         }
       }
     },
+    "Nothing added yet" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有添加照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有加入照片"
+          }
+        }
+      }
+    },
     "Nothing chosen" : {
       "localizations" : {
         "ja" : {
@@ -22723,6 +23075,22 @@
         }
       }
     },
+    "Opened %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@打开过"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@打開過"
+          }
+        }
+      }
+    },
     "Opened in Develop" : {
       "localizations" : {
         "ja" : {
@@ -22851,6 +23219,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開啟半格組"
+          }
+        }
+      }
+    },
+    "Or drag photos or a folder anywhere onto this page." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也可以把照片或文件夹直接拖到这一页。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也可以把照片或資料夾直接拖到這一頁。"
           }
         }
       }
@@ -25059,6 +25443,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定檔"
+          }
+        }
+      }
+    },
+    "Project name" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "项目名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專案名稱"
           }
         }
       }
@@ -28879,6 +29279,22 @@
         }
       }
     },
+    "Single photos are always copied into the project's folder — leaving them in place works for one folder." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单张照片总会拷贝进项目文件夹；「留在原处」只适用于拖入一个文件夹。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單張照片總會拷貝進專案資料夾；「留在原處」只適用於拖入一個資料夾。"
+          }
+        }
+      }
+    },
     "Size" : {
       "localizations" : {
         "ja" : {
@@ -29931,6 +30347,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "標準"
+          }
+        }
+      }
+    },
+    "Start a new roll" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始新的一卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始新的一卷"
           }
         }
       }
@@ -31667,6 +32099,22 @@
         }
       }
     },
+    "The folder is opened where it is; nothing is copied." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直接打开这个文件夹，不拷贝任何文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直接打開這個資料夾，不拷貝任何檔案。"
+          }
+        }
+      }
+    },
     "The frame's size and shape are the bottom exposure's." : {
       "localizations" : {
         "ja" : {
@@ -32323,6 +32771,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "照片會從記憶卡複製到這台 Mac 上。複製完就可以拔卡，照片還在電腦裡。"
+          }
+        }
+      }
+    },
+    "The photos are copied into %@/%@. The originals are only read." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片会拷贝到 %1$@/%2$@，原文件只读取、不改动。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片會拷貝到 %1$@/%2$@，原始檔只讀取、不改動。"
           }
         }
       }
@@ -35021,6 +35485,22 @@
         }
       }
     },
+    "Undeveloped" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未冲洗"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未沖洗"
+          }
+        }
+      }
+    },
     "Undo" : {
       "localizations" : {
         "ja" : {
@@ -35237,6 +35717,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未命名"
+          }
+        }
+      }
+    },
+    "Untitled Project" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名项目"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未命名專案"
           }
         }
       }

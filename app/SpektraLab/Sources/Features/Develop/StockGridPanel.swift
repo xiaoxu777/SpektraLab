@@ -282,7 +282,7 @@ struct StockGridCard: View {
     let live: Bool
     let imageHeight: CGFloat
 
-    private static let radius: CGFloat = 6
+    private static let radius: CGFloat = 5
 
     var body: some View {
         VStack(spacing: CGFloat(StockGridRule.captionGap)) {

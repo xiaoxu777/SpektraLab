@@ -142,7 +142,8 @@ enum LightTableShaders {
       // the dark desk (the page's, `halfSize.z`): the app's black, the lamp's warm light spilling
       // onto it round the frame and falling away within a few millimetres
       float3 spill = float3(1., .965, .9) * (.1 * exp(-max(dOut, 0.) / 5.) + .035 * exp(-max(dOut, 0.) / 18.));
-      col = mix(col, spill, u.halfSize.z);
+      // FilmLab 暗房 (design A): the dark desk is the app's well (#111214), not black, the lamp's spill over it.
+      col = mix(col, float3(.0667, .0706, .0784) + spill, u.halfSize.z);
 
       // the frame
       float uu = clamp(-dOut / uFrame.x, 0., 1.);

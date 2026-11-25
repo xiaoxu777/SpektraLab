@@ -39,7 +39,11 @@ final class FilmLabHome {
     }
 
     func showHome() { withAnimation(.easeInOut(duration: 0.3)) { shown = true } }
-    func hideHome() { withAnimation(.easeInOut(duration: 0.3)) { shown = false } }
+    /// The home page goes, and 新建项目's sheet with it: a project opened leaves nothing of the page behind.
+    func hideHome() {
+        if FilmLabNewProject.shared.shown { FilmLabNewProject.shared.close() }
+        withAnimation(.easeInOut(duration: 0.3)) { shown = false }
+    }
 
     /// 普通版 or 专业版. Turning 专业版 off while 编辑 is in front goes to 冲洗 (编辑 is 专业版's).
     func setPro(_ on: Bool) {
@@ -63,7 +67,7 @@ struct ProModeSwitch: View {
             segment(L("Pro"), symbol: "slider.horizontal.3", selected: pro) { FilmLabHome.shared.setPro(true) }
         }
         .padding(2)
-        .background(Capsule().fill(Theme.card))
+        .background(RoundedRectangle(cornerRadius: MacMetric.pt(large ? 9 : 8), style: .continuous).fill(Theme.card))
         .fixedSize()
         .help(L("Simple shows the everyday controls; Pro shows every tool."))
         .accessibilityElement(children: .contain)
@@ -81,9 +85,12 @@ struct ProModeSwitch: View {
             .padding(.horizontal, MacMetric.pt(large ? 16 : 10))
             .frame(height: MacMetric.pt(large ? 30 : 20))
             .background {
-                if selected { Capsule().fill(Theme.selection).matchedGeometryEffect(id: "thumb", in: thumb) }   // design A: selection is white
+                if selected {   // design A: selection is white, a rounded tab in a rounded tray
+                    RoundedRectangle(cornerRadius: MacMetric.pt(large ? 7 : 6), style: .continuous).fill(Theme.selection)
+                        .matchedGeometryEffect(id: "thumb", in: thumb)
+                }
             }
-            .contentShape(Capsule())
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -120,31 +127,55 @@ struct FilmLabHomeView: View {
         let projects = store.sources.filter { $0.kind != .appLibrary }
             .sorted { ($0.openedAt ?? $0.addedAt) > ($1.openedAt ?? $1.addedAt) }
         ZStack {
-            HomeBackdrop()
+            // Design A: the plain graphite ground, no moving glow (2026-11-24).
+            Theme.background.ignoresSafeArea()
             VStack(alignment: .leading, spacing: 0) {
                 header(store, hasProjects: !projects.isEmpty)
                     .padding(.horizontal, MacMetric.pt(40))
-                    .padding(.top, MacMetric.pt(34))
+                    .padding(.top, MacMetric.pt(26))
                 if projects.isEmpty {
                     emptyState(store)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView(.vertical) {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: MacMetric.pt(220), maximum: MacMetric.pt(320)),
-                                                     spacing: MacMetric.pt(20))],
-                                  alignment: .leading, spacing: MacMetric.pt(22)) {
-                            ForEach(Array(projects.enumerated()), id: \.element.id) { i, source in
-                                ProjectCard(source: source, selected: source.id == store.selectedSourceID,
-                                            open: { open(source, store) },
-                                            remove: { store.remove(source: source.id) })
-                                    .opacity(appeared ? 1 : 0)
-                                    .offset(y: appeared ? 0 : 18)
-                                    .animation(.spring(duration: 0.55, bounce: 0.25).delay(0.04 * Double(min(i, 12))),
-                                               value: appeared)
+                        VStack(alignment: .leading, spacing: MacMetric.pt(24)) {
+                            // 继续冲洗 (the last project) beside 新建项目 / 导入.
+                            HStack(alignment: .top, spacing: MacMetric.pt(16)) {
+                                if let last = projects.first {
+                                    HomeContinueCard(source: last, open: { open(last, store) })
+                                        .layoutPriority(1)
+                                }
+                                newRollCard(store)
+                                    .frame(minWidth: MacMetric.pt(260), maxWidth: MacMetric.pt(380))
+                            }
+                            .fixedSize(horizontal: false, vertical: true)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(.easeOut(duration: 0.35), value: appeared)
+                            HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(8)) {
+                                Text(L("All projects")).font(MacMetric.font(15, .bold)).foregroundStyle(Theme.text)
+                                Text("\(projects.count)").font(MacMetric.font(12)).monospacedDigit().foregroundStyle(Theme.dim)
+                                Spacer(minLength: 0)
+                            }
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: MacMetric.pt(200), maximum: MacMetric.pt(300)),
+                                                         spacing: MacMetric.pt(16))],
+                                      alignment: .leading, spacing: MacMetric.pt(20)) {
+                                ForEach(Array(projects.enumerated()), id: \.element.id) { i, source in
+                                    ProjectCard(source: source, selected: source.id == store.selectedSourceID,
+                                                dropping: FilmLabDrop.shared.hover == source.id,
+                                                open: { open(source, store) },
+                                                remove: { store.remove(source: source.id) })
+                                        // Its frame, in the window's points: a drag over it is told by where it is (`FilmLabDrop`).
+                                        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { FilmLabDrop.shared.cards[source.id] = $0 }
+                                        .onDisappear { FilmLabDrop.shared.cards[source.id] = nil }
+                                        .opacity(appeared ? 1 : 0)
+                                        .offset(y: appeared ? 0 : 14)
+                                        .animation(.spring(duration: 0.5, bounce: 0.2).delay(0.03 * Double(min(i, 12))),
+                                                   value: appeared)
+                                }
                             }
                         }
                         .padding(.horizontal, MacMetric.pt(40))
-                        .padding(.vertical, MacMetric.pt(24))
+                        .padding(.vertical, MacMetric.pt(22))
                     }
                     .scrollIndicators(.automatic)
                 }
@@ -152,35 +183,90 @@ struct FilmLabHomeView: View {
                     .padding(.horizontal, MacMetric.pt(40))
                     .padding(.bottom, MacMetric.pt(22))
             }
+            // Under 新建项目's sheet the page is neither pressed nor read: a press meant for the sheet (its ×, by
+            // VoiceOver or Accessibility Keyboard) never lands on a card under it.
+            .accessibilityHidden(FilmLabNewProject.shared.shown)
+            .allowsHitTesting(!FilmLabNewProject.shared.shown)
         }
-        .onAppear { appeared = true }
+        // 新建项目's sheet, over the page (not Finder's panel first: the photos are dropped onto it).
+        .overlay {
+            if FilmLabNewProject.shared.shown {
+                FilmLabNewProjectSheet(store: store, router: router)
+            }
+        }
+        .onAppear {
+            appeared = true
+            // A check's launch, for `--capture-window`: the sheet with a folder in it, or the first card lit as a drag lights it.
+            if let path = FilmLabCheckArgs.value("--filmlab-newproject") {
+                FilmLabNewProject.shared.open(with: [URL(fileURLWithPath: path, isDirectory: true)])
+            }
+            if FilmLabCheckArgs.value("--filmlab-drop-hover") != nil {
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    FilmLabDrop.shared.hover = store.sources.filter { $0.kind != .appLibrary }
+                        .sorted { ($0.openedAt ?? $0.addedAt) > ($1.openedAt ?? $1.addedAt) }.dropFirst().first?.id
+                }
+            }
+        }
         .accessibilityIdentifier("filmlab.home")
     }
 
     private func header(_ store: any MacLibraryData, hasProjects: Bool) -> some View {
-        HStack(alignment: .center, spacing: MacMetric.pt(16)) {
-            NegativeMark(size: MacMetric.pt(46))
-            VStack(alignment: .leading, spacing: MacMetric.pt(3)) {
-                Text(Brand.name).font(MacMetric.font(26, .bold)).foregroundStyle(Theme.text)
+        HStack(alignment: .center, spacing: MacMetric.pt(12)) {
+            NegativeMark(size: MacMetric.pt(30))
+            VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
+                Text(Brand.name).font(MacMetric.font(19, .bold)).foregroundStyle(Theme.text)
                 Text(hasProjects ? L("Welcome back. Pick up a roll, or import new photos.")
                                  : L("Hasselblad files in, film out."))
-                    .font(MacMetric.font(13)).foregroundStyle(Theme.dim)
-                storageLine
+                    .font(MacMetric.font(12)).foregroundStyle(Theme.dim).lineLimit(1)
             }
             Spacer(minLength: MacMetric.pt(16))
             if store.selectedSource != nil {
                 Button { home.hideHome() } label: {
-                    Text(L("Back to Library")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                        .padding(.horizontal, MacMetric.pt(16)).frame(height: MacMetric.pt(34))
-                        .background(Capsule().fill(Theme.card))
-                        .contentShape(Capsule())
+                    HStack(spacing: MacMetric.pt(6)) {
+                        Text(L("Back to Library")).font(MacMetric.font(12.5, .medium))
+                        Text("esc").font(MacMetric.font(10.5)).foregroundStyle(Theme.dim)
+                    }
+                    .foregroundStyle(Theme.text)
+                    .padding(.horizontal, MacMetric.pt(12)).frame(height: MacMetric.pt(30))
+                    .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut(.escape, modifiers: [])
                 .accessibilityIdentifier("filmlab.home.back")
             }
-            openButton(store)
         }
+    }
+
+    /// 新建项目 / 导入: a dashed card beside 继续冲洗 — what goes where, and the two ways in (design A).
+    private func newRollCard(_ store: any MacLibraryData) -> some View {
+        VStack(spacing: MacMetric.pt(10)) {
+            Image(systemName: "sdcard").font(.system(size: MacMetric.pt(28), weight: .light)).foregroundStyle(Theme.accent)
+            Text(L("Start a new roll")).font(MacMetric.font(15, .semibold)).foregroundStyle(Theme.text)
+            Text(L("Drag a card or a folder here. 3FR, DNG and JPEG all work."))
+                .font(MacMetric.font(12)).foregroundStyle(Theme.secondaryText)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: MacMetric.pt(8)) {
+                    FilmLabNewProjectButton()
+                    openButton(store)
+                }
+                VStack(spacing: MacMetric.pt(6)) {
+                    FilmLabNewProjectButton()
+                    openButton(store)
+                }
+            }
+            storageLine
+        }
+        .padding(MacMetric.pt(18))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(Theme.field, style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])))
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onTapGesture { FilmLabNewProject.shared.open() }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("filmlab.home.newcard")
     }
 
     /// Where imported photos go, and the way to change it.
@@ -190,7 +276,8 @@ struct FilmLabHomeView: View {
             HStack(spacing: MacMetric.pt(5)) {
                 Image(systemName: imports.mode == .copy ? "folder" : "sdcard").font(MacMetric.font(11))
                 Text(imports.mode == .copy ? L("Imports are copied to \(imports.folderShown)") : L("Imports stay where they are"))
-                    .font(MacMetric.font(11.5)).lineLimit(1).truncationMode(.middle)
+                    .font(MacMetric.font(11.5)).lineLimit(2).multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(L("Change…")).font(MacMetric.font(11.5, .semibold)).foregroundStyle(Theme.accent)
             }
             .foregroundStyle(Theme.dim)
@@ -213,15 +300,14 @@ struct FilmLabHomeView: View {
     private func openButton(_ store: any MacLibraryData, large: Bool = false) -> some View {
         Button { openFolder(store) } label: {
             HStack(spacing: MacMetric.pt(8)) {
-                Image(systemName: "square.and.arrow.down").font(MacMetric.font(large ? 15 : 13, .bold))
-                Text(L("Import Photos…")).font(MacMetric.font(large ? 15 : 13, .semibold))
+                Image(systemName: "square.and.arrow.down").font(MacMetric.font(large ? 14 : 12, .bold))
+                Text(L("Import Photos…")).font(MacMetric.font(large ? 14 : 12.5, .semibold)).fixedSize()
             }
             .foregroundStyle(Theme.onSelection)
-            .padding(.horizontal, MacMetric.pt(large ? 26 : 18))
-            .frame(height: MacMetric.pt(large ? 44 : 34))
-            .background(Capsule().fill(Theme.accent))
-            .shadow(color: Theme.accent.opacity(0.35), radius: 10, y: 4)
-            .contentShape(Capsule())
+            .padding(.horizontal, MacMetric.pt(large ? 20 : 14))
+            .frame(height: MacMetric.pt(large ? 38 : 30))
+            .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.accent))
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressScale())
         .accessibilityIdentifier("filmlab.home.open")
@@ -237,7 +323,13 @@ struct FilmLabHomeView: View {
                 .font(MacMetric.font(13)).foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center).frame(maxWidth: MacMetric.pt(440))
                 .fixedSize(horizontal: false, vertical: true)
-            openButton(store, large: true).padding(.top, MacMetric.pt(4))
+            HStack(spacing: MacMetric.pt(12)) {
+                FilmLabNewProjectButton()
+                openButton(store, large: true)
+            }
+            .padding(.top, MacMetric.pt(4))
+            Text(L("Or drag photos or a folder anywhere onto this page.")).font(MacMetric.font(12)).foregroundStyle(Theme.dim)
+            storageLine
             if let refused {
                 Text(L(shown: refused)).font(MacMetric.font(12)).foregroundStyle(Theme.danger)
             }
@@ -285,6 +377,8 @@ struct FilmLabHomeView: View {
 private struct ProjectCard: View {
     let source: MacSource
     let selected: Bool
+    /// Photos are being dragged over it: dropped, they go into this project.
+    var dropping = false
     let open: () -> Void
     let remove: () -> Void
     @State private var info: ProjectCovers.Info?
@@ -292,28 +386,42 @@ private struct ProjectCard: View {
 
     var body: some View {
         Button(action: open) {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: MacMetric.pt(8)) {
                 cover
-                VStack(alignment: .leading, spacing: MacMetric.pt(3)) {
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(dropping ? Theme.accent : selected ? Theme.selectionFrame : Theme.wall,
+                                      lineWidth: dropping ? 3 : selected ? 1.5 : 1))
+                    .overlay {
+                        if dropping {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.accent.opacity(0.18))
+                                Label(L("Add to this project"), systemImage: "plus.circle.fill")
+                                    .font(MacMetric.font(13, .semibold)).foregroundStyle(.white)
+                                    .padding(.horizontal, MacMetric.pt(12)).frame(height: MacMetric.pt(30))
+                                    .background(Capsule().fill(Color.black.opacity(0.65)))
+                            }
+                            .allowsHitTesting(false)
+                        }
+                    }
+                    .shadow(color: .black.opacity(hovering || dropping ? 0.4 : 0.2), radius: hovering || dropping ? 14 : 6, y: hovering ? 6 : 2)
+                    .scaleEffect(hovering || dropping ? 1.015 : 1)
+                VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
                     HStack(spacing: MacMetric.pt(6)) {
-                        Text(source.name).font(MacMetric.font(14, .semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                        Text(source.name).font(MacMetric.font(13.5, .semibold)).foregroundStyle(Theme.text).lineLimit(1)
                         if source.status == .offline {
                             Image(systemName: "externaldrive.badge.xmark").font(MacMetric.font(11)).foregroundStyle(Theme.dim)
                         }
+                        Spacer(minLength: MacMetric.pt(6))
+                        Text(whenText).font(MacMetric.font(11)).foregroundStyle(Theme.dim).lineLimit(1)
                     }
-                    Text(subtitle).font(MacMetric.font(11.5)).foregroundStyle(Theme.dim).lineLimit(1)
+                    Text(countText).font(MacMetric.font(11.5)).foregroundStyle(Theme.secondaryText).lineLimit(1)
                 }
-                .padding(.horizontal, MacMetric.pt(12))
-                .padding(.vertical, MacMetric.pt(10))
+                .padding(.horizontal, MacMetric.pt(2))
             }
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.panel))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(selected ? Theme.accent : (hovering ? Theme.rule : Theme.wall), lineWidth: selected ? 1.5 : 1))
-            .shadow(color: .black.opacity(hovering ? 0.35 : 0.18), radius: hovering ? 16 : 8, y: hovering ? 8 : 3)
-            .scaleEffect(hovering ? 1.02 : 1)
             .animation(.spring(duration: 0.3, bounce: 0.3), value: hovering)
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .animation(.spring(duration: 0.25, bounce: 0.3), value: dropping)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressScale())
         .onHover { hovering = $0 }
@@ -323,7 +431,10 @@ private struct ProjectCard: View {
             Divider()
             Button(L("Remove from Home"), role: .destructive) { remove() }
         }
-        .task(id: source.path) { info = await ProjectCovers.shared.info(for: source) }
+        // Looked at again when photos were added to it (its count or its last look changes).
+        .task(id: "\(source.path ?? "")|\(source.imageCount ?? -1)|\(source.syncedAt?.timeIntervalSince1970 ?? 0)") {
+            info = await ProjectCovers.shared.info(for: source)
+        }
         .accessibilityLabel(source.name + ", " + subtitle)
         .accessibilityIdentifier("filmlab.home.project")
     }
@@ -370,17 +481,95 @@ private struct ProjectCard: View {
         }
     }
 
-    private var subtitle: String {
-        var parts: [String] = []
-        if let n = source.imageCount ?? info?.count { parts.append(L("\(n) pictures")) }
-        // Opening a project marks it opened now: never "in 0 seconds", and under a minute is "now".
+    private var countText: String {
+        if let n = source.imageCount ?? info?.count { return L("\(n) pictures") }
+        return kindName
+    }
+
+    private var whenText: String { HomeWhen.text(source) }
+
+    private var subtitle: String { countText + " · " + whenText }
+}
+
+/// When a project was last opened, said the home page's way: never "in 0 seconds", under a minute is "now".
+@MainActor
+enum HomeWhen {
+    static func text(_ source: MacSource) -> String {
         let now = Date()
         let when = min(source.openedAt ?? source.addedAt, now)
         let f = RelativeDateTimeFormatter()
         f.locale = Language.shared.current.locale
         f.unitsStyle = .full
         f.dateTimeStyle = .named
-        parts.append(now.timeIntervalSince(when) < 60 ? f.localizedString(fromTimeInterval: 0) : f.localizedString(for: when, relativeTo: now))
+        return now.timeIntervalSince(when) < 60 ? f.localizedString(fromTimeInterval: 0) : f.localizedString(for: when, relativeTo: now)
+    }
+}
+
+/// 继续冲洗: the project last opened, large, with its cover and the way back in (design A).
+private struct HomeContinueCard: View {
+    let source: MacSource
+    let open: () -> Void
+    @State private var info: ProjectCovers.Info?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: MacMetric.pt(18)) {
+            Button(action: open) {
+                Rectangle().fill(Theme.card)
+                    .overlay {
+                        if let image = info?.cover {
+                            Image(uiImage: image).resizable().scaledToFill()
+                        } else {
+                            Image(systemName: "photo.stack").font(.system(size: MacMetric.pt(26), weight: .light)).foregroundStyle(Theme.dim)
+                        }
+                    }
+                    .frame(width: MacMetric.pt(250), height: MacMetric.pt(166))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressScale())
+            VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
+                Text(L("Continue developing")).font(MacMetric.font(11.5, .semibold)).tracking(0.6).foregroundStyle(Theme.accent)
+                Text(source.name).font(MacMetric.font(24, .bold)).foregroundStyle(Theme.text).lineLimit(2)
+                Text(line).font(MacMetric.font(12.5)).foregroundStyle(Theme.secondaryText).lineLimit(2)
+                Spacer(minLength: MacMetric.pt(10))
+                HStack(spacing: MacMetric.pt(8)) {
+                    Button(action: open) {
+                        Text(L("Open")).font(MacMetric.font(12.5, .semibold)).foregroundStyle(Theme.onSelection)
+                            .padding(.horizontal, MacMetric.pt(18)).frame(height: MacMetric.pt(30))
+                            .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.accent))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("filmlab.home.continue")
+                    if let url = source.url {
+                        Button { UIApplication.shared.open(url) } label: {
+                            Text(L("Show in Finder")).font(MacMetric.font(12.5, .medium)).foregroundStyle(Theme.text)
+                                .padding(.horizontal, MacMetric.pt(12)).frame(height: MacMetric.pt(30))
+                                .background(RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.vertical, MacMetric.pt(4))
+            Spacer(minLength: 0)
+        }
+        .padding(MacMetric.pt(16))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.panel))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.rule, lineWidth: 1))
+        .task(id: "\(source.path ?? "")|\(source.imageCount ?? -1)|\(source.syncedAt?.timeIntervalSince1970 ?? 0)") {
+            info = await ProjectCovers.shared.info(for: source)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var line: String {
+        var parts: [String] = []
+        if let n = source.imageCount ?? info?.count { parts.append(L("\(n) pictures")) }
+        parts.append(L("Opened \(HomeWhen.text(source))"))
         return parts.joined(separator: " · ")
     }
 }
@@ -393,6 +582,9 @@ final class ProjectCovers {
     private var known: [String: Info] = [:]
 
     nonisolated static var pictureExtensions: Set<String> { FilmLabCopier.pictureExtensions }
+
+    /// Looked at again next time: photos were added to it.
+    func forget(_ source: MacSource) { if let path = source.path { known[path] = nil } }
 
     func info(for source: MacSource) async -> Info {
         guard let path = source.path else { return Info() }
@@ -439,21 +631,12 @@ struct PressScale: ButtonStyle {
 
 /// The home page's ground: the window's, with two slow amber and teal glows.
 struct HomeBackdrop: View {
+    /// Design A (2026-11-24): the graphite ground with one still, faint warm light from the top, not two drifting glows
+    /// (and no 20-a-second timeline redrawing the page under it).
     var body: some View {
         ZStack {
             Theme.background
-            TimelineView(.animation(minimumInterval: 1 / 20)) { t in
-                let s = t.date.timeIntervalSinceReferenceDate
-                GeometryReader { g in
-                    let w = g.size.width, h = g.size.height
-                    Circle().fill(Theme.accent.opacity(0.16))
-                        .frame(width: w * 0.55).blur(radius: 90)
-                        .position(x: w * (0.22 + 0.06 * sin(s / 7)), y: h * (0.2 + 0.05 * cos(s / 9)))
-                    Circle().fill(Color(hex: 0x3D7C8C).opacity(0.14))
-                        .frame(width: w * 0.5).blur(radius: 100)
-                        .position(x: w * (0.8 + 0.05 * cos(s / 8)), y: h * (0.78 + 0.05 * sin(s / 6)))
-                }
-            }
+            RadialGradient(colors: [Theme.accent.opacity(0.10), .clear], center: .top, startRadius: 0, endRadius: 620)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)

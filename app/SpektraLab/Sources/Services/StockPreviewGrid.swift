@@ -138,13 +138,13 @@ extension StockPreviewRules {
 /// lines of type that can be read.
 enum StockGridRule {
     /// The narrowest a card is laid: one more column is added only when every card keeps this.
-    static let minCell = 64.0
+    static let minCell = 76.0
     /// Between cards, across and down, and between a maker's header and its first row.
     static let gap = 8.0
     /// Either side of the grid: the column's own margin, where its headers' words start.
     static let margin = 16.0
-    /// A card's picture, as the old card: 100 × 84.
-    static let imageAspect = 0.84
+    /// A card's picture: 4:3, the photograph's own shape more often than not (FilmLab 暗房, design A; was 100 × 84).
+    static let imageAspect = 0.75
     /// Under the picture: 4 pt, then two lines of the name.
     static let captionGap = 4.0
     static let caption = 26.0

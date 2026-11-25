@@ -92,18 +92,63 @@ struct FilmStripBar: View, Equatable {
         .accessibilityIdentifier("filmlab.strip")
     }
 
-    /// How many, and how many chosen, at the strip's start.
+    /// The strip's start (design A, 2026-11-24): how many and how many chosen, the roll's quick filters as chips, and
+    /// the colour-label dots, all the same state as the 图库 sidebar's (`FilmLabRollFilterState`).
     private var countLabel: some View {
-        VStack(spacing: MacMetric.pt(2)) {
-            Text("\(store.total)").font(MacMetric.font(15, .bold)).foregroundStyle(Theme.text).monospacedDigit()
-            Text(L("pictures")).font(MacMetric.font(10)).foregroundStyle(Theme.dim)
-            if browser.selection.count > 1 {
-                Text(L("\(browser.selection.count) chosen")).font(MacMetric.font(10, .semibold)).foregroundStyle(Theme.accent)
-                    .padding(.top, MacMetric.pt(2))
+        let state = FilmLabRollFilterState.shared
+        return VStack(alignment: .leading, spacing: MacMetric.pt(8)) {
+            HStack(spacing: MacMetric.pt(4)) {
+                Text(L("\(store.total) pictures")).font(MacMetric.font(12.5, .semibold)).foregroundStyle(Theme.text)
+                    .monospacedDigit().lineLimit(1)
+                if browser.selection.count > 1 {
+                    Text("· " + L("\(browser.selection.count) chosen")).font(MacMetric.font(11.5)).foregroundStyle(Theme.dim)
+                        .monospacedDigit().lineLimit(1)
+                }
+            }
+            .minimumScaleFactor(0.8)
+            FlowLayout(spacing: MacMetric.pt(4)) {
+                stripChip(L("All"), on: state.current == .all) { state.current = .all }
+                stripChip("★4+", on: state.current == .picks) { state.current = state.current == .picks ? .all : .picks }
+                stripChip(L("Undeveloped"), on: state.current == .undeveloped) {
+                    state.current = state.current == .undeveloped ? .all : .undeveloped
+                }
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: MacMetric.pt(6)) {
+                ForEach(FilmLabRollFilterState.labels, id: \.self) { label in
+                    let on = state.label == label
+                    Button { state.label = on ? nil : label } label: {
+                        Circle().fill(MacWords.color(label.rawValue) ?? Theme.dim)
+                            .frame(width: MacMetric.pt(9), height: MacMetric.pt(9))
+                            .opacity(state.label == nil || on ? 0.9 : 0.35)
+                            .padding(MacMetric.pt(2))
+                            .overlay { if on { Circle().strokeBorder(Theme.text, lineWidth: 1.2) } }
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(MacWords.colorName(label.rawValue))
+                    .accessibilityLabel(MacWords.colorName(label.rawValue))
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
             }
         }
-        .frame(width: MacMetric.pt(64))
+        .padding(.horizontal, MacMetric.pt(14))
+        .padding(.vertical, MacMetric.pt(12))
+        .frame(width: MacMetric.pt(156), alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .topLeading)
         .overlay(alignment: .trailing) { Rectangle().fill(Theme.wall).frame(width: 1) }
+    }
+
+    private func stripChip(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(MacMetric.font(10.5, on ? .semibold : .regular)).lineLimit(1).fixedSize()
+                .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
+                .padding(.horizontal, MacMetric.pt(7)).frame(height: MacMetric.pt(19))
+                .background(on ? Theme.selection : Theme.card, in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     private func click(_ image: MacImage, _ flags: UIKeyModifierFlags) {
@@ -194,13 +239,7 @@ private struct FilmStripCell: View {
             stars
         }
         .padding(MacMetric.pt(4))
-        .background {
-            RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous)
-                .fill(selected ? Theme.card : (hovering ? Theme.card.opacity(0.5) : .clear))
-                // Design A: selection is the white frame, never the accent (the accent is for actions and stars).
-                .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous)
-                    .strokeBorder(selected ? Theme.selectionFrame : .clear, lineWidth: 1.5))
-        }
+        .brightness(hovering && !selected ? 0.04 : 0)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
     }
@@ -214,8 +253,21 @@ private struct FilmStripCell: View {
             FrameView(frame: frame, pointSize: max(fit.width, fit.height), contentMode: .fit)
                 .frame(width: fit.width, height: fit.height)
                 .overlay { MacDevelopVeil(frame: frame, ring: MacMetric.pt(14)) }
+                .clipShape(RoundedRectangle(cornerRadius: MacMetric.pt(3), style: .continuous))
+                .overlay { ring }
         } else {
             MacFileThumb(url: image.url, box: box)
+                .clipShape(RoundedRectangle(cornerRadius: MacMetric.pt(3), style: .continuous))
+                .overlay { ring }
+        }
+    }
+
+    /// Design A: the frame in front wears a white line round the picture, a little off it; never a card.
+    @ViewBuilder private var ring: some View {
+        if selected {
+            RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous)
+                .strokeBorder(Theme.selectionFrame, lineWidth: 2)
+                .padding(-MacMetric.pt(3.5))
         }
     }
 
@@ -224,20 +276,22 @@ private struct FilmStripCell: View {
         HStack(spacing: MacMetric.pt(1)) {
             ForEach(1...5, id: \.self) { s in
                 Button { rate(s) } label: {
-                    Image(systemName: s <= image.rating ? "star.fill" : "star")
-                        .font(.system(size: MacMetric.pt(9), weight: .semibold))
-                        .foregroundStyle(s <= image.rating ? Theme.accent : Theme.dim)
+                    Image(systemName: "star.fill")
+                        .font(.system(size: MacMetric.pt(8.5), weight: .semibold))
+                        .foregroundStyle(s <= image.rating ? Theme.accent : Theme.starOff)
                         .frame(width: MacMetric.pt(12), height: MacMetric.pt(12))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(MacWords.rating(s))
             }
+            Spacer(minLength: MacMetric.pt(4))
             if image.colorLabel != nil {
-                MacColorTag(label: image.colorLabel).padding(.leading, MacMetric.pt(3))
+                MacColorTag(label: image.colorLabel)
             }
         }
-        .opacity(hovering || image.rating > 0 || selected ? 1 : 0.35)
+        .frame(width: box.width)
+        .opacity(hovering || image.rating > 0 || selected ? 1 : 0.6)
         .frame(height: MacMetric.pt(12))
     }
 }

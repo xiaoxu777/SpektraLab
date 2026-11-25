@@ -53,9 +53,10 @@ struct MacModeSwitch: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: MacMetric.pt(22))
                         .background {
-                            if on { Capsule().fill(Theme.selection) }
+                            // Design A: a rounded tab inside a rounded tray, not a capsule (2026-11-24).
+                            if on { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.selection) }
                         }
-                        .padding(.horizontal, 2)
+                        .padding(.horizontal, 1)
                         .frame(height: MacMetric.pt(30))
                         .contentShape(Rectangle())
                 }
@@ -66,7 +67,8 @@ struct MacModeSwitch: View {
                 .accessibilityIdentifier("mac.mode.\(mode.rawValue)")
             }
         }
-        .background { Capsule().fill(Theme.card).frame(height: MacMetric.pt(26)) }
+        .padding(.horizontal, 1)
+        .background { RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card).frame(height: MacMetric.pt(26)) }
     }
 }
 

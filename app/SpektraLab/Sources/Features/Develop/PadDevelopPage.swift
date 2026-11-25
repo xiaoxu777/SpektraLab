@@ -507,8 +507,19 @@ extension DevelopWorkspace {
     /// order for both that is dragged into shape, the column scrolling as one, the layout remembered
     /// (`AdjustColumn`). The column's width and room no longer decide anything: it scrolls.
     private var columnAdjust: some View {
-        AdjustColumn(session: session, state: $adjustState,
-                     tail: Self.gradingHasEffects ? AnyView(wideFormatTail.rowEnabled(session.edit.appliesFilm)) : nil)
+        // FilmLab 暗房 (design A): 二级调色's chip tabs over the column (`FilmLabGradeTabs`), each its part of it.
+        let tab = FilmLabGradeState.shared.tab
+        return VStack(spacing: 0) {
+            FilmLabGradeTabs()
+            if tab == .local {
+                FilmLabLocalHint()
+                Spacer(minLength: 0)
+            } else {
+                AdjustColumn(session: session, state: $adjustState, tools: { tab.shows($0) },
+                             tail: tab == .effects && Self.gradingHasEffects
+                                ? AnyView(wideFormatTail.rowEnabled(session.edit.appliesFilm)) : nil)
+            }
+        }
     }
 
     // MARK: keys

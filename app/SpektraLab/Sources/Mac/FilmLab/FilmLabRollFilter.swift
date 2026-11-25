@@ -54,13 +54,17 @@ enum FilmLabRollFilter: String, CaseIterable, Identifiable {
 final class FilmLabRollFilterState {
     static let shared = FilmLabRollFilterState()
     var current: FilmLabRollFilter = .all
+    /// The colour label the sidebar's dots narrow to, on top of `current`; nil for any.
+    var label: MacColorLabel?
+    /// The dots, in the design's order (the five of the strip's menu and keys 6–9).
+    static let labels: [MacColorLabel] = [.red, .yellow, .green, .blue, .purple]
 
     /// `rows` as the filter in front leaves them.
     func apply(_ rows: [MacImage], library: FrameCatalog) -> [MacImage] {
-        guard current != .all else { return rows }
-        let f = current
+        guard current != .all || label != nil else { return rows }
+        let f = current, label = label
         _ = FilmLabExportLog.shared.exported   // read: an export landing narrows 已导出 again
-        return rows.filter { f.matches($0, library: library) }
+        return rows.filter { f.matches($0, library: library) && (label == nil || $0.colorLabel == label) }
     }
 }
 
@@ -72,6 +76,7 @@ struct FilmLabRollFilters: View {
     var body: some View {
         let state = FilmLabRollFilterState.shared
         let _ = FilmLabExportLog.shared.exported
+        VStack(alignment: .leading, spacing: 0) {
         VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
             Text(L("This Roll")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
                 .padding(.horizontal, MacMetric.pt(8)).padding(.bottom, MacMetric.pt(3))
@@ -97,6 +102,35 @@ struct FilmLabRollFilters: View {
             }
         }
         .padding(.horizontal, MacMetric.pt(6))
-        .padding(.vertical, MacMetric.pt(6))
+        .padding(.top, MacMetric.pt(6))
+        labelDots
+        }
+    }
+
+    /// 色标: a dot per colour; one clicked narrows the grid and the strip to it, clicked again lets go.
+    private var labelDots: some View {
+        let state = FilmLabRollFilterState.shared
+        return VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
+            Text(L("Colour Label")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
+            HStack(spacing: MacMetric.pt(10)) {
+                ForEach(FilmLabRollFilterState.labels, id: \.self) { label in
+                    let on = state.label == label
+                    Button { state.label = on ? nil : label } label: {
+                        Circle().fill(MacWords.color(label.rawValue) ?? Theme.dim)
+                            .frame(width: MacMetric.pt(12), height: MacMetric.pt(12))
+                            .padding(MacMetric.pt(3))
+                            .overlay { if on { Circle().strokeBorder(Theme.text, lineWidth: 1.5) } }
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(MacWords.colorName(label.rawValue))
+                    .accessibilityLabel(MacWords.colorName(label.rawValue))
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, MacMetric.pt(14))
+        .padding(.top, MacMetric.pt(8)).padding(.bottom, MacMetric.pt(10))
     }
 }

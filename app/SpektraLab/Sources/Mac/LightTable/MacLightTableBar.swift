@@ -126,7 +126,7 @@ struct MacLightTableTitlePanel: View {
                     .foregroundStyle(Theme.text)
                     .padding(.horizontal, 11)
                     .frame(height: 28)
-                    .background(Theme.card, in: Capsule())
+                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .fixedSize()
                 }
                 .buttonStyle(.plain)
@@ -173,13 +173,13 @@ struct MacLightTableToolsPanel: View {
                         .accessibilityIdentifier("lighttable.tool.\(t.rawValue)")
                     }
                 }
-                .background(Theme.card, in: Capsule())
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 segment(on: loupe, help: Self.loupeHelp, label: L("Loupe"), action: actions.toggleLoupe) {
                     DrawnGlyph(icon: .standLoupe, size: 18, color: loupe ? Theme.onSelection : Theme.text,
                                ground: loupe ? Theme.selection : Theme.card)
                     Text(L("Loupe")).font(Theme.Font.ui(14, .medium)).fixedSize()
                 }
-                .background(Theme.card, in: Capsule())
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .disabled(empty)
                 .accessibilityIdentifier("lighttable.loupe")
             } else {
@@ -246,7 +246,7 @@ struct MacLightTableToolsPanel: View {
             }
             .disabled(!canZoomIn)
         }
-        .background(Theme.card, in: Capsule())
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     /// [A4 ▾ | ⟲]: one capsule the disc's height.
@@ -276,7 +276,7 @@ struct MacLightTableToolsPanel: View {
             .accessibilityValue(table.model.portrait ? L("Portrait") : L("Landscape"))
             .accessibilityIdentifier("lighttable.orientation")
         }
-        .background(Theme.card, in: Capsule())
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     @ViewBuilder private var sizePickers: some View {
@@ -316,10 +316,10 @@ struct MacLightTableToolsPanel: View {
             }
             .disabled(empty)
         } label: {
-            Disc(diameter: disc) {
+            Disc(diameter: disc, corner: 8) {
                 Image(systemName: "ellipsis").font(.system(size: Disc<Image>.symbolSize(disc)))
             }
-            .contentShape(Circle())
+            .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
         .fixedSize()
@@ -335,7 +335,7 @@ struct MacLightTableToolsPanel: View {
     private func toolDisc<Glyph: View>(on: Bool, help: String, label: String, action: @escaping () -> Void,
                                    @ViewBuilder glyph: @escaping () -> Glyph) -> some View {
         Button(action: action) {
-            Disc(diameter: disc, lit: on ? Theme.selection : nil, glyph: glyph).contentShape(Circle())
+            Disc(diameter: disc, lit: on ? Theme.selection : nil, corner: 8, glyph: glyph).contentShape(Rectangle())
         }
         .buttonStyle(MacFloatPress())
         .help(help)
@@ -352,8 +352,8 @@ struct MacLightTableToolsPanel: View {
                 .padding(.horizontal, 12)
                 .frame(minWidth: disc)
                 .frame(height: disc)
-                .background(on ? Theme.selection : Color.clear, in: Capsule())
-                .contentShape(Capsule())
+                .background(on ? Theme.selection : Color.clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(Rectangle())
         }
         .buttonStyle(MacFloatPress())
         .help(help)

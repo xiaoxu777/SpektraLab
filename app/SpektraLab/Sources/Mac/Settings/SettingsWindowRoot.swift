@@ -100,12 +100,12 @@ struct SettingsWindowRoot: View {
             HStack(spacing: 0) {
                 sidebar
                     .frame(width: MacMetric.pt(MacSettingsMetric.sidebar))
-                    .background(Theme.panel)
+                    .background(Theme.background)
                 Rectangle().fill(Theme.wall).frame(width: 1)
                 content
             }
         }
-        .background(Theme.background.ignoresSafeArea())
+        .background(Theme.panel.ignoresSafeArea())
         .appColorScheme()
         .macPageActions(confirm: { router.dismissCover() }, cancel: { router.dismissCover() })
         .onAppear {
@@ -147,7 +147,7 @@ struct SettingsWindowRoot: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: MacMetric.pt(MacMetric.gridHeader))
-        .background(Theme.panel)
+        .background(Theme.chrome)
     }
 
     private var sidebar: some View {
@@ -157,18 +157,19 @@ struct SettingsWindowRoot: View {
                     let on = s == section
                     Button { section = s; supporters = false } label: {
                         HStack(spacing: MacMetric.pt(6)) {
+                            // Design A: the chosen line raised on the card with an amber glyph, as 图库's sidebar.
                             Image(systemName: s.symbol).font(MacMetric.font(13))
-                                .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
+                                .foregroundStyle(on ? Theme.accent : Theme.dim)
                                 .frame(width: MacMetric.pt(18))
                             Text(s.title).font(MacMetric.font(13, on ? .semibold : .regular))
-                                .foregroundStyle(on ? Theme.onSelection : Theme.text)
+                                .foregroundStyle(on ? Theme.text : Theme.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 0)
                         }
                         .padding(.horizontal, MacMetric.pt(8))
-                        .frame(minHeight: MacMetric.pt(26))
+                        .frame(minHeight: MacMetric.pt(28))
                         .background {
-                            if on { RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous).fill(Theme.selection) }
+                            if on { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.card) }
                         }
                         .contentShape(Rectangle())
                     }

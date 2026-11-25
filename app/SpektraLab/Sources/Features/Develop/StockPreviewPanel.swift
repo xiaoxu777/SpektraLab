@@ -137,7 +137,7 @@ struct StockPreviewPanel: View {
                          content: StockGridRule.contentHeight(groups: groups, width: w), dragged: dragged, standard: standard)
         }
         let header = ColumnSectionHeader<EmptyView>.height
-        let grips = (filmFolded ? 0 : StripSplitGrip.height) + (paperFolded ? 0 : StripSplitGrip.height)
+        let grips = (filmFolded ? 0 : StripSplitGrip.height + StockShelfChips.height) + (paperFolded ? 0 : StripSplitGrip.height)
         let decodeLeast: CGFloat = decode == nil ? 60 : prefs.decodeCollapsed ? DecodeSection.foldedHeight : DecodeSection.stackedHeight
         let foot = (session.pair == nil ? Self.switchHeight : 0) + (status == nil ? 0 : StatusFoot.height)
         return StripSplit.Room(room: Double(room ?? 0), chrome: Double(2 * header + grips), lead: Double(header + StripSplitGrip.height),
@@ -157,12 +157,14 @@ struct StockPreviewPanel: View {
         let layout = gridRoom
         let split = StripSplit.resolve(layout)
         return VStack(spacing: 0) {
+            // FilmLab 暗房 (design A): the film's shelves as a row of chips under its header, not a menu.
             ColumnSectionHeader(title: L("Film"), folded: filmFolded, id: "film", value: chosenText(0),
                                 toggleFold: { prefs.filmRowCollapsed.toggle() }) {
-                filmPill(small: true).rowEnabled(appliesFilm)
                 if let crop { cropButton(crop).rowEnabled(appliesFilm) }
             }
             if !filmFolded {
+                StockShelfChips(shelves: StockShelf.film, shelf: memory.binding(.film, kind: $filmKind), all: strip.filmCards)
+                    .rowEnabled(appliesFilm)
                 filmGrid.frame(height: split.film).rowEnabled(appliesFilm)
                 grip(.film, layout, shown: split.film)
             }
@@ -409,6 +411,40 @@ extension StockShelfMemory {
             self.choose(chosen, on: row)
             kind.wrappedValue = chosen == .favourites ? .all : chosen
         })
+    }
+}
+
+/// FilmLab 暗房 (design A): a strip's shelves as chips in a row — the chosen one filled — scrolling sideways where the
+/// column is too narrow for them all. A shelf with no card of the strip is dimmed.
+struct StockShelfChips: View {
+    let shelves: [StockShelf]
+    @Binding var shelf: StockShelf
+    let all: [StockPreviewCard]
+    static let height: CGFloat = 32
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 5) {
+                ForEach(shelves) { s in
+                    let on = s == shelf
+                    Button { shelf = s } label: {
+                        Text(s.title).font(Theme.Font.ui(11.5, on ? .semibold : .medium)).lineLimit(1)
+                            .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
+                            .padding(.horizontal, 10).frame(height: 22)
+                            .background(on ? Theme.selection : Theme.card, in: Capsule())
+                            .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!s.holdsStock(in: all))
+                    .opacity(s.holdsStock(in: all) ? 1 : Theme.disabledOpacity)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+        .scrollIndicators(.hidden)
+        .frame(height: Self.height, alignment: .top)
+        .accessibilityIdentifier("v5.develop.film-shelves")
     }
 }
 

@@ -46,6 +46,8 @@ struct RecipeChips: View {
     /// The chips in lines, wrapped at the row's width, in place of the host's
     /// scrolled row: a window's sheet (`ExportSheet`).
     var wraps = false
+    /// FilmLab 暗房 (design A): the 导出 column's chips, the size of 冲洗's film-shelf chips.
+    var small = false
 
     @Environment(ExportRecipeStore.self) private var store
     @State private var naming: Naming?
@@ -74,7 +76,7 @@ struct RecipeChips: View {
 
     /// The window's row: every chip whole, in as many lines as it takes.
     private var wrapped: some View {
-        ChipFlow(spacing: 8, lineSpacing: 8) {
+        ChipFlow(spacing: small ? 5 : 8, lineSpacing: small ? 6 : 8) {
             ForEach(store.recipes) { saved in
                 wholeChip(saved.name, on: saved.id == recipe.id) {
                     withAnimation(.easeOut(duration: 0.15)) { recipe = admit(saved) }
@@ -185,19 +187,19 @@ struct RecipeChips: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Text(title)
-                    .font(Theme.Font.ui(12.5, .semibold))
+                    .font(Theme.Font.ui(small ? 11.5 : 12.5, .semibold))
                     .lineLimit(1)
                     .hidden()
                     .overlay {
                         Text(title)
-                            .font(Theme.Font.ui(12.5, on ? .semibold : .medium))
+                            .font(Theme.Font.ui(small ? 11.5 : 12.5, on ? .semibold : .medium))
                             .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
                             .lineLimit(1)
                             .fixedSize()
                     }
             }
-            .padding(.horizontal, 12)
-            .frame(height: 30)
+            .padding(.horizontal, small ? 10 : 12)
+            .frame(height: small ? 24 : 30)
             .background(Capsule().fill(on ? Theme.selection : Theme.card))
             .contentShape(Capsule())
         }

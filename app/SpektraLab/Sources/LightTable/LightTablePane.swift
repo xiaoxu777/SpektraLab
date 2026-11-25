@@ -164,7 +164,7 @@ struct LightTablePane: View {
                     Text(Self.angle(it.rot))
                         .font(Theme.Font.ui(13, .semibold)).monospacedDigit()
                         .padding(.horizontal, 11).frame(height: 28)
-                        .background(Theme.panel.opacity(0.86), in: Capsule())
+                        .background(Theme.panel.opacity(0.86), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .padding(.top, max(12, inset.top + 2))
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)

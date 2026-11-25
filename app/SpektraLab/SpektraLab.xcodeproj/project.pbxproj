@@ -152,9 +152,12 @@
 				9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */,
 				A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */,
 				8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */,
+				AB34CCFF142F2E32396C5C6E /* FilmLabGradeTabs.swift */,
 				8A9900B3FB12A87FAB1A3242 /* FilmLabHome.swift */,
 				E5C5A19A1E1EB7336667C4D7 /* FilmLabImport.swift */,
 				5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */,
+				DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */,
+				4FE4799103FDE94A2683282E /* FilmLabResizeProbe.swift */,
 				7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */,
 				07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */,
 				8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */,
@@ -197,6 +200,7 @@
 		23027C76F45CA6D51C45862C /* MacTransitionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74AACB4B185ECEFDAC0A7F5D /* MacTransitionsCheck.swift */; };
 		2322FC1A503AA87A4B2F00D9 /* Layer2DisplaySizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer2DisplaySizes.swift; sourceTree = "<group>"; };
 		234E694E206D12A16A234AF8 /* DevelopedPicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F106739DC8980EECF5DAFD3D /* DevelopedPicture.swift */; };
+		23616ABD54877786FE7F2712 /* FilmLabGradeTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB34CCFF142F2E32396C5C6E /* FilmLabGradeTabs.swift */; };
 		2411DB8A1CC539A4DEC62490 /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
 		2577859D50BAF5D589A2AF74 /* LayersPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADE8EF8E350DD3B4DF05598 /* LayersPanel.swift */; };
 		25A15B83D345B74E6556F9A8 /* Layer2Copies.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3C578F6D2980FC7CDEDD78 /* Layer2Copies.swift */; };
@@ -390,6 +394,7 @@
 		42A3FA76845ADAD4052BCC5A /* PresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetStore.swift; sourceTree = "<group>"; };
 		42B236436D38BA2CD30190B4 /* RemovalWords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemovalWords.swift; sourceTree = "<group>"; };
 		42DAC20CE3A11E82F5C57DFB /* FilmGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CBE4AFB72208EBD6FAA83D /* FilmGeometry.swift */; };
+		432FBC8B7A045AD33D18A7CE /* FilmLabProjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */; };
 		43E84A02E7DA493A8BA0E80D /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		4492CEFB9E17CBE1A0A7756C /* StripProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripProbe.swift; sourceTree = "<group>"; };
 		44D5D1E6C5949563F8A371FA /* ColourPads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColourPads.swift; sourceTree = "<group>"; };
@@ -443,6 +448,7 @@
 		4F5A1AFFAE02722854CCDB74 /* Layer2Snapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Layer2Snapshots.swift; sourceTree = "<group>"; };
 		4F665C099579B0018EDCF397 /* MemoryLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryLog.swift; sourceTree = "<group>"; };
 		4F9E4736C2882AD9FA3DBFA5 /* CurveMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurveMath.swift; sourceTree = "<group>"; };
+		4FE4799103FDE94A2683282E /* FilmLabResizeProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabResizeProbe.swift; sourceTree = "<group>"; };
 		50261090D4CF7FD9936806D6 /* MacLightTableCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B92171E58FB163AB661F23 /* MacLightTableCheck.swift */; };
 		503C6C830DD135E1273D4E30 /* DevelopCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2776C4B1458ED9380E8FCDE5 /* DevelopCanvas.swift */; };
 		5070E5241BDE4621F862A19C /* PieceComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceComposer.swift; sourceTree = "<group>"; };
@@ -835,9 +841,12 @@
 				091777C259CD64E2D1342678 /* FilmLabBar.swift */,
 				2918D511AE485C203E1C9127 /* FilmLabCopier.swift */,
 				F327F52B5308BEF31D70B261 /* FilmLabExportLog.swift */,
+				23616ABD54877786FE7F2712 /* FilmLabGradeTabs.swift */,
 				E94324BF6880C02591FB83EC /* FilmLabHome.swift */,
 				024A4CD8A2C36E2FD85A5932 /* FilmLabImport.swift */,
 				A573EBB0EBF5CD18ACCBB6E4 /* FilmLabOpen.swift */,
+				432FBC8B7A045AD33D18A7CE /* FilmLabProjects.swift */,
+				B601C6573DE819F945B3EC59 /* FilmLabResizeProbe.swift */,
 				949DC9B2496450AEC0E04987 /* FilmLabRollFilter.swift */,
 				7F38B2D7042763D9AB81F96E /* FilmLabWelcome.swift */,
 				3B0AB8287D50EE02A5F6F785 /* FilmStrip.swift */,
@@ -1640,6 +1649,7 @@
 		A9E4ECFD8A3D7937999E8B6A /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB9B887C9CE11099BA6445E /* SettingsScreen.swift */; };
 		AA30006F73EB09526C547909 /* DevelopPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopPane.swift; sourceTree = "<group>"; };
 		AA7BB6AD6149D74BF2C29044 /* LibraryFrame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryFrame.swift; sourceTree = "<group>"; };
+		AB34CCFF142F2E32396C5C6E /* FilmLabGradeTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabGradeTabs.swift; sourceTree = "<group>"; };
 		ABAEE27F621ED5477C8CD315 /* FilmCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmCanvasView.swift; sourceTree = "<group>"; };
 		ABF0C0C0AF5EA4E6110AB577 /* MaskFinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskFinding.swift; sourceTree = "<group>"; };
 		AD4428AC886DB43542DA8C3D /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
@@ -1732,6 +1742,7 @@
 		B5B14C267A2367F250324533 /* Layer2Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF51F184B82293C13DBF678 /* Layer2Kernel.swift */; };
 		B5ED08D2F119177330D977D9 /* MacSettingsParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B25F129F000D39DBFA29CA /* MacSettingsParts.swift */; };
 		B5F77A7E86A66AAFFCDE7B16 /* MacExportHDRCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D54DFB0F3A009780734FA1 /* MacExportHDRCheck.swift */; };
+		B601C6573DE819F945B3EC59 /* FilmLabResizeProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE4799103FDE94A2683282E /* FilmLabResizeProbe.swift */; };
 		B644B44AB8C9E4450A58A317 /* CostModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostModel.swift; sourceTree = "<group>"; };
 		B68814B263C505B7156BB47A /* FilmEdgeJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B38B9C9FFE22398D8D2550 /* FilmEdgeJourney.swift */; };
 		B6C1B607FA2EAF792F33BAB8 /* MaskOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskOverlay.swift; sourceTree = "<group>"; };
@@ -2083,6 +2094,7 @@
 		DBEFF2E8D4957B7E7C46EC83 /* LayerPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerPage.swift; sourceTree = "<group>"; };
 		DC6EC72DDD0051EC3633316F /* InterfaceScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1941AC60ACF1B6E715BA33C0 /* InterfaceScale.swift */; };
 		DCDF24286E4A1C29B96A536E /* Rows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E412292F641F321214D4C20 /* Rows.swift */; };
+		DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabProjects.swift; sourceTree = "<group>"; };
 		DD4034B51DA2E838B08C7A69 /* AdjustSliders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1F06C1E0FCD37464AAB7B4 /* AdjustSliders.swift */; };
 		DDA5DAFC2CC8326D51F5AAD6 /* HostCut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostCut.swift; sourceTree = "<group>"; };
 		DDEDAC5844B31D8767A2AB0B /* NeutralPickSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5431DC1F200C603D7039710 /* NeutralPickSession.swift */; };

@@ -47,64 +47,66 @@ struct ExportModeSection: View {
         return list
     }
 
+    /// Design A (2026-11-24): the column's sections fold like 冲洗's, each saying what it is set to in its header.
+    @AppStorage("filmlab.export.fold.presets") private var presetsFolded = false
+    @AppStorage("filmlab.export.fold.file") private var fileFolded = false
+    @AppStorage("filmlab.export.fold.save") private var saveFolded = false
+
     var body: some View {
         let recipe = self.recipe
+        let r = recipe.wrappedValue
         VStack(alignment: .leading, spacing: 0) {
-            SectionLabel(L("Export")).padding(.horizontal, 16).padding(.top, 12)
             // 普通版 (FilmLab): Format, Quality, Size and Save to; the saved recipes and the colour space are 专业版's.
             if !FeatureFlags.simpleWindow {
-                RecipeChips(recipe: recipe, admit: { ExportRecipe.opening($0) }, wraps: true)
-                    .padding(.top, 8)
-            }
-            GroupBox(radius: 12) {
-                ExportRow(label: L("Format"), height: 42) { FormatSwitch(recipe: recipe) }.modifier(Separated())
-                QualitySliderRow(recipe: recipe).modifier(Separated())
-                ExportRow(label: L("Size"), height: 42) {
-                    Menu {
-                        ForEach(sizes(recipe.wrappedValue.size), id: \.self) { size in
-                            Button(sizeTitle(size)) { recipe.wrappedValue.size = size }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(sizeTitle(recipe.wrappedValue.size)).font(Theme.Font.ui(13, .medium)).foregroundStyle(Theme.text)
-                            Image(systemName: "chevron.up.chevron.down").font(Theme.Font.ui(10, .semibold)).foregroundStyle(Theme.dim)
-                        }
-                    }
-                    .menuIndicator(.hidden)
-                    .accessibilityIdentifier("filmlab.export.size")
+                ColumnSectionHeader(title: L("Presets"), folded: presetsFolded, id: "export.presets",
+                                    value: r.name) { presetsFolded.toggle() }
+                if !presetsFolded {
+                    RecipeChips(recipe: recipe, admit: { ExportRecipe.opening($0) }, wraps: true, small: true)
+                        .padding(.top, 2).padding(.bottom, 14)
                 }
-                .modifier(FeatureFlags.simpleWindow ? Separated(shown: false) : Separated())
-                if !FeatureFlags.simpleWindow { ColourRow(recipe: recipe) }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            SectionLabel(L("Save to")).padding(.horizontal, 16).padding(.top, 14)
-            SegmentedSwitch(options: ExportRecipe.Destination.allCases, selection: recipe.destination,
-                            title: \.shownTitle, height: 30, track: Theme.card)
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-            if recipe.wrappedValue.destination == .files {
-                Button { startsAfterPicking = false; picking = true } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder").foregroundStyle(Theme.secondaryText)
-                        Text(folder.map { MacExportFolder.place($0) } ?? L("Choose a Folder…"))
-                            .font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.text)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Chevron()
+            ColumnSectionHeader(title: L("File"), folded: fileFolded, id: "export.file",
+                                value: r.builtName + Fmt.dot + sizeTitle(r.size)) { fileFolded.toggle() }
+            if !fileFolded {
+                VStack(spacing: 0) {
+                    ExportRow(label: L("Format"), height: 42) { FormatSwitch(recipe: recipe) }.modifier(Separated())
+                    QualitySliderRow(recipe: recipe).modifier(Separated())
+                    ExportRow(label: L("Size"), height: 42) {
+                        Menu {
+                            ForEach(sizes(r.size), id: \.self) { size in
+                                Button(sizeTitle(size)) { recipe.wrappedValue.size = size }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(sizeTitle(r.size)).font(Theme.Font.ui(13, .medium)).foregroundStyle(Theme.text)
+                                Image(systemName: "chevron.up.chevron.down").font(Theme.Font.ui(10, .semibold)).foregroundStyle(Theme.dim)
+                            }
+                        }
+                        .menuIndicator(.hidden)
+                        .accessibilityIdentifier("filmlab.export.size")
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 9)
-                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .contentShape(Rectangle())
+                    .modifier(FeatureFlags.simpleWindow ? Separated(shown: false) : Separated())
+                    if !FeatureFlags.simpleWindow { ColourRow(recipe: recipe) }
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .accessibilityIdentifier("filmlab.export.folder")
+                .padding(.horizontal, 2)
+                .padding(.bottom, 8)
             }
-            footer(recipe.wrappedValue)
-                .padding(.horizontal, 12)
-                .padding(.top, 14)
+            ColumnSectionHeader(title: L("Save to"), folded: saveFolded, id: "export.save",
+                                value: r.destination == .files ? folder.map { MacExportFolder.place($0) } : r.destination.shownTitle) {
+                saveFolded.toggle()
+            }
+            if !saveFolded {
+                VStack(alignment: .leading, spacing: 8) {
+                    SegmentedSwitch(options: ExportRecipe.Destination.allCases, selection: recipe.destination,
+                                    title: \.shownTitle, height: 28, track: Theme.card)
+                    if r.destination == .files { folderField }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+            }
+            footer(r)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
                 .padding(.bottom, 16)
             FoldRule()
         }
@@ -116,6 +118,50 @@ struct ExportModeSection: View {
             MacExportFolder.remember(url)
             if begins { start(recipe.wrappedValue, folder: url) }
         }
+    }
+
+    /// 存到: the folder in a well-coloured field, 更改 beside it (design A).
+    private var folderField: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "folder").font(Theme.Font.ui(12)).foregroundStyle(Theme.dim)
+                Text(folder.map { MacExportFolder.place($0) } ?? L("No folder yet"))
+                    .font(Theme.Font.ui(12)).foregroundStyle(folder == nil ? Theme.dim : Theme.text)
+                    .lineLimit(1).truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 9)
+            .frame(height: 28)
+            .background(Theme.well, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.rule, lineWidth: 1))
+            Button { startsAfterPicking = false; picking = true } label: {
+                Text(folder == nil ? L("Choose…") : L("Change…")).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.text)
+                    .padding(.horizontal, 10).frame(height: 28)
+                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("filmlab.export.folder")
+        }
+    }
+
+    /// The column's one big action: amber, squared like the bar's 导出 (design A), not a capsule.
+    private func exportButton(_ title: String, primary: Bool = true, enabled: Bool = true,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if primary { Image(systemName: "square.and.arrow.up").font(Theme.Font.ui(13, .semibold)) }
+                Text(title).font(Theme.Font.ui(13.5, .semibold))
+            }
+            .foregroundStyle(primary ? Theme.onSelection : Theme.text)
+            .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .background(primary ? Theme.accent : Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .opacity(enabled ? 1 : 0.4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
     }
 
     @ViewBuilder private func footer(_ recipe: ExportRecipe) -> some View {
@@ -138,11 +184,11 @@ struct ExportModeSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if busy {
-                CapsuleButton(title: L("Stop"), primary: false, height: 40) { run.stop() }
+                exportButton(L("Stop"), primary: false) { run.stop() }
                     .accessibilityIdentifier("filmlab.export.stop")
             } else {
-                CapsuleButton(title: frameIDs.count > 1 ? L("Export \(frameIDs.count) Pictures") : L("Export"),
-                              height: 40, enabled: !frameIDs.isEmpty) { start(recipe) }
+                exportButton(frameIDs.count > 1 ? L("Export \(frameIDs.count) Pictures") : L("Export"),
+                             enabled: !frameIDs.isEmpty) { start(recipe) }
                     .accessibilityIdentifier("filmlab.export.go")
             }
         }

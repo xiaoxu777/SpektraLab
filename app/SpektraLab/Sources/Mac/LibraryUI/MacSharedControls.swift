@@ -58,7 +58,7 @@ struct MacSharedControls: View {
                     .foregroundStyle(cropping ? Theme.onSelection : Theme.text)
                     .padding(.horizontal, MacMetric.pt(8))
                     .frame(height: MacMetric.pt(22))
-                    .background(Capsule().fill(cropping ? Theme.selection : Theme.card))
+                    .background(RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(cropping ? Theme.selection : Theme.card))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

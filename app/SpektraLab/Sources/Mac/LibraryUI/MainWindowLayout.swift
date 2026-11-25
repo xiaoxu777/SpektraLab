@@ -189,7 +189,7 @@ struct MainWindowLayout: View {
                 if browser.fullGrid {
                     // The grid that takes the window (G): the floating panel, whole.
                     HStack(spacing: 0) {
-                        ShellContent(develop: develop)
+                        ShellContent(develop: develop, covered: FilmLabHome.shared.shown || FilmLabHome.shared.welcome)
                             .equatable()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                         panel(store, rows, inDevelop: develop != nil, room: geo.size, factor: f)
@@ -197,7 +197,7 @@ struct MainWindowLayout: View {
                 } else {
                     // FilmLab: the browser is a strip under each page's picture, never under its column
                     // (`ShellFilmStrip`, the owner, 2026-11-23).
-                    ShellContent(develop: develop)
+                    ShellContent(develop: develop, covered: FilmLabHome.shared.shown || FilmLabHome.shared.welcome)
                         .equatable()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -215,6 +215,11 @@ struct MainWindowLayout: View {
         .overlay {
             if dropWatch.shown || browser.dropReading != nil { MacImportDropNote(reading: browser.dropReading).ignoresSafeArea() }
         }
+        // FilmLab: photos dragged over an open project go into it (`FilmLabDrop`): said where they will go.
+        .overlay(alignment: .top) {
+            OwnReads { FilmLabDropNote() }.interfaceScaled(.macPoints).allowsHitTesting(false)
+        }
+        .onAppear { FilmLabDrop.shared.model = model; FilmLabCheckArgs.showPage(model: model) }
         // What a paste just did, over the picture while 冲洗/二级调色/导出 is in front (the library says it in its sidebar).
         .overlay(alignment: .bottom) {
             if develop != nil {
@@ -649,20 +654,36 @@ struct MainWindowLayout: View {
 /// of its picture as it went (measured in 冲洗, a scripted sweep: one layout of the hidden page per size step, ~1.7
 /// decodes started per width step). Held, nothing under it moves; it stays mounted, so its scroll position and
 /// selection are what they were, and it takes the window's size again when 图库 is in front.
+///
+/// FilmLab (2026-11-24, the owner: "改变窗口大小好卡啊"): held, it was still placed again at every step — its grid is a
+/// lazy stack, and a lazy stack measures its rows (every cell's badge line) whenever the window around it moves, size
+/// held or not. Measured in 冲洗 on a 3FR (`--filmlab-resize-probe`, the window swept 360 pt out and back at every
+/// display frame): 69 ms a step with it, 30 ms without. So while the window is being resized under 冲洗/二级调色/导出, or
+/// under FilmLab's home page, the hidden page is taken out, and put back 0.4 s after the last step; it is made again hidden, its selection and source
+/// being the shared objects', and its grid scrolls to the photo in focus as it appears (`MacLibraryGrid`).
 private struct ShellContent: View, Equatable {
     let develop: Route?
+    /// FilmLab's home page or welcome over the whole window: the library page under it is hidden too.
+    var covered = false
     /// The library page's size when it was last in front. Kept in a box nothing observes: as `@State` it was written
     /// at every resize step in 图库, and each write re-ran this body and the library page's.
     @State private var front = FrontSize()
 
     private final class FrontSize { var size: CGSize? }
 
-    nonisolated static func == (a: Self, b: Self) -> Bool { a.develop == b.develop }
+    /// A resize under way while a develop page is in front: the hidden library page out until it settles.
+    @State private var resizing = false
+    /// The last size seen and the settle's timer, in a box nothing observes (written at every step).
+    @State private var settle = Settle()
+    private final class Settle { var size: CGSize?; var task: Task<Void, Never>? }
+
+    nonisolated static func == (a: Self, b: Self) -> Bool { a.develop == b.develop && a.covered == b.covered }
 
     var body: some View {
         // Read when the mode changes (this body runs again then), so the hidden page keeps the size of its last frame in front.
         let held = develop == nil ? nil : front.size
         ZStack {
+            if !(resizing && (develop != nil || covered)) {
             LibraryScreen()
                 .frame(width: held?.width, height: held?.height)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -672,12 +693,25 @@ private struct ShellContent: View, Equatable {
                 .opacity(develop == nil ? 1 : 0)
                 .allowsHitTesting(develop == nil)
                 .accessibilityHidden(develop != nil)
+            }
             if let develop {
                 RouteContent(route: develop)
                     .id(develop)
             }
         }
+        .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in resized(to: size) }
         .transaction { $0.animation = nil }
+    }
+
+    private func resized(to size: CGSize) {
+        defer { settle.size = size }
+        guard develop != nil || covered, let last = settle.size, last != size else { return }
+        if !resizing { resizing = true }
+        settle.task?.cancel()
+        settle.task = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            if !Task.isCancelled { resizing = false }
+        }
     }
 }
 
