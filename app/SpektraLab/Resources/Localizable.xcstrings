@@ -177,6 +177,38 @@
         }
       }
     },
+    "%@ not exported" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 张没有导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 張沒有匯出"
+          }
+        }
+      }
+    },
+    "%@ photos exported" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导出 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已匯出 %@ 張"
+          }
+        }
+      }
+    },
     "%@ Recent Imports, each with its own time" : {
       "localizations" : {
         "ja" : {
@@ -2991,6 +3023,22 @@
         }
       }
     },
+    "1 photo exported" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已导出 1 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已匯出 1 張"
+          }
+        }
+      }
+    },
     "1 photo uses it.\nDeleting it removes the watermark from it." : {
       "localizations" : {
         "ja" : {
@@ -4091,6 +4139,28 @@
         }
       }
     },
+    "Add a film border" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの縁を付ける"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加胶片边框"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加底片邊框"
+          }
+        }
+      }
+    },
     "Add a film border, or not" : {
       "localizations" : {
         "ja" : {
@@ -4131,6 +4201,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為這一格加入照片"
+          }
+        }
+      }
+    },
+    "Add a little film grain" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの粒状を少し加える"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加一点胶片颗粒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加一點底片顆粒"
           }
         }
       }
@@ -4899,6 +4991,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "空著的一層是未曝光的底片：畫面只按另一次曝光沖洗。"
+          }
+        }
+      }
+    },
+    "and %@ more" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还有 %@ 张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還有 %@ 張"
           }
         }
       }
@@ -5969,6 +6077,22 @@
         }
       }
     },
+    "bottom" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下"
+          }
+        }
+      }
+    },
     "Bottom alone" : {
       "localizations" : {
         "ja" : {
@@ -6135,6 +6259,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "亮度和冷暖"
+          }
+        }
+      }
+    },
+    "Brightness and warmth" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "明るさと色温度"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调亮暗和冷暖"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調亮暗和冷暖"
           }
         }
       }
@@ -6733,6 +6879,22 @@
         }
       }
     },
+    "centre" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "居中"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "置中"
+          }
+        }
+      }
+    },
     "Centred" : {
       "localizations" : {
         "ja" : {
@@ -6773,6 +6935,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更改"
+          }
+        }
+      }
+    },
+    "Change Local Photo Folder" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真フォルダを変更"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "修改本地图片目录"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "修改本機圖片目錄"
+          }
+        }
+      }
+    },
+    "Change film in one click" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワンクリックでフィルムを変更"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一键换胶片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一鍵換底片"
           }
         }
       }
@@ -7251,6 +7457,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇檔案夾…"
+          }
+        }
+      }
+    },
+    "Choose a folder and press Export to save JPEGs. Originals are never changed." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダを選んで「書き出す」で JPEG に保存。元のファイルは変わりません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选好文件夹，点「导出」存成 JPEG。原片不会改动。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選好資料夾，按「輸出」存成 JPEG。原片不會改動。"
           }
         }
       }
@@ -7823,6 +8051,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在畫面中點按一處中性灰"
+          }
+        }
+      }
+    },
+    "Click a thumbnail to change the film. Sliders set brightness and warmth." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サムネールをクリックしてフィルムを変更。スライダーで明るさと色温度を調整。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点一张小图换胶片。滑块调亮暗和冷暖。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一張小圖換底片。滑桿調亮暗和冷暖。"
           }
         }
       }
@@ -9815,6 +10065,22 @@
         }
       }
     },
+    "Date {the export has one}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
+          }
+        }
+      }
+    },
     "Daylight" : {
       "localizations" : {
         "ja" : {
@@ -10667,6 +10933,22 @@
         }
       }
     },
+    "Done. Each picture has its own Undo." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已应用，每张都能单独撤销"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已套用，每張都能單獨還原"
+          }
+        }
+      }
+    },
     "Dots" : {
       "localizations" : {
         "ja" : {
@@ -11019,6 +11301,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "把 PNG 檔案拖到這裡，或選擇「加入⋯」"
+          }
+        }
+      }
+    },
+    "Drop a card or folder here. 3FR, DNG, JPEG." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードやフォルダをここにドロップ\n3FR・DNG・JPEG に対応"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖入存储卡或文件夹\n支持 3FR、DNG、JPEG"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖入記憶卡或資料夾\n支援 3FR、DNG、JPEG"
           }
         }
       }
@@ -11599,6 +11903,22 @@
         }
       }
     },
+    "Edge Details" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片边细节"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片邊細節"
+          }
+        }
+      }
+    },
     "Edge Print" : {
       "localizations" : {
         "ja" : {
@@ -12171,6 +12491,22 @@
         }
       }
     },
+    "Everyday pictures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日常照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日常照片"
+          }
+        }
+      }
+    },
     "Everything in Simple, plus:" : {
       "localizations" : {
         "ja" : {
@@ -12375,6 +12711,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在輸出"
+          }
+        }
+      }
+    },
+    "Exporting %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在导出 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在匯出 %@"
           }
         }
       }
@@ -12969,6 +13321,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "片邊決定底片尺寸：%@。顆粒與光暈隨之變化。"
+          }
+        }
+      }
+    },
+    "Film edge {the export has one}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "片邊"
           }
         }
       }
@@ -13655,6 +14023,28 @@
         }
       }
     },
+    "Fine control" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "細かく調整"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精细调整"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "精細調整"
+          }
+        }
+      }
+    },
     "Finish in the background" : {
       "localizations" : {
         "ja" : {
@@ -13849,6 +14239,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "符合視窗"
+          }
+        }
+      }
+    },
+    "Flag" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旗标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旗標"
           }
         }
       }
@@ -14179,6 +14585,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "對於檔案夾，預覽保存在 SpektraLab 為它建立的圖庫中，位於這台 Mac 上。"
+          }
+        }
+      }
+    },
+    "For a print lab, or more editing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交给冲印店，或继续修图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "交給沖印店，或繼續修圖"
           }
         }
       }
@@ -14815,6 +15237,22 @@
         }
       }
     },
+    "Fuller colour on Apple screens" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在苹果设备上颜色更饱满"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在蘋果裝置上顏色更飽滿"
+          }
+        }
+      }
+    },
     "GUIDE" : {
       "localizations" : {
         "ja" : {
@@ -15009,6 +15447,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "閃柔"
+          }
+        }
+      }
+    },
+    "Glow around highlights" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハイライトのにじみ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高光光晕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高光光暈"
           }
         }
       }
@@ -15679,6 +16139,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隱藏畸變區域"
+          }
+        }
+      }
+    },
+    "Hide Rejected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏不要的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏不要的"
+          }
+        }
+      }
+    },
+    "Hide the preview (⌥⌘V)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起预览（⌥⌘V）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起預覽（⌥⌘V）"
           }
         }
       }
@@ -16837,6 +17329,50 @@
         }
       }
     },
+    "Insert the card and import its photos. Each import is one roll." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードを挿して写真を読み込みます。1 回の読み込みが 1 本のロールです。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插上存储卡，导入照片。每次导入就是一卷。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插上記憶卡，匯入照片。每次匯入就是一卷。"
+          }
+        }
+      }
+    },
+    "Insert the card and press Import Photos. Click a photo to start." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カードを挿して「写真を読み込む」を押します。写真をクリックして始めます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插上存储卡，点「导入照片」。点一张照片开始。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插上記憶卡，按「匯入照片」。點一張照片開始。"
+          }
+        }
+      }
+    },
     "Install Lens Profiles in Settings…" : {
       "localizations" : {
         "ja" : {
@@ -17431,6 +17967,22 @@
         }
       }
     },
+    "Keep" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留用"
+          }
+        }
+      }
+    },
     "Keep As It Is" : {
       "localizations" : {
         "ja" : {
@@ -17497,6 +18049,28 @@
         }
       }
     },
+    "Keep the card in while you edit." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集中はカードを挿したままに。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "修图时卡不能拔。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "修圖時卡不能拔。"
+          }
+        }
+      }
+    },
     "Keeps the original in SpektraLab, so the photo can be deleted from Photos." : {
       "localizations" : {
         "ja" : {
@@ -17515,6 +18089,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "拷貝後，可從「照片」中刪除原圖。"
+          }
+        }
+      }
+    },
+    "Kept" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "留用"
           }
         }
       }
@@ -18197,6 +18787,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "留在原處，不複製"
+          }
+        }
+      }
+    },
+    "left" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左"
           }
         }
       }
@@ -18959,6 +19565,28 @@
         }
       }
     },
+    "Local edits, like the sky or a face" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空や顔など部分ごとの調整"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部调整，比如天空、人脸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "局部調整，例如天空、人臉"
+          }
+        }
+      }
+    },
     "Log" : {
       "localizations" : {
         "ja" : {
@@ -19131,6 +19759,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在尋找影像… %@"
+          }
+        }
+      }
+    },
+    "Lossless, for the web and design work" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无损，用于网页和设计"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無損，用於網頁和設計"
           }
         }
       }
@@ -20099,6 +20743,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更多檔案格式，以及列印用的色彩設定"
+          }
+        }
+      }
+    },
+    "More formats, print colour settings" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追加の形式と印刷用カラー設定"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多格式和打印色彩设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多格式與列印色彩設定"
           }
         }
       }
@@ -23239,6 +23905,28 @@
         }
       }
     },
+    "Or drag them onto this page." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このページにドラッグしても読み込めます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也可以直接拖到这一页。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也可以直接拖到這一頁。"
+          }
+        }
+      }
+    },
     "Orange" : {
       "localizations" : {
         "ja" : {
@@ -23537,6 +24225,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他"
+          }
+        }
+      }
+    },
+    "Otherwise each picture keeps its own." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不应用，每张用各自的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不套用，每張用各自的"
           }
         }
       }
@@ -24199,6 +24903,22 @@
         }
       }
     },
+    "Personalize" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个性化"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個人化"
+          }
+        }
+      }
+    },
     "Perspective" : {
       "localizations" : {
         "ja" : {
@@ -24633,6 +25353,22 @@
         }
       }
     },
+    "PNG…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG…"
+          }
+        }
+      }
+    },
     "Point" : {
       "localizations" : {
         "ja" : {
@@ -25029,6 +25765,22 @@
         }
       }
     },
+    "Preview width" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览宽度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽寬度"
+          }
+        }
+      }
+    },
     "Previews" : {
       "localizations" : {
         "ja" : {
@@ -25355,6 +26107,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "專業"
+          }
+        }
+      }
+    },
+    "Pro: adds curves, glow, local edits and more." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "プロ：カーブ、にじみ、部分補正なども。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "专业版：再加曲线、光晕、局部调整等。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "專業版：再加曲線、光暈、局部調整等。"
           }
         }
       }
@@ -25745,6 +26519,44 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "品質"
+          }
+        }
+      }
+    },
+    "Quality %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画质 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫質 %@"
+          }
+        }
+      }
+    },
+    "Quick results" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手早く仕上げる"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速出片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速出片"
           }
         }
       }
@@ -26513,6 +27325,38 @@
         }
       }
     },
+    "Reject" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要"
+          }
+        }
+      }
+    },
+    "Rejected" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不要"
+          }
+        }
+      }
+    },
     "Release Notes" : {
       "localizations" : {
         "ja" : {
@@ -26597,6 +27441,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除這 %@ 組半格？"
+          }
+        }
+      }
+    },
+    "Remove Flag" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消旗标"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消旗標"
           }
         }
       }
@@ -27217,6 +28077,22 @@
         }
       }
     },
+    "right" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "右"
+          }
+        }
+      }
+    },
     "Right frame" : {
       "localizations" : {
         "ja" : {
@@ -27415,6 +28291,38 @@
         }
       }
     },
+    "Show the preview (⌥⌘V)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示预览（⌥⌘V）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示預覽（⌥⌘V）"
+          }
+        }
+      }
+    },
+    "Sidebar width" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "边栏宽度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "側邊欄寬度"
+          }
+        }
+      }
+    },
     "SLIDE" : {
       "localizations" : {
         "ja" : {
@@ -27565,6 +28473,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "一步存成 JPEG"
+          }
+        }
+      }
+    },
+    "Save as a New Preset…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存为新预设…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存為新預設…"
           }
         }
       }
@@ -28449,6 +29373,22 @@
         }
       }
     },
+    "Share online, send to a phone" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享到网上、发到手机"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享到網上、傳到手機"
+          }
+        }
+      }
+    },
     "Share the log with SpektraLab" : {
       "localizations" : {
         "ja" : {
@@ -29235,6 +30175,28 @@
         }
       }
     },
+    "Simple: film, brightness and warmth, grain, export." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シンプル：フィルム、明るさと色温度、粒状、書き出し。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版：换胶片、调亮暗冷暖、加颗粒、导出。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "普通版：換底片、調亮暗冷暖、加顆粒、匯出。"
+          }
+        }
+      }
+    },
     "Simple: just the essentials — pick a film, adjust brightness and colour, export." : {
       "localizations" : {
         "ja" : {
@@ -29427,6 +30389,22 @@
         }
       }
     },
+    "Small files for Apple devices" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文件小，适合苹果设备"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案小，適合蘋果裝置"
+          }
+        }
+      }
+    },
     "Smaller Brush" : {
       "localizations" : {
         "ja" : {
@@ -29533,6 +30511,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "降低硬度"
+          }
+        }
+      }
+    },
+    "Some with %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分带%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分帶%@"
           }
         }
       }
@@ -30477,6 +31471,22 @@
         }
       }
     },
+    "Stopped" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停止"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停止"
+          }
+        }
+      }
+    },
     "Stopped. " : {
       "localizations" : {
         "ja" : {
@@ -30517,6 +31527,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已停止：它們的預覽保留之前的畫面。"
+          }
+        }
+      }
+    },
+    "Stopping…" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在停止…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在停止…"
           }
         }
       }
@@ -30895,6 +31921,28 @@
         }
       }
     },
+    "Switch any time, top right of the window." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウインドウ右上でいつでも切り替えられます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "随时可在窗口右上角切换。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隨時可在視窗右上角切換。"
+          }
+        }
+      }
+    },
     "System {appearance}" : {
       "localizations" : {
         "ja" : {
@@ -30913,6 +31961,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "跟隨系統"
+          }
+        }
+      }
+    },
+    "Text {a watermark of typed words}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字"
+          }
+        }
+      }
+    },
+    "The text could not be made into a watermark." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这段文字做不成水印。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這段文字做不成浮水印。"
           }
         }
       }
@@ -31045,6 +32125,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移除片邊"
+          }
+        }
+      }
+    },
+    "Take the card out once it is copied." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "コピーが終わればカードを抜けます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制完可以拔卡。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "複製完可以拔卡。"
           }
         }
       }
@@ -34869,6 +35971,22 @@
         }
       }
     },
+    "top" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上"
+          }
+        }
+      }
+    },
     "Top %@ %%" : {
       "localizations" : {
         "ja" : {
@@ -35261,6 +36379,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "旋轉 90°"
+          }
+        }
+      }
+    },
+    "Turn your Hasselblad photos into real film. Three steps." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハッセルブラッドの写真を本物のフィルムの色に。3 ステップです。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把哈苏照片冲成真胶片的样子。一共三步。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把哈蘇照片沖成真底片的樣子。一共三步。"
           }
         }
       }
@@ -35869,6 +37009,22 @@
         }
       }
     },
+    "Use these on all %@ pictures" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这 %@ 张都用这一套"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這 %@ 張都用這一套"
+          }
+        }
+      }
+    },
     "Use this film edge on all %@ pictures" : {
       "localizations" : {
         "zh-Hans" : {
@@ -35881,6 +37037,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "這次匯出的 %@ 張都用這套片邊"
+          }
+        }
+      }
+    },
+    "Use {use this text}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用"
           }
         }
       }
@@ -36451,6 +37623,28 @@
         }
       }
     },
+    "Welcome back." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "おかえりなさい。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎回来。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎回來。"
+          }
+        }
+      }
+    },
     "Welcome back. Pick up a roll, or import new photos." : {
       "localizations" : {
         "ja" : {
@@ -36535,6 +37729,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "放入其中的內容"
+          }
+        }
+      }
+    },
+    "What is it for?" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用在哪儿"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用在哪裡"
           }
         }
       }
@@ -37111,6 +38321,22 @@
         }
       }
     },
+    "Wide colour, for printing" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "广色域，用于打印"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "廣色域，用於列印"
+          }
+        }
+      }
+    },
     "Wide {formats}" : {
       "localizations" : {
         "ja" : {
@@ -37129,6 +38355,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "寬幅"
+          }
+        }
+      }
+    },
+    "With %@ {the export carries}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "带%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帶%@"
           }
         }
       }
@@ -37481,6 +38723,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的圖庫現在是一個 SpektraLab 目錄。照片在原處讀取，不會移動或拷貝任何東西。"
+          }
+        }
+      }
+    },
+    "Your name or a line of text" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的名字，或一行字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的名字，或一行字"
           }
         }
       }

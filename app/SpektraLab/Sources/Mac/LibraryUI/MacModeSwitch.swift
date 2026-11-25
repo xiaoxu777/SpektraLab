@@ -11,21 +11,23 @@
 import SwiftUI
 
 enum WorkspaceMode: String, CaseIterable, Hashable {
-    /// FilmLab's order (the owner, 2026-11-23): 二级调色 straight after 冲洗, 导出 last.
-    case library, develop, edit, export
+    /// FilmLab's order (the owner, 2026-11-23): 二级调色 straight after 冲洗, 导出 last; 个性化 (the film edge, the date
+    /// back, the watermark) before 导出 since 2026-11-25 ("把片边和日期后背加到导出前面吧，命名为个性化").
+    case library, develop, edit, personalize, export
 
     var title: String {
         switch self {
         case .library: L("Library")
         case .develop: L("Develop")
         case .export: L("Export")
+        case .personalize: L("Personalize")
         // FilmLab: 编辑 is 二级调色, the grading after the film (the owner, 2026-11-23).
         case .edit: L("Grading")
         }
     }
 
     /// The modes the row offers: FilmLab's simple window leaves 编辑 out (`FeatureFlags.simpleWindow`).
-    static var shown: [WorkspaceMode] { FeatureFlags.simpleWindow ? [.library, .develop, .export] : allCases }
+    static var shown: [WorkspaceMode] { FeatureFlags.simpleWindow ? [.library, .develop, .personalize, .export] : allCases }
 }
 
 /// `current` wears the white capsule; `choose` is what a press asks for (`.library` pops the window back
@@ -42,7 +44,7 @@ struct MacModeSwitch: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(showAdvanced ? WorkspaceMode.allCases : [.library, .develop, .export], id: \.self) { mode in
+            ForEach(showAdvanced ? WorkspaceMode.allCases : [.library, .develop, .personalize, .export], id: \.self) { mode in
                 let on = current == mode
                 let allowed = enabled(mode)
                 Button { choose(mode) } label: {
@@ -78,6 +80,7 @@ struct MacModeSwitch: View {
 @MainActor
 enum MacDevelopWanted {
     static var surface: DevelopSurface?
-    /// FilmLab: the step the opened page stands on (`.format` for 导出), read once with `surface`.
+    /// FilmLab: the step the opened page stands on (`.format` for 个性化 and 导出, told apart by `FilmLabFinish`), read
+    /// once with `surface`.
     static var step: DevelopStep?
 }

@@ -30,11 +30,13 @@ final class FilmLabHome {
     /// The home page is over the window. On at every launch.
     /// On at every launch; `--no-home` leaves it off, for a check that captures the window itself (`--capture-window`).
     var shown = !CommandLine.arguments.contains("--no-home")
-    /// The welcome tour is over the window: the first launch, or asked for again (Help, the home page).
-    var welcome = !UserDefaults.standard.bool(forKey: FilmLabHome.welcomedKey)
+    /// The welcome tour is over the window: the first launch, or asked for again (Help, the home page), or a check's
+    /// launch (`--filmlab-welcome PAGE`, `WelcomeCheck`).
+    var welcome = WelcomeCheck.on || !UserDefaults.standard.bool(forKey: FilmLabHome.welcomedKey)
 
     func finishWelcome() {
-        UserDefaults.standard.set(true, forKey: Self.welcomedKey)
+        // A check's tour leaves the settings as it found them.
+        if !WelcomeCheck.on { UserDefaults.standard.set(true, forKey: Self.welcomedKey) }
         withAnimation(.easeInOut(duration: 0.45)) { welcome = false }
     }
 
@@ -118,7 +120,6 @@ struct FilmLabHomeView: View {
     @Environment(AppRouter.self) private var router
     @State private var refused: String?
     @State private var appeared = false
-    @State private var storageShown = false
 
     private var home: FilmLabHome { .shared }
 
@@ -216,7 +217,7 @@ struct FilmLabHomeView: View {
             NegativeMark(size: MacMetric.pt(30))
             VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
                 Text(Brand.name).font(MacMetric.font(19, .bold)).foregroundStyle(Theme.text)
-                Text(hasProjects ? L("Welcome back. Pick up a roll, or import new photos.")
+                Text(hasProjects ? L("Welcome back.")
                                  : L("Hasselblad files in, film out."))
                     .font(MacMetric.font(12)).foregroundStyle(Theme.dim).lineLimit(1)
             }
@@ -244,7 +245,7 @@ struct FilmLabHomeView: View {
         VStack(spacing: MacMetric.pt(10)) {
             Image(systemName: "sdcard").font(.system(size: MacMetric.pt(28), weight: .light)).foregroundStyle(Theme.accent)
             Text(L("Start a new roll")).font(MacMetric.font(15, .semibold)).foregroundStyle(Theme.text)
-            Text(L("Drag a card or a folder here. 3FR, DNG and JPEG all work."))
+            Text(L("Drop a card or folder here. 3FR, DNG, JPEG."))
                 .font(MacMetric.font(12)).foregroundStyle(Theme.secondaryText)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             ViewThatFits(in: .horizontal) {
@@ -269,31 +270,38 @@ struct FilmLabHomeView: View {
         .accessibilityIdentifier("filmlab.home.newcard")
     }
 
-    /// Where imported photos go, and the way to change it.
+    /// 修改本地图片目录: one control, Finder's panel for the photo folder imports are copied into (the owner, 2026-11-25:
+    /// "内容直接改为修改本地图片目录", for a sentence and a separate Change…). The folder is its tooltip, and its small grey
+    /// text where that fits on the line; copy or leave them where they are is its right-click menu.
     private var storageLine: some View {
         let imports = FilmLabImport.shared
-        return Button { storageShown = true } label: {
-            HStack(spacing: MacMetric.pt(5)) {
-                Image(systemName: imports.mode == .copy ? "folder" : "sdcard").font(MacMetric.font(11))
-                Text(imports.mode == .copy ? L("Imports are copied to \(imports.folderShown)") : L("Imports stay where they are"))
-                    .font(MacMetric.font(11.5)).lineLimit(2).multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(L("Change…")).font(MacMetric.font(11.5, .semibold)).foregroundStyle(Theme.accent)
+        let label = HStack(spacing: MacMetric.pt(5)) {
+            Image(systemName: "folder").font(MacMetric.font(11.5, .semibold))
+            Text(L("Change Local Photo Folder")).font(MacMetric.font(12, .semibold)).fixedSize()
+        }
+        .foregroundStyle(Theme.accent)
+        return Button { Task { await imports.chooseFolder() } } label: {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: MacMetric.pt(8)) {
+                    label
+                    Text(imports.mode == .copy ? imports.folderShown : L("Imports stay where they are"))
+                        .font(MacMetric.font(11.5)).foregroundStyle(Theme.dim).lineLimit(1).fixedSize()
+                }
+                label
             }
-            .foregroundStyle(Theme.dim)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $storageShown, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: MacMetric.pt(12)) {
-                Text(L("Where should imported photos go?")).font(MacMetric.font(15, .bold)).foregroundStyle(Theme.text)
-                StorageChoice(compact: true)
+        .help(imports.folder.path)
+        .contextMenu {
+            Picker(L("Where should imported photos go?"), selection: Binding(get: { imports.mode }, set: { imports.mode = $0 })) {
+                Text(L("Copy to my photo folder (recommended)")).tag(FilmLabImport.Mode.copy)
+                Text(L("Leave them where they are")).tag(FilmLabImport.Mode.inPlace)
             }
-            .padding(MacMetric.pt(18))
-            .frame(width: MacMetric.pt(420))
-            .background(Theme.background)
-            .interfaceScaled(.macPoints)
+            .pickerStyle(.inline)
         }
+        .accessibilityLabel(L("Change Local Photo Folder"))
+        .accessibilityValue(imports.folderShown)
         .accessibilityIdentifier("filmlab.home.storage")
     }
 
@@ -319,7 +327,7 @@ struct FilmLabHomeView: View {
                 .frame(maxWidth: MacMetric.pt(520))
                 .mask(LinearGradient(colors: [.clear, .black, .black, .clear], startPoint: .leading, endPoint: .trailing))
             Text(L("Your first roll")).font(MacMetric.font(20, .bold)).foregroundStyle(Theme.text)
-            Text(L("Put the camera's card in this Mac and choose its folder of photos. Each import becomes a project here, like a roll of film."))
+            Text(L("Insert the card and import its photos. Each import is one roll."))
                 .font(MacMetric.font(13)).foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center).frame(maxWidth: MacMetric.pt(440))
                 .fixedSize(horizontal: false, vertical: true)
@@ -328,7 +336,7 @@ struct FilmLabHomeView: View {
                 openButton(store, large: true)
             }
             .padding(.top, MacMetric.pt(4))
-            Text(L("Or drag photos or a folder anywhere onto this page.")).font(MacMetric.font(12)).foregroundStyle(Theme.dim)
+            Text(L("Or drag them onto this page.")).font(MacMetric.font(12)).foregroundStyle(Theme.dim)
             storageLine
             if let refused {
                 Text(L(shown: refused)).font(MacMetric.font(12)).foregroundStyle(Theme.danger)
@@ -340,8 +348,8 @@ struct FilmLabHomeView: View {
     private func footer(_ store: any MacLibraryData) -> some View {
         HStack(spacing: MacMetric.pt(14)) {
             ProModeSwitch(large: true)
-            Text(ProMode.shared.on ? L("Pro: every tool, for fine control — curves, grain, glow, local edits and more.")
-                                   : L("Simple: just the essentials — pick a film, adjust brightness and colour, export."))
+            Text(ProMode.shared.on ? L("Pro: adds curves, glow, local edits and more.")
+                                   : L("Simple: film, brightness and warmth, grain, export."))
                 .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
                 .lineLimit(2)
                 .contentTransition(.opacity)

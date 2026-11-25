@@ -15,13 +15,33 @@ import UIKit
 struct WatermarkPage: View {
     let session: OpenFrameSession
     let placement: WatermarkPlacement
+    /// FilmLab's 个性化 (`FilmLabMarkSection`) draws the marks, the place and the size itself and takes the rest from here,
+    /// in its own scroll: 不透明度 and 填充, and in 专业版 叠加于 and the typed size and turn. Nil: the page whole.
+    enum Embedded { case simple, pro }
+    var embedded: Embedded? = nil
     @Environment(AppServices.self) private var model
     @State private var dragging = false
 
     private var store: WatermarkStore { model.watermarks }
     private var gone: Bool { store.mark(placement.mark) == nil }
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if let embedded {
+            VStack(spacing: 0) {
+                opacity
+                fill
+                if embedded == .pro {
+                    stage
+                    numbers
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+        } else {
+            page
+        }
+    }
+
+    private var page: some View {
         ScrollView(.vertical) {
             VStack(spacing: 0) {
                 marks
@@ -167,10 +187,12 @@ struct WatermarkPage: View {
                     .help(L("Another colour…"))
                     .accessibilityIdentifier("layers.page.watermark.fill.picker")
             }
-            note(placement.fill == nil ? L("Native: the PNG’s own colours.")
-                                       : L("Filled: the watermark’s shape in one colour, its own transparency kept."))
+            if embedded == nil {
+                note(placement.fill == nil ? L("Native: the PNG’s own colours.")
+                                           : L("Filled: the watermark’s shape in one colour, its own transparency kept."))
+            }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, 16).padding(.vertical, embedded == nil ? 12 : 8)
     }
 
     /// A fill's word as a colour to draw (sRGB).
@@ -252,9 +274,11 @@ struct WatermarkPage: View {
                             commit: { v in setTurn(v) })
                     .accessibilityLabel(L("Rotation"))
             }
-            note(L("Size is a share of the picture’s short side. Drag the watermark on the picture, its corners to size it, the dot above it to turn it."))
+            if embedded == nil {
+                note(L("Size is a share of the picture’s short side. Drag the watermark on the picture, its corners to size it, the dot above it to turn it."))
+            }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
+        .padding(.horizontal, 16).padding(.vertical, embedded == nil ? 12 : 8)
     }
 
     /// The canvas the placement is measured on (the 底片 one for a 底片 mark, the film on).

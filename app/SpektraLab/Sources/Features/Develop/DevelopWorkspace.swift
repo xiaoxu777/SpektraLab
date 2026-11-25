@@ -224,39 +224,16 @@ struct DevelopWorkspace: View {
                 }
             case .format:
                 VStack(spacing: 0) {
-                    // FilmLab's 导出 mode: the export's settings and its button first, whatever the film emulation is,
-                    // then the format they export (`ExportModeSection`).
-                    ExportModeSection(frameIDs: exportIDs)
-                    // 片边 and 日期后背 are 导出's in both modes, every part of them (the owner, 2026-11-23: "专业和普通版，
-                    // 加片边的功能都应该放在导出的界面，并且应该都要支持自定义"). 普通版 has nothing else under the export.
-                    if FeatureFlags.simpleWindow {
-                        if pair == nil, let filmEdgeColumn {
-                            filmEdgeColumn.rowEnabled(session.edit.appliesFilm)
-                            FilmEdgeToAllRow(session: session, frame: frame, ids: exportIDs)
-                        }
-                    } else {
-                    VStack(spacing: 0) {
-                        // 胶片 picked (a picture's row has its own page, `LayerPictureColumn`): a pair's piece, a
-                        // double's own section over the format, or a photograph's format.
-                        if let pair { PairPiecePanel(session: session, frame: frame, pair: pair) }
-                        else {
-                            if let double = session.double { DoublePieceSection(session: session, frame: frame, double: double) }
-                            FramePanel(session: session, frame: frame, v5: true, wide: true)
-                        }
-                        // 片边 and 日期后背 under the
-                        // film's sizes, in the old rows' place, each folding (`FilmEdgeColumn`).
-                        if let filmEdgeColumn {
-                            filmEdgeColumn
-                            FilmEdgeToAllRow(session: session, frame: frame, ids: exportIDs)
-                        }
-                    }
-                    // The film edge and the date back are the film's (Apply Film Emulation).
-                    .rowEnabled(session.edit.appliesFilm)
+                    // FilmLab's 导出 mode only exports (the owner, 2026-11-25: "导出界面只做导出"): what the photo is for
+                    // (the presets), then the file and where it goes (`ExportModeSection`); the button is the column's
+                    // pinned foot (`FilmLabExportFooter`). 片边, 日期后背, the film's 尺寸 and the watermark are 个性化's
+                    // (`FilmLabPersonalizeColumn`, `personalizePiece`).
+                    ExportModeSection(frameIDs: exportIDs, part: .presets)
                     // Remove anti-halation layer, then Grain and Halation with the other effects under their own
-                    // folding header (`wideFormatTail`, `wideEffects`).
-                    // On the Mac they are 二级调色's (`gradingHasEffects`).
-                    if !Self.gradingHasEffects { wideFormatTail.rowEnabled(session.edit.appliesFilm) }
-                    }
+                    // folding header (`wideFormatTail`, `wideEffects`): on the Mac they are 二级调色's
+                    // (`gradingHasEffects`).
+                    if !FeatureFlags.simpleWindow, !Self.gradingHasEffects { wideFormatTail.rowEnabled(session.edit.appliesFilm) }
+                    ExportModeSection(frameIDs: exportIDs, part: .details)
                 }
                 .padding(.bottom, 12)
             }
@@ -275,6 +252,23 @@ struct DevelopWorkspace: View {
         } else {
             darkroomStrip
         }
+    }
+
+    /// 个性化's first part in 专业版 where the piece is not a single photograph: a pair's piece (its own film edge and
+    /// date lines, `PairPiecePanel`), or a double's own section over its film's sizes. Nil for a photograph, whose
+    /// 片边, 日期后背 and 尺寸 are the column's own sections.
+    var personalizePiece: AnyView? {
+        guard !FeatureFlags.simpleWindow else { return nil }
+        if let pair {
+            return AnyView(PairPiecePanel(session: session, frame: frame, pair: pair).rowEnabled(session.edit.appliesFilm))
+        }
+        if let double = session.double {
+            return AnyView(VStack(spacing: 0) {
+                DoublePieceSection(session: session, frame: frame, double: double)
+                FramePanel(session: session, frame: frame, v5: true, wide: true)
+            }.rowEnabled(session.edit.appliesFilm))
+        }
+        return nil
     }
 
     /// Film & Paper's Decode, under the strips: its parts' resets are the page's own.

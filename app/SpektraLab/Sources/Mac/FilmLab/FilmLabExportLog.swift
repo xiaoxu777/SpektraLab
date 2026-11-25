@@ -33,6 +33,8 @@ final class FilmLabExportLog {
 
     /// A picture saved by an export: now.
     func record(_ id: UUID, at date: Date = Date()) {
+        // A check's export (`--filmlab-export-folder`) is not the person's: nothing is recorded.
+        guard !CommandLine.arguments.contains("--filmlab-export-folder") else { return }
         exported[id] = date
         save()
     }

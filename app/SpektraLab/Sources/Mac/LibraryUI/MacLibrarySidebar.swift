@@ -37,7 +37,8 @@ struct MacLibrarySidebar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            tabs
+            // A project opening: the sidebar's blocks arrive one after another (`FilmLabLibraryEntrance`).
+            tabs.filmLabArrive(0)
             Rectangle().fill(Theme.wall).frame(height: 1)
             Group {
                 switch browser.navigator {
@@ -58,7 +59,7 @@ struct MacLibrarySidebar: View {
             // (2026-11-05). Their tiles carry the ring; stopped, they keep the old preview, marked.
             if library.developingCount > 0 { developingLine }
             Rectangle().fill(Theme.wall).frame(height: 1)
-            bottomBar
+            bottomBar.filmLabArrive(13)
         }
         .background(Theme.background.ignoresSafeArea())   // FilmLab 暗房: the column's ground, as 冲洗's
         .onChange(of: filtering) { _, on in browser.typing = on }
@@ -160,12 +161,13 @@ struct MacLibrarySidebar: View {
             projectHeader
                 .padding(.horizontal, MacMetric.pt(8))
                 .padding(.vertical, MacMetric.pt(6))
+                .filmLabArrive(1)
             ScrollView {
                 FilmLabRollFilters(rows: store.images)
                     .padding(.bottom, MacMetric.pt(8))
             }
             .scrollIndicators(.automatic)
-            chosenFoot
+            chosenFoot.filmLabArrive(12)
         }
         // The whole project, whatever collection of its tree was chosen before the tree left the sidebar.
         .task(id: store.selectedSourceID) { await showWholeProject() }

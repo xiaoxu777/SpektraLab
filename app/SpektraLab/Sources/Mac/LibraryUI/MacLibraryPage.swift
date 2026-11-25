@@ -26,7 +26,10 @@ struct MacLibraryPage: View {
     /// The host's import banner, with its fade: `LibraryScreen.bottom`.
     let importBanner: AnyView
 
-    @State private var dragStart: CGFloat?
+    /// The centre's width as last laid out (grid, line and preview together), for the preview's grip. In a box nothing
+    /// observes: as `@State` every step of a window resize would write it and run this page's body again.
+    @State private var centre = Room()
+    private final class Room { var width: CGFloat = 0 }
     /// The library's two questions and the pair just made live in `MacLibraryActions` (2026-10-26), so the
     /// develop page's browser asks them the same way.
     private var actions: MacLibraryActions { MacLibraryActions.shared }
@@ -34,6 +37,8 @@ struct MacLibraryPage: View {
 
     var body: some View {
         let store = MacLibraryUI.store(model)
+        // The flags' files are found through the store's sources (`FilmLabFlags`).
+        FilmLabFlags.shared.attach(store)
         // FilmLab: the roll's quick filter in front narrows what the page shows and walks (`FilmLabRollFilterState`).
         let rows = FilmLabRollFilterState.shared.apply(store.images, library: library)
         return presentations(window(store, rows), store)
@@ -44,10 +49,18 @@ struct MacLibraryPage: View {
     /// are the shell's, mounted once for every mode.
     @ViewBuilder private func window(_ store: any MacLibraryData, _ rows: [MacImage]) -> some View {
         HStack(spacing: 0) {
-            if browser.sidebarShown { columnPane(store, rows) }
+            // The sidebar slides away and back (边栏, ⌘T); the grid beside it is not animated: it takes its new
+            // width at once, under the sidebar as it goes (a grid re-laid out at every frame of a slide would stutter).
+            if browser.sidebarShown {
+                columnPane(store, rows)
+                    .zIndex(1)
+                    .transition(.move(edge: .leading))
+            }
             // The grid has the window (`MacLibraryBrowser.fullGrid`): the viewer steps aside for it.
             if !browser.fullGrid { centrePane(rows) }
         }
+        // `ShellContent` clears the transaction's animation above this page, so the slide is asked for here.
+        .animation(.smooth(duration: 0.24), value: browser.sidebarShown)
         .background(Theme.background.ignoresSafeArea())
         .background { if inFront && MacShellPath.split(router.path).stacked.isEmpty { keys(rows) } }
         .overlay(alignment: .bottom) {
@@ -87,28 +100,27 @@ struct MacLibraryPage: View {
                     .appEnvironment(model)
             }
             .onChange(of: store.move.showsPage, initial: true) { _, on in browser.moveShown = on }
+            // A check's launch (`--filmlab-library-check`): this page driven from the command line.
+            .onAppear { FilmLabLibraryCheck.startIfAsked(store: store, library: library) }
+            // A project opening: the bar, the sidebar and the photos arrive (`FilmLabLibraryEntrance`, which watches for it).
+            .onAppear { FilmLabLibraryEntrance.shared.watch(store: store, router: router) }
             #if DEBUG
             .onAppear { MacLibraryDriver.startIfAsked(model: model, store: store, open: open, makePair: makePair, crop: crop) }
             #endif
     }
 
-    /// The one line between the sidebar and the grid; dragged, the sidebar's width.
+    /// The one line between the sidebar and the grid; dragged, the sidebar's own width (220 to 520 Mac points, kept:
+    /// `MacLibraryBrowser.sidebarWidth`). The develop page's grip: the resize cursor, a line while the pointer is on it.
     private var wall: some View {
         Rectangle().fill(Theme.wall).frame(width: 1).ignoresSafeArea()
             .overlay {
-                Color.clear.frame(width: MacMetric.pt(7)).contentShape(Rectangle())
-                    .gesture(DragGesture(minimumDistance: 1)
-                        .onChanged { v in
-                            let start = dragStart ?? browser.sidebarWidth
-                            dragStart = start
-                            let w = start + v.translation.width * MacMetric.scale
-                            browser.sidebarWidth = min(max(w, MacMetric.sidebarRange.lowerBound), MacMetric.sidebarRange.upperBound)
-                        }
-                        .onEnded { _ in
-                            dragStart = nil
-                            PaneDividers.shared.save()   // the one column, kept for both pages
-                        })
-                    .hoverEffect(.highlight)
+                DividerGrip(way: .sideways, value: MacMetric.pt(browser.sidebarWidth),
+                            range: MacMetric.pt(MacMetric.sidebarRange.lowerBound)...MacMetric.pt(MacMetric.sidebarRange.upperBound),
+                            grows: 1, label: L("Sidebar width"),
+                            set: { browser.sidebarWidth = $0 * MacMetric.scale },
+                            ended: { browser.saveSidebarWidth() })
+                    .frame(width: DividerGrip.reach)
+                    .accessibilityIdentifier("filmlab.library.sidebar.grip")
             }
     }
 
@@ -126,16 +138,36 @@ struct MacLibraryPage: View {
     /// FilmLab 暗房 (the owner chose design A, 2026-11-23): 图库's centre is the grid itself, filling the room right of the
     /// column — the grid is the browser here, so there is no strip under it (the strip is 冲洗's, 二级调色's and 导出's).
     /// A double click, or Return, opens the picture in 冲洗.
+    ///
+    /// FilmLab (2026-11-25, the owner: "选择图像后右侧可以阅览照片"): with a photo chosen it is drawn large at the grid's right
+    /// (`FilmLabLibraryPreview`), a line between them that is dragged; with none chosen the grid has the width. The
+    /// split is a layout over a kept share, so a window resize writes no state here.
     private func centrePane(_ rows: [MacImage]) -> some View {
         let store = MacLibraryUI.store(model)
-        return MacLibraryGrid(store: store, browser: browser, rows: rows, open: open,
-                              lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
-                              makePair: makePair,
-                              makeDouble: { actions.makeDouble($0, store: store, model: model) },
-                              confirmRemoval: confirmRemoval,
-                              bar: .slim, sizeSlider: true, viewer: false, crop: crop)
-            .background(Theme.well)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        let layout = FilmLabLibraryLayout.shared
+        let previews = layout.previewShown && browser.primary(rows) != nil
+        return FilmLabLibrarySplit(share: layout.previewShare) {
+            MacLibraryGrid(store: store, browser: browser, rows: rows, open: open,
+                           lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
+                           makePair: makePair,
+                           makeDouble: { actions.makeDouble($0, store: store, model: model) },
+                           confirmRemoval: confirmRemoval,
+                           bar: .slim, sizeSlider: true, viewer: false, crop: crop, previewToggle: true)
+                .background(Theme.well)
+                // The grid takes its width at once: its cells are not flown to their new places.
+                .transaction { $0.animation = nil }
+            if previews {
+                FilmLabPreviewGrip(room: { centre.width })
+                    .transition(.opacity)
+                FilmLabLibraryPreview(store: store, rows: rows, open: open)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: previews)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { centre.width = $0 }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The sidebar's slide is not the centre's: it stands where it will be from the first frame.
+        .transaction { $0.animation = nil }
     }
 
     /// Opens `image` on the edit page (`MacLibraryGo.open`).
@@ -193,7 +225,10 @@ struct MacLibraryPage: View {
             HiddenKeyEquivalent(title: L("Larger Thumbnails"), key: "+", modifiers: .command, enabled: !typing) { browser.resize(by: 1.25) }
             HiddenKeyEquivalent(title: L("Larger Thumbnails"), key: "=", modifiers: .command, enabled: !typing) { browser.resize(by: 1.25) }
             HiddenKeyEquivalent(title: L("Smaller Thumbnails"), key: "-", modifiers: .command, enabled: !typing) { browser.resize(by: 1 / 1.25) }
-            HiddenKeyEquivalent(title: L("Viewer"), key: "v", modifiers: [.command, .option], enabled: !typing) { browser.viewerShown.toggle() }
+            // ⌥⌘V: 图库's preview at the right (it was the old viewer's key; the strip is ⌘B).
+            HiddenKeyEquivalent(title: L("Preview"), key: "v", modifiers: [.command, .option], enabled: !typing) {
+                FilmLabLibraryLayout.shared.previewShown.toggle()
+            }
             MacShortcutButton(.libraryTab, enabled: !typing) { browser.show(.library) }
             MacShortcutButton(.filtersTab, enabled: !typing) { browser.show(.filters) }
             MacShortcutButton(.infoTab, enabled: !typing) { browser.show(.info) }

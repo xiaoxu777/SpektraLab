@@ -48,6 +48,9 @@ struct RecipeChips: View {
     var wraps = false
     /// FilmLab 暗房 (design A): the 导出 column's chips, the size of 冲洗's film-shelf chips.
     var small = false
+    /// FilmLab 暗房 (the owner, 2026-11-24: "用户不会去看这些小方块"): each recipe a card that says what it is for — the
+    /// 导出 column's main choice. Saving the settings as a new recipe is a quiet line under the cards.
+    var cards = false
 
     @Environment(ExportRecipeStore.self) private var store
     @State private var naming: Naming?
@@ -61,7 +64,7 @@ struct RecipeChips: View {
 
     var body: some View {
         Group {
-            if wraps { wrapped } else { scrolled }
+            if cards { cardList } else if wraps { wrapped } else { scrolled }
         }
         .alert(naming == .new ? L("New Recipe") : L("Rename Recipe"), isPresented: Binding(get: { naming != nil }, set: { if !$0 { naming = nil } })) {
             TextField(recipe.builtName, text: $name)
@@ -71,6 +74,87 @@ struct RecipeChips: View {
         } message: {
             Text(naming == .new ? L("Saves the settings on this sheet under a name. Leave it empty to name the recipe for what it makes.")
                                 : L("Leave it empty to name the recipe for what it makes."))
+        }
+    }
+
+    /// The 导出 column's cards: one a recipe, the one in use raised with the white frame and its radio lit.
+    private var cardList: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(store.recipes) { saved in
+                card(saved, on: saved.id == recipe.id)
+                    .contextMenu { menu(saved) }
+            }
+            HStack(spacing: 12) {
+                Button {
+                    name = ""
+                    naming = .new
+                } label: {
+                    Label(L("Save as a New Preset…"), systemImage: "plus")
+                        .font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.secondaryText)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint(L("Saves these settings under a name"))
+                Spacer(minLength: 0)
+                if let kept = store.recipe(recipe.id), !kept.sameSettings(as: recipe) {
+                    Button(L("Save Changes")) {
+                        store.update(kept.id, with: recipe)
+                        if let now = store.recipe(kept.id) { recipe = now }
+                    }
+                    .buttonStyle(.plain)
+                    .font(Theme.Font.ui(12, .semibold)).foregroundStyle(Theme.accent)
+                }
+            }
+            .padding(.top, 4)
+            .padding(.horizontal, 4)
+        }
+        .padding(.horizontal, 12)
+    }
+
+    private func card(_ saved: ExportRecipe, on: Bool) -> some View {
+        let use = Self.use(of: saved)
+        return Button {
+            withAnimation(.easeOut(duration: 0.15)) { recipe = admit(saved) }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: use.symbol)
+                    .font(Theme.Font.ui(15, .medium))
+                    .foregroundStyle(on ? Theme.accent : Theme.secondaryText)
+                    .frame(width: 34, height: 34)
+                    .background(on ? Theme.background : Theme.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(saved.name).font(Theme.Font.ui(13.5, .semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                    Text(use.words).font(Theme.Font.ui(12)).foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(FilmLabExportRecipe.specs(saved)).font(Theme.Font.ui(11)).monospacedDigit().foregroundStyle(Theme.dim)
+                        .lineLimit(1).minimumScaleFactor(0.85)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                FilmLabRadioMark(on: on)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .background(on ? Theme.card : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(on ? Theme.selectionFrame : Theme.rule, lineWidth: on ? 1.5 : 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle(scale: 0.99))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("filmlab.export.preset")
+    }
+
+    /// What a recipe is for, in a line, from what it makes: its container and its colour space.
+    static func use(of r: ExportRecipe) -> (symbol: String, words: String) {
+        switch (r.format, r.colour) {
+        case (.tiff, _): ("printer", L("For a print lab, or more editing"))
+        case (.png, _): ("square.on.square.dashed", L("Lossless, for the web and design work"))
+        case (.jpeg, .sRGB): ("paperplane", L("Share online, send to a phone"))
+        case (_, .displayP3): ("iphone", L("Fuller colour on Apple screens"))
+        case (.heif, _): ("iphone", L("Small files for Apple devices"))
+        case (_, .adobeRGB), (_, .proPhoto): ("printer", L("Wide colour, for printing"))
+        default: ("photo", L("Everyday pictures"))
         }
     }
 

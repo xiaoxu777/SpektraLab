@@ -44,7 +44,8 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     /// (decided 2026-10-27). At a larger interface scale everything is larger, so the threshold is too.
     static var centreFrom: CGFloat { 1200 }
     /// The mode row's width in the bar.
-    static var modeWidth: CGFloat { MacMetric.pt(216) }
+    /// 54 a mode: five in 专业版 since 个性化 (2026-11-25), four in 普通版.
+    static var modeWidth: CGFloat { MacMetric.pt(CGFloat(WorkspaceMode.shown.count) * 54) }
 
     /// The bar is the window's width: `width` bar points are `width × factor` window points, which are the
     /// scene points `WindowShape` measures the window in over the page's own factor (`followsWindow`).
@@ -58,17 +59,19 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
 
     var body: some View {
         ZStack {
+            // A project opening: the bar's groups arrive from the left, 35 ms apart (`FilmLabLibraryEntrance`); at any
+            // other time they are simply there.
             HStack(spacing: MacMetric.pt(10)) {
-                FilmLabHomeButton()
-                controls
-                if !centred { mode.frame(width: Self.modeWidth) }
+                FilmLabHomeButton().filmLabArrive(0)
+                controls.filmLabArrive(1)
+                if !centred { mode.frame(width: Self.modeWidth).filmLabArrive(3) }
                 Spacer(minLength: MacMetric.pt(8))
-                actions
-                ProModeSwitch()
-                if let export { FilmLabExportButton(action: export) }
-                if stripToggle { browserToggle }
+                actions.filmLabArrive(5)
+                ProModeSwitch().filmLabArrive(6)
+                if let export { FilmLabExportButton(action: export).filmLabArrive(7) }
+                if stripToggle { browserToggle.filmLabArrive(8) }
             }
-            if centred { mode.frame(width: Self.modeWidth) }
+            if centred { mode.frame(width: Self.modeWidth).filmLabArrive(3) }
         }
         .padding(.horizontal, 12)
         .frame(height: Self.height)

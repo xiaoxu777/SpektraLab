@@ -477,7 +477,11 @@ struct DevelopCanvas: View {
             // The part on screen of the render at full size, where it is of the edit as it stands — in HDR where
             // the frame's look is, and then never shown before its HDR is made (`HDRPlacedImage`).
             if let d = fullView?.detail, d.adjustments == edit.adjustments, d.layers?.key == detailLayers?.key, d.marks == detailMarks,
-               zoom > 1.01, model.openSession(frame.id)?.cleanUnderGesture != true {
+               zoom > 1.01, model.openSession(frame.id)?.cleanUnderGesture != true,
+               // FilmLab: the full render is of the saved edit; not over a page that hides its film edge, its date back or
+               // its watermarks (a 底片 mark is in the render itself).
+               edit.filmEdge.active == frame.edit.filmEdge.active, edit.dateBack.active == frame.edit.dateBack.active,
+               edit.watermarks.isEmpty == frame.edit.watermarks.isEmpty {
                 // (Not under a gesture on a 底片 mark: the full render carries the mark at its old place.)
                 HDRPlacedImage(image: GamutProof.shared.proofed(d.image, gamutProof), rect: d.rect)
                     .allowsHitTesting(false)

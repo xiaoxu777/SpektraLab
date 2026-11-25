@@ -46,6 +46,8 @@ struct MacLibraryGrid: View {
     /// 裁剪 on a picture — the page's own way to it (the owner, 2026-10-26: it works while browsing).
     /// Nil: the bar shows no Crop.
     var crop: ((MacImage) -> Void)? = nil
+    /// 图库's own grid: its slim header carries the switch for the preview at the right (`FilmLabLibraryPreview`).
+    var previewToggle = false
 
     @Environment(AppRouter.self) private var router
     @Environment(FrameCatalog.self) private var library
@@ -92,11 +94,13 @@ struct MacLibraryGrid: View {
                 if fit.sort { MacSortControls(store: store) }
                 if fit.slider { sizeControl }
                 searchField
+                if previewToggle { FilmLabPreviewToggle() }
             }
             .padding(.horizontal, MacMetric.pt(12))
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .frame(height: MacMetric.pt(MacMetric.panelHeader))
+        .filmLabArrive(5)
     }
 
     /// Which of the header's parts fit in `width` (this page's points).
@@ -118,7 +122,7 @@ struct MacLibraryGrid: View {
         let sortLabelWidth = w(MacWords.sort(store.query.sort), 12, .medium)
         let sortChromeWidth = MacMetric.pt(56)
         let sort = sortLabelWidth + sortChromeWidth
-        var room = width - count - gap - search
+        var room = width - count - gap - search - (previewToggle ? MacMetric.pt(24) + gap : 0)
         let sorts = room >= sort + gap
         if sorts { room -= sort + gap }
         let fits = sizeSlider && room >= slider + gap
@@ -338,7 +342,10 @@ struct MacLibraryGrid: View {
     private func cell(_ image: MacImage, _ i: Int, _ layout: MacRowLayout) -> some View {
         MacBrowserCell(image: image, side: layout.side, picture: layout.pictureSize(i), pad: layout.pad,
                        line: layout.line, selected: browser.selection.contains(image.id),
-                       focused: browser.focus == image.id && browser.selection.count > 1)
+                       focused: browser.focus == image.id && browser.selection.count > 1,
+                       flagTargets: { FilmLabFlagTargets.of(image, in: rows) })
+            // A project opening: the photos float in one by one (`FilmLabLibraryEntrance`); at any other time, nothing.
+            .filmLabArrive(cell: i)
             // The store pages its rows: the next page when the last one shows.
             .onAppear { if image.id == rows.last?.id, store.hasMore { Task { await store.loadMore() } } }
             .modifier(MacClick { flags in click(image, flags) })
@@ -383,6 +390,8 @@ struct MacLibraryGrid: View {
         let frames = chosen.compactMap { $0.develop?.frameID }
         Button { open(image) } label: { Label(L("Open in Develop"), systemImage: "slider.horizontal.3") }
         Button { lightTable(chosen) } label: { Label(L("Put on Light Table"), systemImage: "rectangle.on.rectangle") }
+        // 旗标: 留用 · 不要 · 取消旗标, for the chosen pictures (`FilmLabFlags`).
+        FilmLabFlagItems(images: chosen)
         // A half-frame pair of the one or two chosen photographs (the owner, 2026-10-25): two fill its holes;
         // one asks for the second, as the window library's Pair does. A pair is not a frame of another pair.
         // Not offered where the page showing the browser does not own the pair's flow and its refusals.
@@ -618,25 +627,33 @@ struct MacBadgeRow: Layout {
 struct MacFileThumb: View {
     let url: URL
     let box: CGSize
+    /// A preview that had to be made (not one already in memory) fades in over its placeholder: the grid's cells
+    /// (2026-11-25, the owner: "照片也是慢慢一张张浮现"). One in memory is drawn at once, as everywhere else.
+    var fades = false
     @Environment(\.displayScale) private var scale
     @State private var image: UIImage?
     /// ImageIO could not make one (a file it cannot read, or cannot reach): said, not left loading.
     @State private var failed = false
+    /// The picture shown first was made, not found in memory: it fades in (`fades`).
+    @State private var arrived = false
 
     var body: some View {
         let px = PictureLoading.maxPixel(points: max(box.width, box.height), scale: scale) ?? 256
         ZStack {
             if let image {
                 Image(uiImage: image).resizable().aspectRatio(contentMode: .fit)
+                    .transition(.opacity)
             } else {
                 RoundedRectangle(cornerRadius: 2, style: .continuous).fill(Theme.plot)
                     .frame(width: box.width * 0.9, height: box.width * 0.6)
                     .overlay {
                         if failed { Image(systemName: "photo.badge.exclamationmark").font(MacMetric.font(16)).foregroundStyle(Theme.faint) }
                     }
+                    .transition(.opacity)
             }
         }
         .frame(width: box.width, height: box.height)
+        .animation(fades && arrived ? .easeOut(duration: 0.22) : nil, value: image != nil)
         .task(id: "\(url.path)@\(px)") {
             // The frame the camera cropped to (`CameraCrop`: a Leica Q3's digital zoom), as the frame made
             // of this file will open with it in Develop. Cut here and not in `ThumbnailStore`, whose
@@ -657,6 +674,7 @@ struct MacFileThumb: View {
             if known == nil, let hit { image = MacCameraCrops.cut(hit, reading) }
             let made = await ThumbnailStore.shared.image(.file(url), maxPixel: px)
             guard !Task.isCancelled else { return }
+            if image == nil, made != nil { arrived = true }
             if let made { image = MacCameraCrops.cut(made, reading) } else if image == nil { failed = true }
             if let image { MacThumbAspects.shared.learn(url, image.size) }
         }
@@ -918,17 +936,34 @@ struct MacBrowserCell: View {
     let line: CGFloat
     let selected: Bool
     var focused = false
+    /// The pictures a press on this cell's flag acts on (`FilmLabFlagTargets`); nil: the cell shows no flag (a grid
+    /// that is not the library's).
+    var flagTargets: (() -> [MacImage])? = nil
     @Environment(FrameCatalog.self) private var library
     @Environment(AppServices.self) private var model
+    @State private var hovering = false
 
     var body: some View {
         // FilmLab 暗房 (design A): the picture with rounded corners, a ring round the picture itself when chosen (not a
         // card behind the cell), the film it was developed with on a small dark chip at its foot.
         let radius = MacMetric.pt(4)
+        // 留用 / 不要 (`FilmLabFlags`): the flag at the picture's top corner — both while the pointer is on the cell, the
+        // one set otherwise — and a photo not wanted dimmed, except where the roll is narrowed to those.
+        let flag = flagTargets == nil ? nil : FilmLabFlags.shared.flag(image)
+        let dimmed = flag == .reject && FilmLabRollFilterState.shared.current != .rejected
         VStack(spacing: 0) {
             shown.frame(width: picture.width, height: picture.height)
+                .opacity(dimmed ? 0.3 : 1)
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                 .overlay(alignment: .bottomLeading) { filmChip }
+                .overlay(alignment: .topLeading) {
+                    if let flagTargets, hovering || flag != nil, picture.width >= MacMetric.pt(54) {
+                        FilmLabFlagDiscs(flag: flag, both: hovering,
+                                         press: { FilmLabFlags.shared.toggle($0, on: image, among: flagTargets()) },
+                                         size: picture.width >= MacMetric.pt(96) ? 20 : 16)
+                            .padding(MacMetric.pt(5))
+                    }
+                }
                 .overlay {
                     if selected {
                         RoundedRectangle(cornerRadius: radius + MacMetric.pt(3), style: .continuous)
@@ -941,6 +976,9 @@ struct MacBrowserCell: View {
         }
         .padding(pad)
         .contentShape(Rectangle())
+        .onHover { if flagTargets != nil { hovering = $0 } }
+        // A check's launch: this cell drawn as under the pointer (`FilmLabLibraryCheck.hoverName`).
+        .onAppear { if let name = FilmLabLibraryCheck.hoverName, flagTargets != nil, image.fileName.hasPrefix(name) { hovering = true } }
     }
 
     /// The film's short name, where the picture was developed with one and the cell has room for it.
@@ -962,7 +1000,7 @@ struct MacBrowserCell: View {
             FrameView(frame: frame, pointSize: max(picture.width, picture.height), contentMode: .fit)
                 .overlay { MacDevelopVeil(frame: frame, ring: MacMetric.pt(18)) }
         } else {
-            MacFileThumb(url: image.url, box: picture)
+            MacFileThumb(url: image.url, box: picture, fades: true)
         }
     }
 }

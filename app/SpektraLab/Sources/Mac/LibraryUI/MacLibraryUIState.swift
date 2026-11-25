@@ -57,10 +57,10 @@ enum MacMetric {
     static func padPoints(forColumn figure: CGFloat) -> CGFloat {
         figure / (InterfaceScale.padTarget * 0.9)
     }
-    /// The narrowest and widest the column may be dragged here, in this page's figures.
-    static var sidebarRange: ClosedRange<CGFloat> {
-        columnFigure(PaneDividers.minColumn)...columnFigure(700)
-    }
+    /// The narrowest and widest 图库's sidebar may be dragged, Mac points. FilmLab (2026-11-25, the owner: "左侧边栏可以收起来
+    /// 或者 resize"): the sidebar has a width of its own (`MacLibraryBrowser.sidebarWidth`). Until then it was the 冲洗
+    /// column's number and could only be dragged wider than that column's least, never narrower.
+    static let sidebarRange: ClosedRange<CGFloat> = 220...520
     static let row: CGFloat = 24
     static let indent: CGFloat = 14
     static let tabBar: CGFloat = 30
@@ -225,6 +225,26 @@ final class MacLibraryBrowser {
         let own = defaults.double(forKey: widthKey)
         let browser = own > 0 ? own : defaults.double(forKey: Self.browserWidthKey)
         browserWidth = browser > 0 ? CGFloat(browser).clamped(to: MacMetric.browserRange) : MacMetric.browserWidth
+        // The library's own browser keeps its sidebar (a page's own browser, the import page's, has none).
+        keepsSidebar = widthKey == Self.browserWidthKey
+        if keepsSidebar {
+            let side = defaults.double(forKey: Self.sidebarWidthKey)
+            if side > 0 { ownSidebarWidth = CGFloat(side).clamped(to: MacMetric.sidebarRange) }
+            if defaults.object(forKey: Self.sidebarShownKey) != nil { sidebarShown = defaults.bool(forKey: Self.sidebarShownKey) }
+        }
+    }
+
+    /// 图库's sidebar as this Mac keeps it (FilmLab, 2026-11-25): its width as dragged, and whether it is put away.
+    static let sidebarWidthKey = "filmlab.library.sidebarWidth"
+    static let sidebarShownKey = "filmlab.library.sidebarShown"
+    @ObservationIgnored private let keepsSidebar: Bool
+    /// The sidebar's width as dragged in 图库; nil until it is, and then it stands as wide as the 冲洗 column.
+    private var ownSidebarWidth: CGFloat?
+
+    /// A drag of the sidebar's edge ended: what it left is kept.
+    func saveSidebarWidth() {
+        guard keepsSidebar, let w = ownSidebarWidth else { return }
+        defaults.set(Double(w), forKey: Self.sidebarWidthKey)
     }
 
     /// The picture the modes last opened (the owner, 2026-10-27: pressing 冲洗 or 编辑 must not require a
@@ -241,13 +261,16 @@ final class MacLibraryBrowser {
     var navigator: MacNavigator = .library
     /// The thumbnail cell's side, Mac points.
     var cell: Double = MacMetric.cellDefault
-    /// The left column's width (`PaneDividers.columnWidth`, in this page's figures): one number for
-    /// 图库, 冲洗 and 编辑, dragged at either page's wall.
+    /// 图库's sidebar, Mac points: its own width once dragged (`ownSidebarWidth`, 220–520); until then the 冲洗 column's
+    /// (`PaneDividers.columnWidth`, in this page's figures), so nothing moves on a mode press for a person who never
+    /// dragged it.
     var sidebarWidth: CGFloat {
-        get { MacMetric.columnFigure(PaneDividers.shared.columnWidth) }
-        set { PaneDividers.shared.columnWidth = MacMetric.padPoints(forColumn: newValue) }
+        get { (ownSidebarWidth ?? MacMetric.columnFigure(PaneDividers.shared.columnWidth)).clamped(to: MacMetric.sidebarRange) }
+        set { ownSidebarWidth = newValue.clamped(to: MacMetric.sidebarRange) }
     }
-    var sidebarShown = true
+    var sidebarShown = true {
+        didSet { if keepsSidebar, sidebarShown != oldValue { defaults.set(sidebarShown, forKey: Self.sidebarShownKey) } }
+    }
     /// The viewer: the chosen picture large at the left of the grid, the grid a browser beside it (⌥⌘V).
     /// On by default — the picture is the centre (the owner, 2026-10-26); off, the browser has the window.
     /// In the develop page the same switch is the browser's own place beside the canvas.

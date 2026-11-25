@@ -133,11 +133,16 @@ struct WatermarkAddDisc: View {
     let session: OpenFrameSession
     @Environment(AppServices.self) private var model
 
-    var body: some View {
+    @ViewBuilder var body: some View {
+        // FilmLab (2026-11-25): where the page shows no watermark (冲洗, 二级调色) none is placed; that is 个性化's.
+        if session.showsFilmEdge { disc }
+    }
+
+    private var disc: some View {
         let store = model.watermarks
         let refusal = WatermarkRules.refusal(isComposite: !session.takesWatermarks)
         let full = !WatermarkGeometry.canAdd(to: session.edit.watermarks)
-        Menu {
+        return Menu {
             if store.marks.isEmpty {
                 Text(L("No watermarks yet"))
             } else {

@@ -5,11 +5,14 @@
 //  picture show the narrowed rows. The store's own filters (the Filters tab) still narrow what is loaded first.
 //  还没冲洗 is a picture never opened in 冲洗 (no frame, or a frame never developed); 已导出 is one the export batch
 //  saved (`FilmLabExportLog`).
+//
+//  留用 and 不要 (2026-11-25) are the flags (`FilmLabFlags`); "隐藏不要的" takes the photos not wanted out of every other
+//  filter's rows (kept for this Mac in `filmlab.library.hideRejected`), offered once a photo of the roll is flagged so.
 
 import SwiftUI
 
 enum FilmLabRollFilter: String, CaseIterable, Identifiable {
-    case all, rated, picks, undeveloped, exported
+    case all, rated, picks, flagged, rejected, undeveloped, exported
     var id: String { rawValue }
 
     var title: String {
@@ -17,6 +20,8 @@ enum FilmLabRollFilter: String, CaseIterable, Identifiable {
         case .all: L("All Pictures")
         case .rated: L("Rated")
         case .picks: L("Picks ★4+")
+        case .flagged: L("Kept")
+        case .rejected: L("Rejected")
         case .undeveloped: L("Not Developed Yet")
         case .exported: L("Exported")
         }
@@ -27,6 +32,8 @@ enum FilmLabRollFilter: String, CaseIterable, Identifiable {
         case .all: "photo.on.rectangle"
         case .rated: "star"
         case .picks: "star.fill"
+        case .flagged: "flag"
+        case .rejected: "xmark"
         case .undeveloped: "circle.dashed"
         case .exported: "square.and.arrow.up"
         }
@@ -38,6 +45,8 @@ enum FilmLabRollFilter: String, CaseIterable, Identifiable {
         case .all: return true
         case .rated: return row.rating > 0
         case .picks: return row.rating >= 4
+        case .flagged: return FilmLabFlags.shared.flag(row) == .pick
+        case .rejected: return FilmLabFlags.shared.flag(row) == .reject
         case .undeveloped:
             guard let id = row.develop?.frameID, let frame = library.frame(id) else { return true }
             return frame.developed == nil
@@ -59,12 +68,22 @@ final class FilmLabRollFilterState {
     /// The dots, in the design's order (the five of the strip's menu and keys 6–9).
     static let labels: [MacColorLabel] = [.red, .yellow, .green, .blue, .purple]
 
+    /// The photos flagged 不要 are left out of the rows (of every filter but 不要 itself). Kept for this Mac.
+    static let hideRejectedKey = "filmlab.library.hideRejected"
+    var hideRejected = UserDefaults.standard.bool(forKey: FilmLabRollFilterState.hideRejectedKey) {
+        didSet { if hideRejected != oldValue { UserDefaults.standard.set(hideRejected, forKey: Self.hideRejectedKey) } }
+    }
+
     /// `rows` as the filter in front leaves them.
     func apply(_ rows: [MacImage], library: FrameCatalog) -> [MacImage] {
-        guard current != .all || label != nil else { return rows }
+        let hides = hideRejected && current != .rejected && FilmLabFlags.shared.count(.reject, in: rows) > 0
+        guard current != .all || label != nil || hides else { return rows }
         let f = current, label = label
         _ = FilmLabExportLog.shared.exported   // read: an export landing narrows 已导出 again
-        return rows.filter { f.matches($0, library: library) && (label == nil || $0.colorLabel == label) }
+        let flags = FilmLabFlags.shared
+        return rows.filter {
+            f.matches($0, library: library) && (label == nil || $0.colorLabel == label) && !(hides && flags.flag($0) == .reject)
+        }
     }
 }
 
@@ -80,7 +99,8 @@ struct FilmLabRollFilters: View {
         VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
             Text(L("This Roll")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
                 .padding(.horizontal, MacMetric.pt(8)).padding(.bottom, MacMetric.pt(3))
-            ForEach(FilmLabRollFilter.allCases) { f in
+                .filmLabArrive(2)
+            ForEach(Array(FilmLabRollFilter.allCases.enumerated()), id: \.element) { n, f in
                 let on = state.current == f
                 Button { state.current = f } label: {
                     HStack(spacing: MacMetric.pt(7)) {
@@ -99,11 +119,33 @@ struct FilmLabRollFilters: View {
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .accessibilityIdentifier("filmlab.roll-filter.\(f.rawValue)")
+                .filmLabArrive(3 + n)
             }
+            hideRejectedRow
         }
         .padding(.horizontal, MacMetric.pt(6))
         .padding(.top, MacMetric.pt(6))
-        labelDots
+        labelDots.filmLabArrive(11)
+        }
+    }
+
+    /// "隐藏不要的": a tick under the filters, there once the roll has a photo flagged 不要 (or while it is on).
+    @ViewBuilder private var hideRejectedRow: some View {
+        let state = FilmLabRollFilterState.shared
+        if state.hideRejected || FilmLabFlags.shared.count(.reject, in: rows) > 0 {
+            Button { state.hideRejected.toggle() } label: {
+                HStack(spacing: MacMetric.pt(7)) {
+                    FilmLabCheckMark(on: state.hideRejected, size: 12).frame(width: MacMetric.pt(16))
+                    Text(L("Hide Rejected")).font(MacMetric.font(12)).foregroundStyle(Theme.secondaryText)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, MacMetric.pt(8))
+                .frame(height: MacMetric.pt(26))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(state.hideRejected ? .isSelected : [])
+            .accessibilityIdentifier("filmlab.roll-filter.hide-rejected")
         }
     }
 

@@ -26,6 +26,7 @@ struct ShellFilmStrip: View {
 
     var body: some View {
         let store = MacLibraryUI.store(model)
+        let _ = FilmLabFlags.shared.attach(store)
         FilmStripBar(store: store, rows: FilmLabRollFilterState.shared.apply(store.images, library: model.library), open: { open?($0) })
             .equatable()
             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -57,6 +58,7 @@ struct FilmStripBar: View, Equatable {
                             FilmStripCell(image: image, box: Self.box,
                                           selected: browser.selection.contains(image.id),
                                           rate: { rate(image, $0) },
+                                          flag: { FilmLabFlags.shared.toggle(.pick, on: image, among: FilmLabFlagTargets.of(image, in: rows)) },
                                           choose: { browser.click(image.id, command: false, shift: false, in: rows) },
                                           open: { open(image) })
                                 .id(image.id)
@@ -109,6 +111,7 @@ struct FilmStripBar: View, Equatable {
             FlowLayout(spacing: MacMetric.pt(4)) {
                 stripChip(L("All"), on: state.current == .all) { state.current = .all }
                 stripChip("★4+", on: state.current == .picks) { state.current = state.current == .picks ? .all : .picks }
+                stripChip(L("Kept"), on: state.current == .flagged) { state.current = state.current == .flagged ? .all : .flagged }
                 stripChip(L("Undeveloped"), on: state.current == .undeveloped) {
                     state.current = state.current == .undeveloped ? .all : .undeveloped
                 }
@@ -202,6 +205,7 @@ struct FilmStripBar: View, Equatable {
             Divider()
             Button(L("No Label")) { label(image, .unlabelled) }
         }
+        FilmLabFlagItems(images: FilmLabFlagTargets.of(image, in: rows))
         Divider()
         if let id = image.develop?.frameID {
             Button(L("Copy Settings…")) { router.present(.copySettings(id)) }
@@ -220,6 +224,8 @@ private struct FilmStripCell: View {
     let box: CGSize
     let selected: Bool
     let rate: (Int) -> Void
+    /// The flag beside the stars pressed: 留用, or off again (`FilmLabFlagMark`).
+    let flag: () -> Void
     /// VoiceOver's (and any accessibility client's) press: the picture chosen, as a click; Open as a double click.
     let choose: () -> Void
     let open: () -> Void
@@ -228,15 +234,18 @@ private struct FilmStripCell: View {
     @State private var hovering = false
 
     var body: some View {
+        // 留用 / 不要 (`FilmLabFlags`): a photo not wanted is dimmed, as in the grid.
+        let flagged = FilmLabFlags.shared.flag(image)
         VStack(spacing: MacMetric.pt(3)) {
             picture
+                .opacity(flagged == .reject && FilmLabRollFilterState.shared.current != .rejected ? 0.35 : 1)
                 .frame(width: box.width, height: box.height)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(image.fileName)
                 .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
                 .accessibilityAction { choose() }
                 .accessibilityAction(named: L("Open")) { open() }
-            stars
+            stars(flagged)
         }
         .padding(MacMetric.pt(4))
         .brightness(hovering && !selected ? 0.04 : 0)
@@ -272,7 +281,7 @@ private struct FilmStripCell: View {
     }
 
     /// Five stars, the set ones filled; shown faint until the pointer is over the frame or it has a rating.
-    private var stars: some View {
+    private func stars(_ flagged: FilmLabFlag?) -> some View {
         HStack(spacing: MacMetric.pt(1)) {
             ForEach(1...5, id: \.self) { s in
                 Button { rate(s) } label: {
@@ -285,13 +294,16 @@ private struct FilmStripCell: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(MacWords.rating(s))
             }
-            Spacer(minLength: MacMetric.pt(4))
+            // The flag right after the stars, so it reads as this frame's and not the next one's.
+            FilmLabFlagMark(flag: flagged, hovering: hovering || selected, press: flag)
+                .padding(.leading, MacMetric.pt(3))
+            Spacer(minLength: MacMetric.pt(2))
             if image.colorLabel != nil {
                 MacColorTag(label: image.colorLabel)
             }
         }
         .frame(width: box.width)
-        .opacity(hovering || image.rating > 0 || selected ? 1 : 0.6)
+        .opacity(hovering || image.rating > 0 || selected || flagged != nil ? 1 : 0.6)
         .frame(height: MacMetric.pt(12))
     }
 }

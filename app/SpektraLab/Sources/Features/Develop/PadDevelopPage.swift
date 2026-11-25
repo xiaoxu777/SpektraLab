@@ -59,7 +59,12 @@ extension DevelopWorkspace {
             // Made again for each frame (2.4.0 A2b): the zoom and the pan, the pictures it has decoded (one
             // frame's never drawn under the next, `FramePicture`, `HDRImage`), the mask stage and its pointer
             // are a frame's, as they were when the whole page was made again.
-            OwnReads { canvas(cropping: cropping, arranging: arranging) }.id(frame.id).padPart(.canvas)
+            OwnReads { canvas(cropping: cropping, arranging: arranging) }.id(frame.id)
+                // Where an export's card lifts from (`FilmLabExportStage`: stored, not observed — nothing is drawn again).
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(FilmLabExportStage.space)) } action: {
+                    FilmLabExportStage.shared.viewer = $0
+                }
+                .padPart(.canvas)
             // Mac (the owner, 2026-10-27): the line under the picture, in the filmstrip's place — the
             // same strip the library draws under its viewer (`MacInfoStrip`), with the develop's own
             // line in it, so the column keeps no status row.
@@ -131,6 +136,37 @@ extension DevelopWorkspace {
             joinWideWindow(); unfoldInColumn(); router.inlineCropHost = frame.id
         }
         .onChange(of: navigation.panelFolded) { _, _ in unfoldInColumn() }
+        // FilmLab (the owner, 2026-11-24): the film edge and the date back are seen in 导出 only — and, with the
+        // watermarks, in 个性化 before it (2026-11-25): the two pages of the Format step (`finishing`).
+        .onChange(of: finishing, initial: true) { _, now in
+            OpenFrameSession.edgeWanted = Self.edgeEverywhere || now
+            session.showsFilmEdge = Self.edgeEverywhere || now
+        }
+        .onChange(of: frame.id) { _, _ in session.showsFilmEdge = Self.edgeEverywhere || finishing }
+        // A watermark's handles are 个性化's: 导出 shows the picture as it leaves, with nothing over it.
+        .onChange(of: personalizing) { _, now in
+            if !now, !Self.edgeEverywhere, session.watermarkPick != nil { session.watermarkPick = nil }
+        }
+        // The export's animation over the page (`FilmLabExportFlight`): it takes no clicks. Its cards go from the
+        // picture's area to the foot's tray, both measured in the page's own space.
+        .coordinateSpace(name: FilmLabExportStage.space)
+        .overlay { if !Self.edgeEverywhere { FilmLabExportFlight(current: frame.id).allowsHitTesting(false) } }
+    }
+
+    /// The develop page's Format step: 个性化 or 导出, the picture with its film edge, its date and its watermarks.
+    var finishing: Bool { navigation.surface == .develop && navigation.step == .format }
+    /// 导出: the export column (`FilmLabFinish`).
+    var exporting: Bool { finishing && FilmLabFinish.shared.page == .export }
+    /// 个性化: the film edge, the date back and the watermark's column.
+    var personalizing: Bool { finishing && FilmLabFinish.shared.page == .personalize }
+
+    /// Where the film edge is shown on every step: the touch layout, which has its own film-edge flow.
+    static var edgeEverywhere: Bool {
+        #if targetEnvironment(macCatalyst)
+        false
+        #else
+        true
+        #endif
     }
 
     /// The canvas with what lies over it (`pageBody`'s, read apart).
@@ -139,7 +175,8 @@ extension DevelopWorkspace {
         let _ = TransitionMarks.mark("canvas.body")
         let _ = TransitionMarks.canvas(frame.id)
         #endif
-        DevelopCanvas(frame: frame, edit: session.edit, showsOriginal: original,
+        // FilmLab: the canvas is laid out from the edit as the page shows it — 片边 and 日期后背 only in 导出 (`shownEdit`).
+        DevelopCanvas(frame: frame, edit: session.shownEdit, showsOriginal: original,
                       comparing: comparing, split: $split, initialZoom: opening.zoom,
                       developed: session.developed, progress: status.progress, piece: pieceMarks,
                       allowsOriginalHold: true)
@@ -149,7 +186,7 @@ extension DevelopWorkspace {
             // of the frame (`ArrangeOverlay`).
             .id(arranging == nil ? "canvas" : "canvas.arranging")
             .overlay {
-                let aspect = CGFloat(DevelopedFrameView.shownAspect(frame: frame, edit: session.edit, model: model,
+                let aspect = CGFloat(DevelopedFrameView.shownAspect(frame: frame, edit: session.shownEdit, model: model,
                                                                     developed: session.developed))
                 if let arranging {
                     ArrangeOverlay(session: session, frame: frame, pick: arranging, aspect: aspect)
@@ -272,8 +309,9 @@ extension DevelopWorkspace {
     struct MacBarSignature: Hashable {
         var frame: LibraryFrame.ID
         var edit: Bool
-        /// FilmLab: the page stands on Format, which the mode row calls 导出.
+        /// FilmLab: the page stands on Format, which the mode row calls 个性化 or 导出 (`personalize`).
         var export: Bool
+        var personalize: Bool
         var inCrop: Bool
         var columnShown: Bool
         var cropEnabled: Bool
@@ -286,7 +324,7 @@ extension DevelopWorkspace {
     var macBarSignature: MacBarSignature {
         // 摆放 is the page's crop of a pair's frame or a double's exposure: the bar wears it as it wears a crop.
         MacBarSignature(frame: frame.id, edit: navigation.surface == .edit,
-                        export: navigation.surface == .develop && navigation.step == .format,
+                        export: finishing, personalize: personalizing,
                         inCrop: inlineCrop != nil || LayersStage.shared.arranging(frame.id) != nil,
                         columnShown: columnShown, cropEnabled: cropAction != nil,
                         canUndo: session.canUndo, canRedo: session.canRedo,
@@ -306,7 +344,8 @@ extension DevelopWorkspace {
         let session = session, router = router, frame = frame
         MacShellBar.shared.develop = MacDevelopBar(
             owner: ObjectIdentifier(session), frameID: frame.id,
-            surface: s.edit ? .edit : s.export ? .export : .develop, inCrop: s.inCrop, columnShown: s.columnShown,
+            surface: s.edit ? .edit : s.personalize ? .personalize : s.export ? .export : .develop,
+            inCrop: s.inCrop, columnShown: s.columnShown,
             toggleColumn: { withAnimation(motion) { pad?.columnHidden.toggle() } },
             // 裁剪 pressed while 摆放 is open finishes it, as it finishes a crop.
             crop: {
@@ -317,9 +356,13 @@ extension DevelopWorkspace {
                 original = false
                 withAnimation(motion) {
                     session.show(mode == .edit ? .edit : .develop)
-                    // FilmLab: 冲洗 is Film & Paper, 导出 is Format with the export under it.
+                    // FilmLab: 冲洗 is Film & Paper; 个性化 and 导出 are Format, told apart by `FilmLabFinish`.
                     if mode == .develop { session.pageNavigation.select(DevelopStep.filmAndPaper) }
-                    if mode == .export { session.pageNavigation.select(DevelopStep.format) }
+                    if mode == .export || mode == .personalize {
+                        FilmLabFinish.shared.page = mode == .export ? .export : .personalize
+                        // `select` folds the panel when the step is picked again: only from another step.
+                        if session.pageNavigation.step != .format { session.pageNavigation.select(DevelopStep.format) }
+                    }
                 }
             },
             canUndo: s.canUndo, canRedo: s.canRedo,
@@ -381,13 +424,16 @@ extension DevelopWorkspace {
         // on the window's bar) and no status line (it is the info strip's, under the picture): the
         // histogram first, on Develop and on Edit alike (HistogramPanel.swift).
         let histogram = HistogramPanel.height()
+        // FilmLab 导出 (the owner, 2026-11-24): the column is only how the photo leaves the app — no histogram, no 图层.
+        // 个性化's too (2026-11-25).
+        let export = exportColumnShown && arranging == nil
         return VStack(spacing: 0) {
             // The frame's: it holds its session's histogram while it is shown (`HistogramPanel.holder`), so it is made
             // again with the next frame's session (2.4.0 A2b).
-            histogramPanel.frame(height: histogram, alignment: .top).id(frame.id)
+            if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id) }
             // 普通版 (FilmLab): a single photograph has no 图层 row (its mask layers are 专业版's); a double or a pair keeps
             // it, the way to its pictures.
-            if !(FeatureFlags.simpleWindow && piece.isSingle) {
+            if !export, !(FeatureFlags.simpleWindow && piece.isSingle) {
                 LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
             }
             if band { navigationBand.frame(height: tabs) }
@@ -452,8 +498,24 @@ extension DevelopWorkspace {
     /// photographs' and the rows'.
     private var watermarkKeysOn: Bool { watermarkPage != nil && session.watermarkSelected && columnShown }
 
+    /// 个性化's and 导出's column: theirs alone, whatever row of 图层 was picked in 冲洗 (the Mac's; the touch layout keeps
+    /// its own).
+    private var exportColumnShown: Bool { finishing && !Self.edgeEverywhere }
+
     @ViewBuilder private var columnPanel: some View {
-        if let mark = watermarkPage {
+        if exportColumnShown, personalizing {
+            // 片边, 日期后背 and 水印, each a switch with its choices as pictures (`FilmLabPersonalizeColumn`).
+            FilmLabPersonalizeColumn(session: session, frame: frame, ids: exportIDs, piece: personalizePiece)
+        } else if exportColumnShown {
+            // The export's choices scroll; its button stays at the column's foot (`FilmLabExportFooter`).
+            VStack(spacing: 0) {
+                ScrollView(.vertical) {
+                    panel.frame(maxWidth: .infinity, alignment: .top)
+                }
+                .scrollIndicators(.hidden)
+                FilmLabExportFooter(frameIDs: exportIDs)
+            }
+        } else if let mark = watermarkPage {
             WatermarkPage(session: session, placement: mark)
         } else if let layer = maskPage {
             MaskPage(session: session, layer: layer)
@@ -480,14 +542,18 @@ extension DevelopWorkspace {
             // so at rest both strips and Decode's shortest part are on screen where the room holds them.
             // The room and the width are measured here, the one place that needs them as numbers: a resize re-makes
             // this panel where its room changed, and nothing else of the column (2026-11-22).
-            GeometryReader { room in
-                ScrollView(.vertical) {
-                    StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
-                                      decode: decodeSection, status: nil, foldable: true,
-                                      room: room.size.height, width: room.size.width)
-                        .frame(maxWidth: .infinity, alignment: .top)
+            VStack(spacing: 0) {
+                GeometryReader { room in
+                    ScrollView(.vertical) {
+                        StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
+                                          decode: decodeSection, status: nil, foldable: true,
+                                          room: room.size.height, width: room.size.width)
+                            .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                    .scrollIndicators(.hidden)
                 }
-                .scrollIndicators(.hidden)
+                // 普通版: 颗粒 is pinned at the column's foot, on show whatever Decode's fold or the scroll (`FilmLabSimpleGrain`).
+                if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session) }
             }
         } else if navigation.surface == .develop {
             ScrollView(.vertical) {
@@ -547,7 +613,8 @@ extension DevelopWorkspace {
             }
             // ↑ ↓ walk the 图层 panel's rows, and stop at its ends (LAYERS-SPEC §7): with the column put away
             // there is no panel to walk, and a single frame has one row.
-            let layerKeys = macPhotoKeysFree && columnShown && !watermarkKeysOn
+            // 个性化 and 导出 have no 图层 panel to walk.
+            let layerKeys = macPhotoKeysFree && columnShown && !watermarkKeysOn && !finishing
                 && (!session.layerPiece.isSingle || (LayerRules.takesMasks(session.layerPiece) && !(session.maskLayers?.items.isEmpty ?? true))
                     || !session.edit.watermarks.isEmpty)
             HiddenKeyEquivalent(title: L("Previous Layer"), key: .upArrow, enabled: layerKeys) { stepLayer(-1) }

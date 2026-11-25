@@ -108,7 +108,7 @@ final class OpenFrameSession {
     /// The photograph's 成片 watermarks as the page's pass lays them (`WatermarkRules.finished`): nil on a pair or a
     /// double, and while a watermark's row is picked — the canvas's overlay draws them then, at the pointer's rate.
     private func shownMarks(_ e: FrameEdit) -> WatermarkComposite.Laid? {
-        guard let frame, !watermarkOverlayLive else { return nil }
+        guard let frame, !watermarkOverlayLive, showsFilmEdge else { return nil }
         return WatermarkComposite.Laid(e, isComposite: frame.isComposite)
     }
 
@@ -159,6 +159,46 @@ final class OpenFrameSession {
 
     /// What the controls bind to. Set it through `change`, so the session sees it.
     private(set) var edit: FrameEdit
+
+    /// FilmLab (the owner, 2026-11-24: "只有在导出界面才可以看到加上片边的效果"): whether the page shows the film edge and the
+    /// date back — and, since 个性化 (2026-11-25), the watermarks: everything 个性化 adds. The develop page sets it, true
+    /// only on its Format step (个性化 and 导出); elsewhere the page develops and lays out `shownEdit`, the edit without
+    /// them. The edit itself is never changed by it. True where nothing sets it.
+    var showsFilmEdge = OpenFrameSession.edgeWanted {
+        didSet {
+            guard oldValue != showsFilmEdge else { return }
+            // A watermark's row is 个性化's: none is picked where none is shown.
+            if !showsFilmEdge, watermarkPick != nil { watermarkPick = nil }
+            layer2.show(marks: shownMarks(edit))
+            if opened { request() }
+        }
+    }
+
+    /// What the develop page last asked of `showsFilmEdge`: a session made meanwhile (the next frame) starts so, and its
+    /// first develop is already the one the page shows. The touch layout shows the edge everywhere.
+    static var edgeWanted: Bool = {
+        #if targetEnvironment(macCatalyst)
+        false
+        #else
+        true
+        #endif
+    }()
+
+    /// The edit as the page shows it: `edit`, with 片边 and 日期后背 off and no watermark while `showsFilmEdge` is false.
+    var shownEdit: FrameEdit {
+        if Self.edgeCheck, showsFilmEdge, !edit.filmEdge.active { var e = edit; e.filmEdge.active = true; return e }
+        guard !showsFilmEdge, edit.filmEdge.active || edit.dateBack.active || !edit.watermarks.isEmpty else { return edit }
+        var e = edit
+        e.filmEdge.active = false
+        e.dateBack.active = false
+        e.watermarks = []
+        return e
+    }
+
+    /// A check's launch only (`--filmlab-edge-check`, for `--capture-window`): the page shows the film edge on where it is
+    /// shown at all, so 导出 can be seen with it and 冲洗 without, on a library none of whose frames has one. Only what the
+    /// page shows: the edit, the library and the export are not touched.
+    static let edgeCheck = CommandLine.arguments.contains("--filmlab-edge-check")
     /// What the last finished render was made from.
     @ObservationIgnored private var rendered: FrameEdit
     /// A half-frame pair: the piece the last finished render was made from.
@@ -574,7 +614,7 @@ final class OpenFrameSession {
         if frame.developSource != nil {
             scheduler.cancelAll(frameID: frameID) { !$0.kind.isCanvas && $0.tier != .full }
         }
-        submit(frame, target: edit, layers: [], opening: true)
+        submit(frame, target: shownEdit, layers: [], opening: true)
     }
 
     /// A memory/camera trim gave the visible stock strip's decode back. Its
@@ -584,7 +624,7 @@ final class OpenFrameSession {
     func refillStripSource() -> Bool {
         guard opened, isHeld, let frame else { return false }
         if scheduler.snapshot(frameID: frameID, where: { $0.kind.isCanvas }) != nil { return true }
-        submit(frame, target: edit, layers: [], opening: true)
+        submit(frame, target: shownEdit, layers: [], opening: true)
         return true
     }
 
@@ -685,7 +725,7 @@ final class OpenFrameSession {
         // The picture is of the edit whose develop has its stamp: the job in flight, the last one finished, or the edit
         // as it stands (a frame's kept develop); none of them known, the edit as it stands.
         if let frame, let darkroom {
-            pictureOf = [asked?.target, rendered, edit].compactMap { $0 }
+            pictureOf = [asked?.target, rendered, shownEdit, edit].compactMap { $0 }
                 .first { darkroom.stamp(frame, edit: $0, longEdge: frame.previewDevelopLongEdge($0)) == stamp } ?? edit
         } else {
             pictureOf = nil
@@ -696,7 +736,7 @@ final class OpenFrameSession {
 
     /// True while the edit on the page is ahead of the picture on it: something
     /// a render would show has changed since the last one landed.
-    var isCatchingUp: Bool { !owed(to: edit).isEmpty }
+    var isCatchingUp: Bool { !owed(to: shownEdit).isEmpty }
 
     /// What the picture on the page owes `target`: the layers its settings
     /// have moved on, and — for a half-frame pair — what its piece has
@@ -1197,7 +1237,7 @@ final class OpenFrameSession {
         guard opened, let frame, darkroom?.makesPictures == true else { return }
         turns &+= 1
         measured = nil
-        submit(frame, target: edit, layers: [.shoot], opening: true)
+        submit(frame, target: shownEdit, layers: [.shoot], opening: true)
     }
 
     /// What the film's size is made of changed with no edit to say so: Settings' *Crop re-maps the
@@ -1207,7 +1247,7 @@ final class OpenFrameSession {
     func filmSizeRuleChanged() {
         guard opened, let frame, !frame.isPair, edit.appliesFilm, darkroom?.makesPictures == true else { return }
         guard edit.wireFilmFormatMM(photo: frame.originalSize, cropIsFrame: true) != edit.params.filmFormatMM else { return }
-        submit(frame, target: edit, layers: [.shoot], opening: false)
+        submit(frame, target: shownEdit, layers: [.shoot], opening: false)
     }
 
     /// A half-frame pair's piece was changed (`AppServices.changePair`: the
@@ -1706,13 +1746,14 @@ final class OpenFrameSession {
     /// the lift develops them where they went. One develop at the gesture's first move; a click that moves nothing asks
     /// for none.
     var developTarget: FrameEdit {
-        guard movingMarks != nil, let frame, !frame.isComposite else { return edit }
-        return WatermarkRules.underGesture(edit, isComposite: false)
+        let shown = shownEdit
+        guard movingMarks != nil, let frame, !frame.isComposite else { return shown }
+        return WatermarkRules.underGesture(shown, isComposite: false)
     }
 
     /// Whether the page's picture is being developed without the 底片 marks the edit has (`developTarget`): the zoom's
     /// full render, which carries them, is not laid over it meanwhile.
-    var cleanUnderGesture: Bool { developTarget != edit }
+    var cleanUnderGesture: Bool { developTarget != shownEdit }
 
     /// A gesture on the marks moved them: under it, the picture without the 底片 marks is asked for (`developTarget`).
     func requestUnderGesture() { request() }
@@ -1757,7 +1798,7 @@ final class OpenFrameSession {
                 // What the frame reads changed meanwhile — a pair given another frame: that is brought too.
                 self.bring(frame, again: again + 1)
             } else {
-                self.ask(frame, target: self.edit, layers: [], opening: true)
+                self.ask(frame, target: self.shownEdit, layers: [], opening: true)
             }
         }
     }

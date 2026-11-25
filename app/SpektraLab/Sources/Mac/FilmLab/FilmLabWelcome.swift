@@ -7,14 +7,24 @@
 
 import SwiftUI
 
+/// A check's launch: `--filmlab-welcome PAGE` (0–5) opens the tour on that page, whether or not it was seen, and the
+/// tour then saves nothing: not that it was seen, nor 普通 | 专业, nor where photos go or the photo folder (each is shown
+/// chosen, not kept). `--filmlab-welcome-storage copy|inPlace` starts the last page on that choice.
+@MainActor
+enum WelcomeCheck {
+    static let page: Int? = FilmLabCheckArgs.value("--filmlab-welcome").flatMap { Int($0) }
+    static var on: Bool { page != nil }
+    static var storage: FilmLabImport.Mode? { FilmLabCheckArgs.value("--filmlab-welcome-storage").flatMap(FilmLabImport.Mode.init(rawValue:)) }
+}
+
 struct FilmLabWelcome: View {
     @Environment(AppServices.self) private var model
     @Environment(AppRouter.self) private var router
-    @State private var page = 0
+    @State private var page = WelcomeCheck.page.map { min(max($0, 0), FilmLabWelcome.pages - 1) } ?? 0
     @State private var forward = true
     @State private var refused: String?
 
-    private static let pages = 6
+    static let pages = 6
     private var home: FilmLabHome { .shared }
 
     var body: some View {
@@ -43,7 +53,15 @@ struct FilmLabWelcome: View {
                             removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity)))
                 }
                 .frame(maxWidth: MacMetric.pt(720))
-                .clipped()
+                // The pages slide in and out of this column, so its sides are masked, and only its sides: the mark's
+                // light and a chosen card's glow run past its top and bottom and fade out on their own (the owner,
+                // 2026-11-25: "被卡掉了一块", when this was `.clipped()`).
+                .mask {
+                    LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.05),
+                                           .init(color: .black, location: 0.95), .init(color: .clear, location: 1)],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .padding(.vertical, -MacMetric.pt(400))
+                }
                 Spacer(minLength: MacMetric.pt(10))
                 controls
                     .padding(.horizontal, MacMetric.pt(28)).padding(.bottom, MacMetric.pt(26))
@@ -60,26 +78,26 @@ struct FilmLabWelcome: View {
             WelcomePage(art: AnyView(WelcomeArt()),
                         eyebrow: nil,
                         title: L("Welcome to FilmLab"),
-                        text: L("Make the photos from your Hasselblad look as if they were shot on real film. Colour and grain are copied from real films, from the makers' own data. It takes three steps."))
+                        text: L("Turn your Hasselblad photos into real film. Three steps."))
         case 1:
             WelcomePage(art: AnyView(LibraryArt()),
                         eyebrow: L("Step 1 · Library"),
                         title: L("Bring in your photos"),
-                        text: L("Put the camera's card in your Mac and press Import Photos. Your photos show up as small pictures; click one to start working on it."))
+                        text: L("Insert the card and press Import Photos. Click a photo to start."))
         case 2:
             WelcomePage(art: AnyView(DevelopArt()),
                         eyebrow: L("Step 2 · Develop"),
                         title: L("Pick a film look"),
-                        text: L("Each small picture shows your photo on a different film. Click the one you like. Then drag two sliders if you want: brightness, and warm or cool colour."))
+                        text: L("Click a thumbnail to change the film. Sliders set brightness and warmth."))
         case 3:
             WelcomePage(art: AnyView(ExportArt()),
                         eyebrow: L("Step 3 · Export"),
                         title: L("Save the finished photos"),
-                        text: L("Choose a folder and press Export. The photos are saved as JPEG files, ready to share or print. Your original files are never changed."))
+                        text: L("Choose a folder and press Export to save JPEGs. Originals are never changed."))
         case 4:
             ChooseModePage(refused: nil)
         default:
-            StoragePage(refused: refused)
+            WelcomeStoragePage(refused: refused)
         }
     }
 
@@ -194,20 +212,22 @@ private struct WelcomePage: View {
 private struct ChooseModePage: View {
     let refused: String?
     @State private var shown = false
+    /// A check's tour shows the choice without saving it (`WelcomeCheck`).
+    @State private var checkPro = ProMode.shared.on
 
     var body: some View {
         VStack(spacing: MacMetric.pt(14)) {
             Text(L("Simple or Pro?")).font(MacMetric.font(28, .bold)).foregroundStyle(Theme.text)
                 .multilineTextAlignment(.center)
-            Text(L("Not sure? Start with Simple. You can switch at any time with the Simple | Pro switch at the top right of the window."))
+            Text(L("Switch any time, top right of the window."))
                 .font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)
             HStack(spacing: MacMetric.pt(18)) {
-                card(pro: false, symbol: "sparkles", title: L("Simple"), who: L("For getting nice photos quickly"),
-                     lines: [L("Pick a film look with one click"), L("Make it brighter or darker"), L("Make the colour warmer or cooler"),
-                             L("Add a film border, or not"), L("Save as JPEG in one step")])
-                card(pro: true, symbol: "slider.horizontal.3", title: L("Pro"), who: L("For people who like to fine-tune"),
-                     lines: [L("Everything in Simple, plus:"), L("Curves for the light and dark parts"), L("Film grain and the glow around highlights"),
-                             L("Edits to just one part, like the sky or a face"), L("More file types and colour settings for print")])
+                card(pro: false, symbol: "sparkles", title: L("Simple"), who: L("Quick results"),
+                     lines: [L("Change film in one click"), L("Brightness and warmth"), L("Add a little film grain"),
+                             L("Add a film border"), L("Save as JPEG in one step")])
+                card(pro: true, symbol: "slider.horizontal.3", title: L("Pro"), who: L("Fine control"),
+                     lines: [L("Everything in Simple, plus:"), L("Curves for the light and dark parts"), L("Glow around highlights"),
+                             L("Local edits, like the sky or a face"), L("More formats, print colour settings")])
             }
             .padding(.top, MacMetric.pt(16))
             if let refused {
@@ -220,8 +240,10 @@ private struct ChooseModePage: View {
     }
 
     private func card(pro: Bool, symbol: String, title: String, who: String, lines: [String]) -> some View {
-        let chosen = ProMode.shared.on == pro
-        return Button { FilmLabHome.shared.setPro(pro) } label: {
+        let chosen = (WelcomeCheck.on ? checkPro : ProMode.shared.on) == pro
+        return Button {
+            if WelcomeCheck.on { withAnimation(.smooth(duration: 0.25)) { checkPro = pro } } else { FilmLabHome.shared.setPro(pro) }
+        } label: {
             VStack(alignment: .leading, spacing: MacMetric.pt(10)) {
                 HStack {
                     Image(systemName: symbol).font(MacMetric.font(20, .semibold))
@@ -262,43 +284,16 @@ private struct ChooseModePage: View {
     }
 }
 
-/// The last page: where imported photos go (`StorageChoice`); Import Photos… is the button under it.
-private struct StoragePage: View {
-    let refused: String?
-    @State private var shown = false
-
-    var body: some View {
-        VStack(spacing: MacMetric.pt(14)) {
-            Text(L("Where should your photos go?")).font(MacMetric.font(28, .bold)).foregroundStyle(Theme.text)
-                .multilineTextAlignment(.center)
-            Text(L("When you import from a card, FilmLab can copy the photos onto this Mac first, so you can take the card out and keep working."))
-                .font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)
-                .frame(maxWidth: MacMetric.pt(520)).fixedSize(horizontal: false, vertical: true)
-            StorageChoice()
-                .frame(maxWidth: MacMetric.pt(520))
-                .padding(.top, MacMetric.pt(10))
-            Text(L("You can change this later on the home page."))
-                .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
-            if let refused {
-                Text(L(shown: refused)).font(MacMetric.font(12)).foregroundStyle(Theme.danger)
-            }
-        }
-        .padding(.horizontal, MacMetric.pt(24))
-        .opacity(shown ? 1 : 0).scaleEffect(shown ? 1 : 0.96)
-        .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.2)) { shown = true } }
-    }
-}
-
 // MARK: - the drawings
 
 /// Five film looks the drawings cycle through: a name and the picture's two tints.
-private let looks: [(name: String, top: UInt32, bottom: UInt32)] = [
+let welcomeLooks: [(name: String, top: UInt32, bottom: UInt32)] = [
     ("Portra 400", 0xF2C9A0, 0x6C8A9A), ("Gold 200", 0xF5C36A, 0x8A6A3A), ("Ektar 100", 0xF08A5A, 0x2E6A8A),
     ("Vision3 250D", 0xD8B8A0, 0x4A6A70), ("Velvia 50", 0xF0A040, 0x1E5A7A),
 ]
 
 /// A picture drawn: sky, a sun, two hills, in a look's two tints.
-private struct SceneSketch: View {
+struct SceneSketch: View {
     let top: UInt32, bottom: UInt32
     var body: some View {
         GeometryReader { g in
@@ -364,7 +359,7 @@ private struct LibraryArt: View {
                         GridRow {
                             ForEach(0..<4, id: \.self) { c in
                                 let i = r * 4 + c
-                                let look = looks[i % looks.count]
+                                let look = welcomeLooks[i % welcomeLooks.count]
                                 SceneSketch(top: look.top, bottom: look.bottom)
                                     .frame(width: MacMetric.pt(66), height: MacMetric.pt(46))
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -389,8 +384,8 @@ private struct DevelopArt: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.4)) { t in
             let s = t.date.timeIntervalSinceReferenceDate
-            let pick = Int(s / 1.4) % looks.count
-            let look = looks[pick]
+            let pick = Int(s / 1.4) % welcomeLooks.count
+            let look = welcomeLooks[pick]
             VStack(spacing: MacMetric.pt(12)) {
                 SceneSketch(top: look.top, bottom: look.bottom)
                     .frame(width: MacMetric.pt(250), height: MacMetric.pt(150))
@@ -404,8 +399,8 @@ private struct DevelopArt: View {
                     .shadow(color: .black.opacity(0.35), radius: 12, y: 5)
                     .animation(.easeInOut(duration: 0.6), value: pick)
                 HStack(spacing: MacMetric.pt(8)) {
-                    ForEach(looks.indices, id: \.self) { i in
-                        SceneSketch(top: looks[i].top, bottom: looks[i].bottom)
+                    ForEach(welcomeLooks.indices, id: \.self) { i in
+                        SceneSketch(top: welcomeLooks[i].top, bottom: welcomeLooks[i].bottom)
                             .frame(width: MacMetric.pt(46), height: MacMetric.pt(32))
                             .clipShape(RoundedRectangle(cornerRadius: 3))
                             .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color.white, lineWidth: i == pick ? 2 : 0))
@@ -455,7 +450,7 @@ private struct ExportArt: View {
                 ZStack {
                     ForEach(0..<4, id: \.self) { i in
                         let start = 0.12 * Double(i), local = min(max((p - start) / 0.35, 0), 1)
-                        let look = looks[i]
+                        let look = welcomeLooks[i]
                         SceneSketch(top: look.top, bottom: look.bottom)
                             .frame(width: MacMetric.pt(92), height: MacMetric.pt(64))
                             .clipShape(RoundedRectangle(cornerRadius: 4))

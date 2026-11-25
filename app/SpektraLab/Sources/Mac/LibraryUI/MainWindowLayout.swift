@@ -109,7 +109,8 @@ enum MacLibraryGo {
         browser.selection = [image.id]
         browser.focus = image.id
         MacDevelopWanted.surface = mode == .edit ? .edit : .develop
-        MacDevelopWanted.step = mode == .export ? .format : mode == .develop ? .filmAndPaper : nil
+        MacDevelopWanted.step = mode == .export || mode == .personalize ? .format : mode == .develop ? .filmAndPaper : nil
+        if mode == .export || mode == .personalize { FilmLabFinish.shared.page = mode == .export ? .export : .personalize }
         open(image, model: model)
     }
 
@@ -243,6 +244,8 @@ struct MainWindowLayout: View {
         }
         .background { OwnReads { shellKeys(store, rows) } }
         .background { OwnReads { ratingKeys(store, rows) } }
+        // P, X, U: 留用, 不要, no flag on the chosen pictures, in every mode as the digits are (`FilmLabFlagKeys`).
+        .background { OwnReads { FilmLabFlagKeys(store: store, enabled: Self.shortcutsFree(router)) } }
         .background { OwnReads { developWatch(store, rows) } }
         .background { OwnReads { pasteRequests(store, rows) } }
         // A click anywhere outside the field being edited ends its editing (the owner, 2026-10-26: the
@@ -375,8 +378,9 @@ struct MainWindowLayout: View {
         MacShortcutButton(.export, enabled: free && (dev != nil || !browser.selection.isEmpty)) {
             if let dev { dev.export() } else { browser.exportAsked = true }
         }
-        // ⌘1–⌘4: the four modes, as the mode row has them (二级调色 only in 专业版); ⌃⌘P: 普通 | 专业.
-        ForEach([(MacShortcut.modeLibrary, WorkspaceMode.library), (.modeDevelop, .develop), (.modeGrading, .edit), (.modeExport, .export)],
+        // ⌘1–⌘5: the five modes, as the mode row has them (二级调色 only in 专业版); ⌃⌘P: 普通 | 专业.
+        ForEach([(MacShortcut.modeLibrary, WorkspaceMode.library), (.modeDevelop, .develop), (.modeGrading, .edit),
+                 (.modePersonalize, .personalize), (.modeExport, .export)],
                 id: \.0.rawValue) { key, mode in
             MacShortcutButton(key, enabled: free && WorkspaceMode.shown.contains(mode) && (mode == .library || !rows.isEmpty || dev != nil)) {
                 browser.fullGrid = false
@@ -549,7 +553,7 @@ struct MainWindowLayout: View {
             MacModeSwitch(current: dev?.surface ?? .develop) { mode in
                 switch mode {
                 case .library: router.toLibrary()
-                case .develop, .export, .edit:
+                case .develop, .export, .edit, .personalize:
                     browser.fullGrid = false      // a surface wants the picture: the viewer comes back
                     dev?.chooseSurface(mode)
                 }
@@ -683,6 +687,10 @@ private struct ShellContent: View, Equatable {
         // Read when the mode changes (this body runs again then), so the hidden page keeps the size of its last frame in front.
         let held = develop == nil ? nil : front.size
         ZStack {
+            // Holds the stack at the size it is offered while the library page is out. Without it the stack is empty
+            // under the home page (no develop page either), measures 0, and that reads as one more resize: the page
+            // was taken out and put back every 0.4 s for as long as the home page stayed up (seen 2026-11-25).
+            Color.clear
             if !(resizing && (develop != nil || covered)) {
             LibraryScreen()
                 .frame(width: held?.width, height: held?.height)

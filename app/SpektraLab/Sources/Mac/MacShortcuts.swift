@@ -12,8 +12,9 @@ enum MacShortcut: String, CaseIterable {
     case tableDrag, tableClick, tableLoupe, tableFit, tableActual, tableZoomIn, tableZoomOut
     case tableRight, tableLeft
     case red, yellow, green, blue
-    /// FilmLab 暗房 (the owner, 2026-11-23): ⌘1–⌘4 are the four modes; ⌃⌘P is 普通 | 专业.
-    case modeLibrary, modeDevelop, modeGrading, modeExport, proMode
+    /// FilmLab 暗房 (the owner, 2026-11-23): ⌘1–⌘5 are the five modes (个性化 is ⌘4 since 2026-11-25, 导出 ⌘5); ⌃⌘P is
+    /// 普通 | 专业.
+    case modeLibrary, modeDevelop, modeGrading, modePersonalize, modeExport, proMode
     case original
     case newVariant, cloneVariant
 
@@ -32,7 +33,8 @@ enum MacShortcut: String, CaseIterable {
         case .modeLibrary: return [k("1", .command)]
         case .modeDevelop: return [k("2", .command)]
         case .modeGrading: return [k("3", .command)]
-        case .modeExport: return [k("4", .command)]
+        case .modePersonalize: return [k("4", .command)]
+        case .modeExport: return [k("5", .command)]
         case .proMode: return [k("p", [.command, .control])]
         case .browser: return [k("b", .command), k("b", [.command, .alternate])]
         case .column: return [k("t", .command), k("s", [.command, .control])]
@@ -95,6 +97,7 @@ enum MacShortcut: String, CaseIterable {
         case .modeLibrary: L("Library")
         case .modeDevelop: L("Develop")
         case .modeGrading: L("Grading")
+        case .modePersonalize: L("Personalize")
         case .modeExport: L("Export", as: "the mode")
         case .proMode: L("Simple or Pro")
         case .browser: L("Browser")

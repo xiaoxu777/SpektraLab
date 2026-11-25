@@ -18,6 +18,9 @@ struct BrowserViewerSplit: View {
     /// FilmLab: the library page's viewer carries the browser's strip under it (`ShellFilmStrip`); the import's and the
     /// export page's do not.
     var filmStrip = false
+    /// The line under the picture (`MacInfoStrip`). Off where the page says it its own way (图库's preview,
+    /// `FilmLabLibraryPreview`).
+    var infoStrip = true
     @Environment(FrameCatalog.self) private var library
     @Environment(AppServices.self) private var model
 
@@ -46,7 +49,7 @@ struct BrowserViewerSplit: View {
                     }
                 }
             }
-            MacInfoStrip(image: image.map(MacInfoStrip.Item.init), chosen: chosen, status: image.flatMap(statusLine))
+            if infoStrip { MacInfoStrip(image: image.map(MacInfoStrip.Item.init), chosen: chosen, status: image.flatMap(statusLine)) }
             // FilmLab: the browser's strip, under the picture and not under the sidebar (`ShellFilmStrip`).
             if filmStrip, ShellFilmStrip.shown { ShellFilmStrip(open: open).frame(height: FilmStripBar.height) }
         }

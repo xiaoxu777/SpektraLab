@@ -9,8 +9,9 @@ import CoreGraphics
 import Foundation
 
 extension OpenFrameSession {
-    /// The marks as the canvas shows them: the ones under a gesture, else the edit's.
-    var shownMarks: [WatermarkPlacement] { movingMarks ?? edit.watermarks }
+    /// The marks as the canvas shows them: the ones under a gesture, else the edit's. FilmLab: none while the page shows
+    /// the picture without what 个性化 adds (冲洗, 二级调色: `showsFilmEdge`), so the 图层 panel lists none there either.
+    var shownMarks: [WatermarkPlacement] { showsFilmEdge ? (movingMarks ?? edit.watermarks) : [] }
 
     /// The picked watermark, as it stands on the page; nil where none is picked (or it has gone, undone away).
     var pickedMark: WatermarkPlacement? { watermarkPick.flatMap { id in shownMarks.first { $0.id == id } } }

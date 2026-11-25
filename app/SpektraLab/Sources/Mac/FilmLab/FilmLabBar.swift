@@ -453,8 +453,10 @@ struct FlowLayout: Layout {
 // MARK: - a check's launch
 
 /// What a check's launch asks for, so `--capture-window` can draw a mode or a panel without a hand on the window:
-/// `--filmlab-mode grade|export` opens the develop page on that mode (with `--develop`), `--filmlab-panel copy|paste`
-/// opens that panel a moment after launch. Nothing is changed in the library or the settings.
+/// `--filmlab-mode grade|personalize|export` opens the develop page on that mode (with `--develop`), `--filmlab-panel copy|paste`
+/// opens that panel a moment after launch. Nothing is changed in the library or the settings. For the export's
+/// animation: `--filmlab-export-folder <path>` exports into that folder for this run (the kept folder, the kept recipe
+/// and the 已导出 log are left alone) and `--filmlab-export-go SECONDS` presses 导出 after that long.
 @MainActor
 enum FilmLabCheckArgs {
     static func value(_ name: String) -> String? {
@@ -466,10 +468,14 @@ enum FilmLabCheckArgs {
     static func applyMode() {
         switch value("--filmlab-mode") {
         case "grade": MacDevelopWanted.surface = .edit
-        case "export": MacDevelopWanted.surface = .develop; MacDevelopWanted.step = .format
+        case "export": MacDevelopWanted.surface = .develop; MacDevelopWanted.step = .format; FilmLabFinish.shared.page = .export
+        case "personalize": MacDevelopWanted.surface = .develop; MacDevelopWanted.step = .format; FilmLabFinish.shared.page = .personalize
         default: break
         }
     }
+
+    /// `--filmlab-export-go` has pressed 导出 once this launch (`FilmLabExportFooter`).
+    static var exportWent = false
 
     /// A page asked for, for `--capture-window` (design A round 7): `--filmlab-show lighttable` opens the Light Table as it
     /// stands (nothing is put on it), `--filmlab-show import --filmlab-show-path <folder>` opens the import page with that
