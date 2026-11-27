@@ -55,6 +55,7 @@ final class Layer2Copies {
     }
 
     private(set) var copies: [UUID: Copy] = [:]
+    @ObservationIgnored private var stripDevelops: [UUID: (frame: LibraryFrame, reusable: Bool)] = [:]
     /// Whether a copy may be made now: nothing in the scheduler, no camera. Set by the app's model.
     @ObservationIgnored var canRun: () -> Bool = { true }
     /// A frame's 成片 layers (`AppServices.finishedLayers`). Set by the app's model.
@@ -80,6 +81,46 @@ final class Layer2Copies {
         guard frame.edit.finishedActs(isComposite: frame.isComposite), let copy = copies[frame.id], let developed = frame.developed,
               copy.of == developed.stamp else { return nil }
         return copy.picture
+    }
+
+    /// The strip can take off an edge only when the pixels match this layout and carry no date or watermark.
+    /// Everything else keeps FrameView's ordinary thumbnail: no new develop and no camera-preview substitute.
+    func stripThumbnail(_ frame: LibraryFrame, model: AppServices) -> FrameThumbnail.Source? {
+        guard frame.edit.filmEdge.effective, !frame.isComposite,
+              frame.edit.filmEdge.format != .sprocket135, !frame.edit.dateBack.active,
+              WatermarkRules.base(frame.edit, isComposite: frame.isComposite).isEmpty,
+              WatermarkRules.finished(frame.edit, isComposite: frame.isComposite).isEmpty,
+              reusableStripDevelop(frame, model: model), let developed = frame.shownDevelop,
+              developed.size.width > 0, developed.size.height > 0,
+              let film = model.filmEdge(for: frame) else { return nil }
+        // pictureBox includes the host's quarter turns; undo only the scan's residual tilt. Its units
+        // are millimetres, so this cut is independent of the kept develop's pixel dimensions.
+        let g = film.geometry, box = g.pictureBox
+        guard g.canvasMM.width > 0, g.canvasMM.height > 0 else { return nil }
+        var cut = Geometry.default
+        cut.crop = CropRect(x: box.box.minX / g.canvasMM.width, y: box.box.minY / g.canvasMM.height,
+                            width: box.box.width / g.canvasMM.width, height: box.box.height / g.canvasMM.height)
+        cut.angle = box.tilt
+        return FrameThumbnail.Source(picture: unmarkedStripCopy(frame) ?? developed.picture,
+                                     size: CGSize(width: developed.size.width, height: developed.size.height),
+                                     geometry: cut, printCrop: frame.edit.printCrop)
+    }
+
+    private func reusableStripDevelop(_ frame: LibraryFrame, model: AppServices) -> Bool {
+        if !frame.isComposite, let cached = stripDevelops[frame.id], cached.frame == frame { return cached.reusable }
+        // A removed date/edge can still be in an older develop. Its edit alone cannot tell us what those pixels
+        // carry. Reuse only a develop whose stamp names the edit/layout we are about to crop.
+        let wanted = model.darkroom.stamp(frame, edit: frame.edit, longEdge: frame.previewDevelopLongEdge(frame.edit), evenAway: true)
+        let reusable = wanted != nil && frame.shownDevelop?.stamp == wanted
+        stripDevelops[frame.id] = (frame, reusable)
+        return reusable
+    }
+
+    private func unmarkedStripCopy(_ frame: LibraryFrame) -> PictureRef? {
+        // `served` deliberately allows a previous Layer 2 copy while its replacement is made; it can still have
+        // the watermark just deleted. The strip's undecorated path may borrow only a copy made without marks.
+        guard let copy = copies[frame.id], !copy.key.contains("|wm ") else { return nil }
+        return served(frame)
     }
 
     /// The library to keep copies for: watched from now on, its copies found

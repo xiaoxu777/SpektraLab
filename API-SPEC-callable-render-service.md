@@ -1993,3 +1993,32 @@ though with this the blurred edge between canvas and film edge would need extra 
 - Check: `engine/tests/overscan_checks.py` (EDR under a film edge: the rebate and a hole the print without EDR, the
   gate's middle EDR's to the bit, the mix monotone across the gate's edge; byte identity without a film edge and with
   EDR off), on 135, 120 + `ks65`, 645, Super 8 and 16 mm.
+
+## 26. `edr_amount` — how much of the EDR master is laid on (2026-11-25, FilmLab, session `extras`)
+
+One field is added; nothing is renamed or moved. The owner (2026-11-25): "EDR 功能应该可以手动调整应用多少吧？最好能加上去".
+`extended_dynamic_range` was a switch: the print profile's measured EDR table (`edr_tone_map`, native linear output Y →
+SDR EDR linear Y, the middle identity) laid on whole, or not at all.
+
+| field | path | type | layer | default | live | range |
+|---|---|---|---|---|---|---|
+| `edr_amount` | `print_render.edr_amount` | float | print | 1.0 | no | 0 … 1 |
+
+- **What it does.** With `extended_dynamic_range` on and a print (not a scanned film, not a Digital Intermediate), the
+  EDR node moves a pixel's Y by the table, in log2: `log2 Y' = log2 Y + a · (table(log2 Y) − log2 Y)`, chromaticity
+  kept as before. The blend is baked with the table at setup (`Pipeline::setup`, the table sampled on its own uniform
+  log2-Y axis, where the identity is the axis itself), so the kernels (`spk_edr`, `spk_edr_weighted`, their Vulkan
+  ports) are unchanged and a film edge's §25 weighting applies to the blended table as it did to the table.
+- **The measured table is not rewritten** (the material model is not the control surface): the profile's
+  `edr_tone_map` is read as before; the blend is the output stage's, after the print.
+- **Unchanged to the bit:** `edr_amount` 1 (the default, and every older edit, which never sends it) is the table as
+  before; `edr_amount` 0 does not run the node, so it is the print with `extended_dynamic_range` false; any amount with
+  `extended_dynamic_range` false, a scanned film or a Digital Intermediate is as before (no node).
+- **Not live**: a change rebuilds the pipeline, as switching `extended_dynamic_range` does (the blend is baked).
+- **The HDR curve** (`spk_hdr_curve`, §19.2) still refuses `extended_dynamic_range` on, whatever the amount.
+- The app (`FilmParams.edrAmount`, 解码 › 高动态范围's 应用多少 slider, 0–100 %) sends it only while EDR is on and the
+  amount is under 1; the edit keeps it under `edrAmount`, written only once moved.
+- Check: `engine/tests/parity_schema.py` (the field, NATIVE_ONLY, before `preview_long_edge`);
+  `app/SpektraLab/tools/hdr_edr_amount_selftest.py` (renders through the engine dylib: 1 equals no field to the bit, 0
+  equals EDR off to the bit, EDR off ignores the amount, 0.25 / 0.5 / 0.75 lie channel by channel between off and on and
+  move monotonically towards on, on the live and the export tiers).

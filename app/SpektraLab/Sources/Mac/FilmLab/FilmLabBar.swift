@@ -138,12 +138,37 @@ struct FilmLabCopyButton: View {
         .popover(isPresented: $ui.copyShown, arrowEdge: .bottom) {
             if let frameID {
                 // A popover is a presentation of its own: the app's objects are handed on again (as the covers do).
-                FilmLabCopyPanel(frameID: frameID) { ui.copyShown = false }
-                    .interfaceScaled(.macPoints)
-                    .appEnvironment(model)
-                    .appColorScheme()
+                FilmLabPanelPopover(width: MacMetric.pt(320)) {
+                    FilmLabCopyPanel(frameID: frameID) { ui.copyShown = false }
+                }
+                .appEnvironment(model)
+                .appColorScheme()
             }
         }
+    }
+}
+
+/// A bar panel as a popover's content, at the Mac-point scale, and as large as the panel is.
+///
+/// A popover on the Mac is a window sized by its content, and `interfaceScaled` is a reader, which has no size of
+/// its own: left to it, 拷贝 ▾ and 粘贴 ▾ came up 79 points square with the panel cut off inside (seen in the
+/// installed app, 2026-11-26; `FilmLabHelpPopover` met the same thing). So the panel's height is measured where it is
+/// drawn, and the popover is given the panel's size times the scale. `width` is the panel's own, in its points.
+struct FilmLabPanelPopover<Panel: View>: View {
+    let width: CGFloat
+    @ViewBuilder var panel: () -> Panel
+    /// The panel's height in its own points, once drawn; a likely one until then.
+    @State private var height: CGFloat = MacMetric.pt(360)
+
+    var body: some View {
+        let f = InterfaceScale.current(.macPoints)
+        panel()
+            .fixedSize(horizontal: true, vertical: true)
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { height = $0 }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .interfaceScaled(.macPoints)
+            .frame(width: width * f, height: height * f)
+            .background(Theme.popover)
     }
 }
 
@@ -289,8 +314,9 @@ struct FilmLabPasteButton: View {
         .help(held ? L("Paste settings (⌘V); choose where (⇧⌘V)") : L("Nothing is copied yet"))
         .accessibilityIdentifier("filmlab.bar.paste")
         .popover(isPresented: $ui.pasteShown, arrowEdge: .bottom) {
-            FilmLabPastePanel(store: store, rows: rows, develop: develop) { ui.pasteShown = false }
-                .interfaceScaled(.macPoints)
+            FilmLabPanelPopover(width: MacMetric.pt(340)) {
+                FilmLabPastePanel(store: store, rows: rows, develop: develop) { ui.pasteShown = false }
+            }
                 .appEnvironment(model)
                 .appColorScheme()
         }

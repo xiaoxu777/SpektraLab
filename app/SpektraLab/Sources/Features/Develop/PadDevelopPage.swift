@@ -60,6 +60,8 @@ extension DevelopWorkspace {
             // frame's never drawn under the next, `FramePicture`, `HDRImage`), the mask stage and its pointer
             // are a frame's, as they were when the whole page was made again.
             OwnReads { canvas(cropping: cropping, arranging: arranging) }.id(frame.id)
+                // 普通版's 预览效果 in 导出 (`FilmLabExportPurposePreview`): the place's mock-up in the viewer's place; nothing otherwise.
+                .overlay { FilmLabExportPurposePreview(session: session, frame: frame) }
                 // Where an export's card lifts from (`FilmLabExportStage`: stored, not observed — nothing is drawn again).
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(FilmLabExportStage.space)) } action: {
                     FilmLabExportStage.shared.viewer = $0
@@ -430,13 +432,13 @@ extension DevelopWorkspace {
         return VStack(spacing: 0) {
             // The frame's: it holds its session's histogram while it is shown (`HistogramPanel.holder`), so it is made
             // again with the next frame's session (2.4.0 A2b).
-            if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id) }
+            if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id).filmLabModePart() }
             // 普通版 (FilmLab): a single photograph has no 图层 row (its mask layers are 专业版's); a double or a pair keeps
             // it, the way to its pictures.
             if !export, !(FeatureFlags.simpleWindow && piece.isSingle) {
-                LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
+                LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top).filmLabModePart()
             }
-            if band { navigationBand.frame(height: tabs) }
+            if band { navigationBand.frame(height: tabs).filmLabModePart() }
             Group {
                 if let arranging {
                     ArrangeColumn(session: session, frame: frame, pick: arranging)
@@ -445,9 +447,13 @@ extension DevelopWorkspace {
                 }
             }
             // The panel takes the height the histogram, 图层 and the band leave (the layout's, not a number).
+            // A change of mode (the window's switch): the parts the two modes do not share slide and fade, towards the
+            // side the switch moved, and the rest of the column stays (`FilmLabModeTransition.swift`; each mode's panel
+            // says so itself in `columnPanel`).
             .frame(minHeight: 0, maxHeight: .infinity, alignment: .top).clipped()
         }
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
+        .filmLabModeColumn(filmLabMode)
         .animation(.easeOut(duration: 0.18), value: layersHeight)
         .layerSheets(session: session, frame: frame)
         // 摆放 is of this picture and this mode: another frame, or Edit, closes it (Done).
@@ -506,6 +512,7 @@ extension DevelopWorkspace {
         if exportColumnShown, personalizing {
             // 片边, 日期后背 and 水印, each a switch with its choices as pictures (`FilmLabPersonalizeColumn`).
             FilmLabPersonalizeColumn(session: session, frame: frame, ids: exportIDs, piece: personalizePiece)
+                .filmLabModePart()
         } else if exportColumnShown {
             // The export's choices scroll; its button stays at the column's foot (`FilmLabExportFooter`).
             VStack(spacing: 0) {
@@ -515,6 +522,7 @@ extension DevelopWorkspace {
                 .scrollIndicators(.hidden)
                 FilmLabExportFooter(frameIDs: exportIDs)
             }
+            .filmLabModePart()
         } else if let mark = watermarkPage {
             WatermarkPage(session: session, placement: mark)
         } else if let layer = maskPage {
@@ -555,6 +563,8 @@ extension DevelopWorkspace {
                 // 普通版: 颗粒 is pinned at the column's foot, on show whatever Decode's fold or the scroll (`FilmLabSimpleGrain`).
                 if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session) }
             }
+            // The film and paper grids take no part in the mode's transition: too heavy to move (`filmLabModeHeavyPart`).
+            .filmLabModeHeavyPart()
         } else if navigation.surface == .develop {
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
@@ -562,10 +572,11 @@ extension DevelopWorkspace {
                 }
             }
             .scrollIndicators(.hidden)
+            .filmLabModePart()
         } else {
             // Edit is Adjust — no EngineRouter
             // (its Latitude card, Enlarger and Effects) and no Crop in the column (DevelopInspectorParts.swift).
-            columnAdjust
+            columnAdjust.filmLabModePart()
         }
     }
 

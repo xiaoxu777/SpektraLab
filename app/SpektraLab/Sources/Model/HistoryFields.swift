@@ -284,6 +284,9 @@ enum HistoryFields {
         d(["edit.params.extendedDynamicRange", "edit.params.edrOff"], .hdr, [by { $0.edit.params.edrChoice }]) { r in
             HistoryLabel("Extended Dynamic Range (EDR)", valueKey: on(r.edit.params.extendedDynamicRange))
         },
+        f("edit.params.edrAmount", .hdr, { $0.edit.params.edrAmount }) { r in
+            HistoryLabel("EDR Amount", value: "\(Int((r.edit.params.edrAmount * 100).rounded()))%")
+        },
         f("edit.hdr", .hdr, { $0.edit.hdrChoice }) { r in HistoryLabel("Enable HDR", valueKey: on(r.edit.hdr)) },
         f("edit.hdrPeak", .hdr, { $0.edit.hdrPeakStops }) { r in HistoryLabel("HDR Peak Brightness", value: String(format: "%.1f EV", r.edit.hdrPeak)) },
         // Format › Size (the film's long edge in mm is derived from the three, and moves with them).

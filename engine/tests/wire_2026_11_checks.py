@@ -97,10 +97,13 @@ def main():
         check(idx == sorted(idx) and idx == list(range(idx[0], idx[0] + len(idx))),
               "the new fields are one block, in API-SPEC's order")
         # the native fields appended since sit between it and preview_long_edge, in order: scene_layers
-        # (API-SPEC §23, 2026-11-13), leak_seed (§21.8, 2026-11-15) and leak_edge (§21.9, 2026-11-16)
-        after = names[idx[-1] + 1:idx[-1] + 5]
-        check(names[idx[0] - 1] == "grain_seed" and after == ["scene_layers", "leak_seed", "leak_edge", "preview_long_edge"],
-              "the block sits after grain_seed; scene_layers, leak_seed and leak_edge follow it, then preview_long_edge",
+        # (API-SPEC §23, 2026-11-13), leak_seed (§21.8, 2026-11-15), leak_edge (§21.9, 2026-11-16) and edr_amount
+        # (§26, 2026-11-25)
+        after = names[idx[-1] + 1:idx[-1] + 6]
+        check(names[idx[0] - 1] == "grain_seed"
+              and after == ["scene_layers", "leak_seed", "leak_edge", "edr_amount", "preview_long_edge"],
+              "the block sits after grain_seed; scene_layers, leak_seed, leak_edge and edr_amount follow it, "
+              "then preview_long_edge",
               f"{names[idx[0] - 1]} .. {after}")
         by = {f["name"]: f for f in fields} if isinstance(fields, list) else fields
         ls = by.get("leak_seed") or {}

@@ -21,13 +21,18 @@ struct ShellFilmStrip: View {
     /// A double click (图库: onto the develop page). Nil where a click already opens (冲洗: the chosen row is the page's).
     var open: ((MacImage) -> Void)? = nil
     @Environment(AppServices.self) private var model
+    @Environment(AppRouter.self) private var router
 
     static var shown: Bool { MacLibraryBrowser.shared.viewerShown && !MacLibraryBrowser.shared.fullGrid }
 
     var body: some View {
         let store = MacLibraryUI.store(model)
         let _ = FilmLabFlags.shared.attach(store)
-        FilmStripBar(store: store, rows: FilmLabRollFilterState.shared.apply(store.images, library: model.library), open: { open?($0) })
+        // The same mode the window's bar wears. Keep this in the strip's inputs: its equatable boundary must not
+        // swallow a mode change just because the library's rows have not changed.
+        let mode = MacShellPath.develop(router.path) == nil ? WorkspaceMode.library : MacShellBar.shared.develop?.surface
+        FilmStripBar(store: store, rows: FilmLabRollFilterState.shared.apply(store.images, library: model.library),
+                     showsDecorations: mode == .personalize || mode == .export, open: { open?($0) })
             .equatable()
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }
@@ -36,10 +41,13 @@ struct ShellFilmStrip: View {
 struct FilmStripBar: View, Equatable {
     let store: any MacLibraryData
     let rows: [MacImage]
+    let showsDecorations: Bool
     /// A double click: in 图库 onto the develop page; in 冲洗 the page's own.
     let open: (MacImage) -> Void
 
-    nonisolated static func == (a: Self, b: Self) -> Bool { a.store === b.store && a.rows == b.rows }
+    nonisolated static func == (a: Self, b: Self) -> Bool {
+        a.store === b.store && a.rows == b.rows && a.showsDecorations == b.showsDecorations
+    }
 
     static var height: CGFloat { MacMetric.pt(124) }
     private static var box: CGSize { CGSize(width: MacMetric.pt(104), height: MacMetric.pt(78)) }
@@ -56,6 +64,7 @@ struct FilmStripBar: View, Equatable {
                     LazyHStack(spacing: MacMetric.pt(6)) {
                         ForEach(rows) { image in
                             FilmStripCell(image: image, box: Self.box,
+                                          showsDecorations: showsDecorations,
                                           selected: browser.selection.contains(image.id),
                                           rate: { rate(image, $0) },
                                           flag: { FilmLabFlags.shared.toggle(.pick, on: image, among: FilmLabFlagTargets.of(image, in: rows)) },
@@ -222,6 +231,7 @@ struct FilmStripBar: View, Equatable {
 private struct FilmStripCell: View {
     let image: MacImage
     let box: CGSize
+    let showsDecorations: Bool
     let selected: Bool
     let rate: (Int) -> Void
     /// The flag beside the stars pressed: 留用, or off again (`FilmLabFlagMark`).
@@ -256,10 +266,17 @@ private struct FilmStripCell: View {
     @ViewBuilder private var picture: some View {
         if let id = image.develop?.frameID, let kept = library.frame(id) {
             let frame = MacShownFrame.of(kept, model: model)
-            let a = MacShownFrame.aspect(frame)
+            let clean = showsDecorations ? nil : Layer2Copies.shared.stripThumbnail(frame, model: model)
+            let a = clean?.aspect ?? MacShownFrame.aspect(frame)
             let fit = box.width / box.height > a ? CGSize(width: box.height * a, height: box.height)
                                                  : CGSize(width: box.width, height: box.width / a)
-            FrameView(frame: frame, pointSize: max(fit.width, fit.height), contentMode: .fit)
+            Group {
+                if let clean {
+                    FrameThumbnail(source: clean, pointSize: max(fit.width, fit.height))
+                } else {
+                    FrameView(frame: frame, pointSize: max(fit.width, fit.height), contentMode: .fit)
+                }
+            }
                 .frame(width: fit.width, height: fit.height)
                 .overlay { MacDevelopVeil(frame: frame, ring: MacMetric.pt(14)) }
                 .clipShape(RoundedRectangle(cornerRadius: MacMetric.pt(3), style: .continuous))

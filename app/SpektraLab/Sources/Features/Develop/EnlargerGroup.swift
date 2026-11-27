@@ -101,12 +101,27 @@ struct EnlargerGroup: View {
     }
 
     /// The group's fold and its ↺: Decode's folding header, a step in (its chevron under Decode's name), as
-    /// 高动态范围's.
+    /// 高动态范围's. `ColumnSectionHeader`'s line, drawn here so that the "?" stands right after the name (FilmLab,
+    /// 2026-11-25: what the enlarger is, `FilmLabHelpButton`).
     private var title: some View {
-        ColumnSectionHeader(title: L("Enlarger"), folded: prefs.enlargerCollapsed, id: "enlarger",
-                            rule: false, indent: HighDynamicRangeGroup.indent,
-                            value: ClipboardGroup.enlarger.summary(of: edit),
-                            toggleFold: { prefs.enlargerCollapsed.toggle() }) {
+        let folded = prefs.enlargerCollapsed
+        let value = ClipboardGroup.enlarger.summary(of: edit)
+        let fold = { withAnimation(.easeOut(duration: 0.18)) { prefs.enlargerCollapsed.toggle() } }
+        return FoldHeader(open: !folded, indent: HighDynamicRangeGroup.indent, toggle: fold) {
+            HStack(spacing: 2) {
+                FoldTitle(L("Enlarger"), open: !folded)
+                FilmLabHelpButton(id: "enlarger", title: L("Enlarger"),
+                                  text: L("The enlarger shines the negative onto the paper to make the print. Brightness makes it lighter or darker, Yellow and Magenta shift its colour, Pre-flash softens the highlights."),
+                                  note: L("It does nothing with No Paper chosen.")) {
+                    FilmLabEnlargerDemo()
+                }
+                if !value.isEmpty {
+                    Spacer(minLength: 6)
+                    Text(value).font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
+                        .lineLimit(1).truncationMode(.tail)
+                }
+            }
+        } accessory: {
             RoundButton(diameter: 22, label: L("Reset") + " " + L("Enlarger"), action: {
                 model.resetPage(.enlarger, in: session)
                 model.resetPage(.preflash, in: session)
@@ -116,5 +131,9 @@ struct EnlargerGroup: View {
             .rowEnabled(reason == nil && moved)
             .accessibilityIdentifier("v5.develop.enlarger.reset")
         }
+        .help(folded ? L("Show the controls") : L("Fold the controls away"))
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: folded ? L("Show the controls") : L("Fold the controls away"), fold)
+        .accessibilityIdentifier("v5.develop.fold.enlarger")
     }
 }

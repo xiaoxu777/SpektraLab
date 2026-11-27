@@ -3215,6 +3215,28 @@
         }
       }
     },
+    "120 film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 フィルム"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 胶卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 膠捲"
+          }
+        }
+      }
+    },
     "120 film has no perforations." : {
       "localizations" : {
         "ja" : {
@@ -3226,13 +3248,35 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "120 胶片没有齿孔。"
+            "value" : "这种胶卷两边没有孔。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "120 底片沒有齒孔。"
+            "value" : "這種膠捲兩邊沒有孔。"
+          }
+        }
+      }
+    },
+    "135 film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 フィルム"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 胶卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 膠捲"
           }
         }
       }
@@ -3277,6 +3321,292 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "15 孔"
+          }
+        }
+      }
+    },
+    "16mm movie" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16mm 映画"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16mm 电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "16mm 電影"
+          }
+        }
+      }
+    },
+    "35mm full frame" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35mm フルサイズ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 全画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 全畫幅"
+          }
+        }
+      }
+    },
+    "35mm full width" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35mm 全幅"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 全宽"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "135 全寬"
+          }
+        }
+      }
+    },
+    "35mm movie" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35mm 映画"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35mm 电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "35mm 電影"
+          }
+        }
+      }
+    },
+    "645 medium format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "645 中判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "645 中画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "645 中畫幅"
+          }
+        }
+      }
+    },
+    "6×12 wide" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×12 パノラマ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×12 宽幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×12 寬幅"
+          }
+        }
+      }
+    },
+    "6×17 wide" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×17 パノラマ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×17 宽幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×17 寬幅"
+          }
+        }
+      }
+    },
+    "6×6 square" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×6 正方形"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×6 方画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×6 方畫幅"
+          }
+        }
+      }
+    },
+    "6×7 medium format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×7 中判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×7 中画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×7 中畫幅"
+          }
+        }
+      }
+    },
+    "6×8 medium format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×8 中判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×8 中画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×8 中畫幅"
+          }
+        }
+      }
+    },
+    "6×9 medium format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×9 中判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×9 中画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6×9 中畫幅"
+          }
+        }
+      }
+    },
+    "70mm giant screen" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 大画面"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 巨幕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 巨幕"
+          }
+        }
+      }
+    },
+    "70mm movie" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 映画"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "70mm 電影"
           }
         }
       }
@@ -4051,6 +4381,28 @@
         }
       }
     },
+    "Add film grain" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムの粒状感を加える"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加胶片颗粒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加底片顆粒"
+          }
+        }
+      }
+    },
     "Add Frame" : {
       "localizations" : {
         "ja" : {
@@ -4150,13 +4502,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加胶片边框"
+            "value" : "添加胶片边框"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加底片邊框"
+            "value" : "添加底片邊框"
           }
         }
       }
@@ -4201,28 +4553,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "為這一格加入照片"
-          }
-        }
-      }
-    },
-    "Add a little film grain" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "フィルムの粒状を少し加える"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加一点胶片颗粒"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "加一點底片顆粒"
           }
         }
       }
@@ -4606,13 +4936,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "过片"
+            "value" : "卷片位置"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "過片"
+            "value" : "捲片位置"
           }
         }
       }
@@ -5051,6 +5381,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "換一台"
+          }
+        }
+      }
+    },
+    "Another camera" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のカメラ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换一台相机"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換一台相機"
           }
         }
       }
@@ -5494,13 +5846,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自动：%@ 相机原有的边角。"
+            "value" : "自动：用 %@ 相机原本的四角。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自動：%@ 相機原有的邊角。"
+            "value" : "自動：用 %@ 相機原本的四角。"
           }
         }
       }
@@ -5835,6 +6187,28 @@
         }
       }
     },
+    "Big screen" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大スクリーン"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大银幕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大銀幕"
+          }
+        }
+      }
+    },
     "Black" : {
       "localizations" : {
         "ja" : {
@@ -5890,13 +6264,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "黑：衬着黑底，或是暗房里冲印的片条。"
+            "value" : "黑：孔是黑的，像在暗房里印出来的。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "黑：襯著黑底，或是暗房裡放相的片條。"
+            "value" : "黑：孔是黑的，像在暗房裡印出來的。"
           }
         }
       }
@@ -6000,13 +6374,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "机身"
+            "value" : "相机"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "機身"
+            "value" : "相機"
           }
         }
       }
@@ -6263,24 +6637,24 @@
         }
       }
     },
-    "Brightness and warmth" : {
+    "Brightness and warmth adjustments" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "明るさと色温度"
+            "value" : "明るさと色温度の調整"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "调亮暗和冷暖"
+            "value" : "明暗与冷暖调整"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "調亮暗和冷暖"
+            "value" : "明暗與冷暖調整"
           }
         }
       }
@@ -6457,6 +6831,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "相機"
+          }
+        }
+      }
+    },
+    "Camera No. %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 台目"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %@ 台"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %@ 台"
           }
         }
       }
@@ -6961,28 +7357,6 @@
         }
       }
     },
-    "Change film in one click" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ワンクリックでフィルムを変更"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一键换胶片"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一鍵換底片"
-          }
-        }
-      }
-    },
     "Changed" : {
       "localizations" : {
         "ja" : {
@@ -7401,6 +7775,28 @@
         }
       }
     },
+    "Choose a film you like, then adjust exposure and colour temperature from there." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好きなフィルムを選び、それをもとに露出と色温度を調整します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择一款你喜欢的胶片，并在此基础上调整曝光和色温。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇一款你喜歡的底片，並在此基礎上調整曝光和色溫。"
+          }
+        }
+      }
+    },
     "Choose Folder…" : {
       "localizations" : {
         "ja" : {
@@ -7769,6 +8165,28 @@
         }
       }
     },
+    "Cinema film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "映画館のフィルム"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电影院的胶片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影院的膠片"
+          }
+        }
+      }
+    },
     "Clear" : {
       "localizations" : {
         "ja" : {
@@ -8055,28 +8473,6 @@
         }
       }
     },
-    "Click a thumbnail to change the film. Sliders set brightness and warmth." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サムネールをクリックしてフィルムを変更。スライダーで明るさと色温度を調整。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "点一张小图换胶片。滑块调亮暗和冷暖。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點一張小圖換底片。滑桿調亮暗和冷暖。"
-          }
-        }
-      }
-    },
     "Click on the picture" : {
       "localizations" : {
         "ja" : {
@@ -8183,6 +8579,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉"
+          }
+        }
+      }
+    },
+    "Close to 4:3" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほぼ 4:3"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接近 4:3"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接近 4:3"
+          }
+        }
+      }
+    },
+    "Close to 5:4" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほぼ 5:4"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接近 5:4"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接近 5:4"
           }
         }
       }
@@ -11689,6 +12129,28 @@
         }
       }
     },
+    "Each kind of camera leaves a different frame and border on the film." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラの種類によって、フィルムに残る画面の形と縁が違います。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不同相机拍出的底片，画面形状和边框都不一样。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不同相機拍出的底片，畫面形狀和邊框都不一樣。"
+          }
+        }
+      }
+    },
     "Each photograph of a double exposure is corrected by its own edit" : {
       "localizations" : {
         "ja" : {
@@ -11826,13 +12288,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "带耳：四角有细小的耳，如 645 单反的片门。"
+            "value" : "带耳：四个角各伸出一个小尖。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "帶耳：四角有細小的耳，如 645 單眼的片門。"
+            "value" : "帶耳：四個角各伸出一個小尖。"
           }
         }
       }
@@ -11930,13 +12392,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "边缘印字"
+            "value" : "边上的字"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "邊緣印字"
+            "value" : "邊上的字"
           }
         }
       }
@@ -11974,13 +12436,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "边缘灰雾"
+            "value" : "边上发灰"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "邊緣灰霧"
+            "value" : "邊上發灰"
           }
         }
       }
@@ -12183,6 +12645,28 @@
         }
       }
     },
+    "EDR Amount" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EDR の強さ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EDR 强度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EDR 強度"
+          }
+        }
+      }
+    },
     "Effects" : {
       "localizations" : {
         "ja" : {
@@ -12311,6 +12795,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "引擎"
+          }
+        }
+      }
+    },
+    "It does nothing with No Paper chosen." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「印画紙なし」では働きません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选「不使用相纸」时不起作用。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選「不使用相紙」時不起作用。"
+          }
+        }
+      }
+    },
+    "Lamp" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ランプ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "灯"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "燈"
           }
         }
       }
@@ -13737,6 +14265,28 @@
         }
       }
     },
+    "Film runs sideways" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムが横に走る"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "胶片横着走"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "膠片橫著走"
+          }
+        }
+      }
+    },
     "Film size %@" : {
       "localizations" : {
         "ja" : {
@@ -14814,13 +15364,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "格号"
+            "value" : "第几张"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "格號"
+            "value" : "第幾張"
           }
         }
       }
@@ -15286,13 +15836,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "片门"
+            "value" : "画面四角"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "片門"
+            "value" : "畫面四角"
           }
         }
       }
@@ -15853,6 +16403,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "亮 %.2f"
+          }
+        }
+      }
+    },
+    "Half frame" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハーフサイズ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "半格"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "半格"
           }
         }
       }
@@ -16587,6 +17159,28 @@
         }
       }
     },
+    "Home movies" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ホームムービー"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "家庭电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "家庭電影"
+          }
+        }
+      }
+    },
     "Horizontal {perspective}" : {
       "localizations" : {
         "ja" : {
@@ -17027,28 +17621,6 @@
         }
       }
     },
-    "Imports stay where they are" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "読み込み時、写真はコピーせず元の場所のまま"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "导入时照片留在原处，不复制"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "匯入時照片留在原處，不複製"
-          }
-        }
-      }
-    },
     "Import…" : {
       "localizations" : {
         "ja" : {
@@ -17325,28 +17897,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "輸入："
-          }
-        }
-      }
-    },
-    "Insert the card and import its photos. Each import is one roll." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "カードを挿して写真を読み込みます。1 回の読み込みが 1 本のロールです。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插上存储卡，导入照片。每次导入就是一卷。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "插上記憶卡，匯入照片。每次匯入就是一卷。"
           }
         }
       }
@@ -18252,13 +18802,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "齿孔：由 65 毫米电影胶片裁成的 120。"
+            "value" : "有孔：用电影胶片裁成的 120 胶卷，两边带孔。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "齒孔：由 65 毫米電影膠片裁成的 120。"
+            "value" : "有孔：用電影膠片裁成的 120 膠捲，兩邊帶孔。"
           }
         }
       }
@@ -18318,13 +18868,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "外挑：两个角向外挑出，如 6×6 片插的片门。"
+            "value" : "外挑：有两个角向外凸出一块。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "外挑：兩個角向外挑出，如 6×6 片匣的片門。"
+            "value" : "外挑：有兩個角向外凸出一塊。"
           }
         }
       }
@@ -19675,6 +20225,50 @@
         }
       }
     },
+    "Long, 2.7:1" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横長 · 2.7:1"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "细长 · 2.7:1"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "細長 · 2.7:1"
+          }
+        }
+      }
+    },
+    "Long, 2:1" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横長 · 2:1"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "细长 · 2:1"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "細長 · 2:1"
+          }
+        }
+      }
+    },
     "Look Closer" : {
       "localizations" : {
         "ja" : {
@@ -20725,6 +21319,28 @@
         }
       }
     },
+    "More details" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳しく"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多细节"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多細節"
+          }
+        }
+      }
+    },
     "More file types and colour settings for print" : {
       "localizations" : {
         "ja" : {
@@ -20897,6 +21513,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "右移"
+          }
+        }
+      }
+    },
+    "Move the picture" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面の位置を調整"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调整画面位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調整畫面位置"
           }
         }
       }
@@ -21117,6 +21755,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "原樣：PNG 本身的顏色。"
+          }
+        }
+      }
+    },
+    "Negative {enlarger help}" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ネガ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底片"
           }
         }
       }
@@ -22340,13 +23000,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 号"
+            "value" : "第 %@ 台"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ 號"
+            "value" : "第 %@ 台"
           }
         }
       }
@@ -25177,6 +25837,28 @@
         }
       }
     },
+    "Picture over the holes" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "穴の上まで写る"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画面盖过齿孔"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫面蓋過齒孔"
+          }
+        }
+      }
+    },
     "Pictures" : {
       "localizations" : {
         "ja" : {
@@ -25453,6 +26135,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "海報"
+          }
+        }
+      }
+    },
+    "The enlarger shines the negative onto the paper to make the print. Brightness makes it lighter or darker, Yellow and Magenta shift its colour, Pre-flash softens the highlights." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "引き伸ばし機はネガを印画紙に投影してプリントを作ります。明るさは明暗、イエローとマゼンタは色かぶり、プレフラッシュはハイライトをやわらげます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大机把底片投到相纸上，印出照片。\n亮度管明暗，黄和品红管偏色，预闪让高光更柔。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放大機把底片投到相紙上，印出照片。\n亮度管明暗，黃和洋紅管偏色，預閃讓高光更柔。"
+          }
+        }
+      }
+    },
+    "What is this?" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これは何？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是什么？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這是什麼？"
           }
         }
       }
@@ -26012,13 +26738,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Mac 上按 1× 印制：即胶片实测的样子。"
+            "value" : "按胶片原样印出，这里不能调。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Mac 上按 1× 印製：即膠片實測的樣子。"
+            "value" : "按膠片原樣印出，這裡不能調。"
           }
         }
       }
@@ -26557,6 +27283,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "快速出片"
+          }
+        }
+      }
+    },
+    "Quickly choose a film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムをすばやく選ぶ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速选择胶片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快速選擇底片"
           }
         }
       }
@@ -28236,13 +28984,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "圆角：真正的圆弧，如 645 旁轴相机的片门。"
+            "value" : "圆角：四个角是圆弧形的。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "圓角：真正的圓弧，如 645 連動測距相機的片門。"
+            "value" : "圓角：四個角是圓弧形的。"
           }
         }
       }
@@ -28265,6 +29013,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "陰 %.2f"
+          }
+        }
+      }
+    },
+    "Same kind, another one: its border is a little different." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラ一台ごとに縁が少し違います。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每台相机的边框都有点不一样。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每台相機的邊框都有點不一樣。"
           }
         }
       }
@@ -28319,6 +29089,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "側邊欄寬度"
+          }
+        }
+      }
+    },
+    "Simple export" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "かんたん書き出し"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "简单导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "簡單輸出"
           }
         }
       }
@@ -28451,28 +29243,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存預設"
-          }
-        }
-      }
-    },
-    "Save as JPEG in one step" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ワンステップで JPEG 保存"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一步存成 JPEG"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一步存成 JPEG"
           }
         }
       }
@@ -29576,13 +30346,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "带肩：两耳之间凹进一段，如 6×8 后背的片门。"
+            "value" : "带肩：两个小尖之间凹进去一段。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "帶肩：兩耳之間凹進一段，如 6×8 機背的片門。"
+            "value" : "帶肩：兩個小尖之間凹進去一段。"
           }
         }
       }
@@ -30405,6 +31175,28 @@
         }
       }
     },
+    "Small movie film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小さな映画フィルム"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小号电影胶片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小號電影膠片"
+          }
+        }
+      }
+    },
     "Smaller Brush" : {
       "localizations" : {
         "ja" : {
@@ -31158,13 +31950,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "片轴漏光"
+            "value" : "卷片漏光"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "片軸漏光"
+            "value" : "捲片漏光"
           }
         }
       }
@@ -31279,6 +32071,28 @@
         }
       }
     },
+    "Square shape" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正方形"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正方形"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正方形"
+          }
+        }
+      }
+    },
     "Square {a ratio}" : {
       "localizations" : {
         "ja" : {
@@ -31312,13 +32126,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "方角：平直的角，圆角从一丝到三分之一毫米。"
+            "value" : "方角：四个角几乎是直角。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "方角：平直的角，圓角從一絲到三分之一公釐。"
+            "value" : "方角：四個角幾乎是直角。"
           }
         }
       }
@@ -31789,6 +32603,28 @@
         }
       }
     },
+    "Super 8 movie" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Super 8 映画"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Super 8 电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Super 8 電影"
+          }
+        }
+      }
+    },
     "Supporters" : {
       "localizations" : {
         "ja" : {
@@ -31965,6 +32801,28 @@
         }
       }
     },
+    "Tall, 3:4" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縦長 · 3:4"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "竖的 · 3:4"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "豎的 · 3:4"
+          }
+        }
+      }
+    },
     "Text {a watermark of typed words}" : {
       "localizations" : {
         "zh-Hans" : {
@@ -31993,6 +32851,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "這段文字做不成浮水印。"
+          }
+        }
+      }
+    },
+    "The usual 3:2" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "いちばん普通 · 3:2"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最常见 · 3:2"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最常見 · 3:2"
+          }
+        }
+      }
+    },
+    "Thin border" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "細い縁だけ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只留细边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只留細邊"
           }
         }
       }
@@ -32508,13 +33410,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "机身决定片门、边距和齿孔的位置。"
+            "value" : "每台相机的四角、边距和孔的位置都有一点不同。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "機身決定片門、邊距和齒孔的位置。"
+            "value" : "每台相機的四角、邊距和孔的位置都有一點不同。"
           }
         }
       }
@@ -33404,13 +34306,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "胶片名、数字和条码印上时所用的光。"
+            "value" : "胶片名字、数字和条码有多亮。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "膠片名、數字和條碼印上時所用的光。"
+            "value" : "膠片名字、數字和條碼有多亮。"
           }
         }
       }
@@ -37167,6 +38069,28 @@
         }
       }
     },
+    "Very long, 3:1" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "とても横長 · 3:1"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "很长 · 3:1"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "很長 · 3:1"
+          }
+        }
+      }
+    },
     "Vibrance" : {
       "localizations" : {
         "ja" : {
@@ -37733,6 +38657,550 @@
         }
       }
     },
+    "WeChat Moments" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "微信朋友圈"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "微信朋友圈"
+          }
+        }
+      }
+    },
+    "Weibo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "微博"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "微博"
+          }
+        }
+      }
+    },
+    "Xiaohongshu" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小红书"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小紅書"
+          }
+        }
+      }
+    },
+    "Send to a Friend" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发给朋友"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳給朋友"
+          }
+        }
+      }
+    },
+    "Save to This Mac" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存到电脑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存到電腦"
+          }
+        }
+      }
+    },
+    "Original size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原圖"
+          }
+        }
+      }
+    },
+    "Best quality" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高质量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高品質"
+          }
+        }
+      }
+    },
+    "For Moments" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发朋友圈"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發朋友圈"
+          }
+        }
+      }
+    },
+    "For Instagram" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发 Instagram"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發 Instagram"
+          }
+        }
+      }
+    },
+    "For Weibo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发微博"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發微博"
+          }
+        }
+      }
+    },
+    "For Xiaohongshu" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发小红书"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發小紅書"
+          }
+        }
+      }
+    },
+    "Short edge %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短边 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "短邊 %@"
+          }
+        }
+      }
+    },
+    "White border" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加白边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加白邊"
+          }
+        }
+      }
+    },
+    "Add a White Border" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加白边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加白邊"
+          }
+        }
+      }
+    },
+    "Export As It Is" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原样导出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原樣輸出"
+          }
+        }
+      }
+    },
+    "Preview the Post" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "预览效果"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預覽效果"
+          }
+        }
+      }
+    },
+    "Back to the Photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回照片"
+          }
+        }
+      }
+    },
+    "Dark feed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        }
+      }
+    },
+    "Light feed" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色"
+          }
+        }
+      }
+    },
+    "Feed {a preview}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "动态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動態"
+          }
+        }
+      }
+    },
+    "Profile {a preview}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主頁"
+          }
+        }
+      }
+    },
+    "Discover {a preview}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发现页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發現頁"
+          }
+        }
+      }
+    },
+    "Note {a preview}" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "笔记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "筆記"
+          }
+        }
+      }
+    },
+    "One Photo" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单张"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "單張"
+          }
+        }
+      }
+    },
+    "Nine Photos" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "九宫格"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "九宮格"
+          }
+        }
+      }
+    },
+    "This one is too wide. %@ will crop its sides." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这张太宽，%@ 会裁掉两边。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這張太寬，%@ 會裁掉兩邊。"
+          }
+        }
+      }
+    },
+    "This one is too tall. %@ will crop its top and bottom." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这张太长，%@ 会裁掉上下。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這張太長，%@ 會裁掉上下。"
+          }
+        }
+      }
+    },
+    "%@ of these do not fit. %@ will crop them." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有 %1$@ 张比例不合适，%2$@ 会裁掉一部分。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有 %1$@ 張比例不合適，%2$@ 會裁掉一部分。"
+          }
+        }
+      }
+    },
+    "With the white border, all of it shows." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加了白边，整张都能看到。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加了白邊，整張都能看到。"
+          }
+        }
+      }
+    },
+    "All of it shows. Nothing is cropped." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整张都能看到，不会被裁。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整張都能看到，不會被裁。"
+          }
+        }
+      }
+    },
+    "Very long pictures show their middle here. A tap shows it whole." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "很长或很宽的照片，这里只显示中间，点开能看全。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "很長或很寬的照片，這裡只顯示中間，點開能看全。"
+          }
+        }
+      }
+    },
+    "In a set, each thumbnail is a square. A tap shows it whole." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多张一起发时小图是方的，点开能看全。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多張一起發時小圖是方的，點開能看全。"
+          }
+        }
+      }
+    },
+    "The profile shows a 3:4 tile. A tap opens the post." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主页的小图是 3:4，点开能看全。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主頁的小圖是 3:4，點開能看全。"
+          }
+        }
+      }
+    },
+    "A sketch of the layout. The app itself may differ a little." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示意图，实际样子以 App 为准。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示意圖，實際樣子以 App 為準。"
+          }
+        }
+      }
+    },
     "What is it for?" : {
       "localizations" : {
         "zh-Hans" : {
@@ -38266,13 +39734,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "白：扫描时的光透过齿孔。"
+            "value" : "白：扫描的灯光从孔里透过来。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "白：掃描時的光透過齒孔。"
+            "value" : "白：掃描的燈光從孔裡透過來。"
           }
         }
       }
@@ -38317,6 +39785,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "白色與黑色"
+          }
+        }
+      }
+    },
+    "Whole film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルム全体"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整条胶片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "整條膠片"
           }
         }
       }
@@ -38525,6 +40015,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "作用於"
+          }
+        }
+      }
+    },
+    "XPan wide" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XPan パノラマ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XPan 宽幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XPan 寬幅"
           }
         }
       }

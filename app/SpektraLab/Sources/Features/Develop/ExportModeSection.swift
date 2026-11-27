@@ -15,6 +15,11 @@
 //
 //  The recipe is the one Settings keeps (`AppSettings.recipe`): what is chosen here is what the next export uses, and
 //  what the full Export page opens with.
+//
+//  2026-11-25, later ("导出页面专业和普通没区别啊，普通的应该直接写用途"): that column is 专业版's. In 普通版 `.presets` is where
+//  the picture is going (`FilmLabExportPurposeCards`: 朋友圈, Instagram, 微博, 小红书, 发给朋友, 保存到电脑), there is no 文件
+//  (the purpose decides it), and the foot names the purpose. The purpose's recipe is its own
+//  (`FilmLabExportPurposeUI.recipe`): `AppSettings.recipe` stays 专业版's, but for 存到 and the naming, which both share.
 
 import SwiftUI
 
@@ -49,6 +54,7 @@ enum FilmLabExportRecipe {
     static func sizeTitle(_ size: ExportRecipe.Size) -> String {
         switch size {
         case .longEdge(let e): L("Long edge \(e)")
+        case .shortEdge(let e): L("Short edge \(e)")
         default: size.shownTitle
         }
     }
@@ -117,14 +123,25 @@ struct ExportModeSection: View {
 
     private var presets: some View {
         let recipe = FilmLabExportRecipe.binding(settings, recipes)
+        let simple = FeatureFlags.simpleWindow
         return VStack(alignment: .leading, spacing: 0) {
             ColumnSectionHeader(title: L("What is it for?"), folded: presetsFolded, id: "export.presets", rule: false,
-                                value: presetsFolded ? recipe.wrappedValue.name : nil) { presetsFolded.toggle() }
+                                value: presetsFolded ? (simple ? FilmLabExportPurposeUI.shared.purpose.name : recipe.wrappedValue.name) : nil) {
+                presetsFolded.toggle()
+            }
             if !presetsFolded {
-                RecipeChips(recipe: recipe, admit: { ExportRecipe.opening($0) }, wraps: true, cards: true)
-                    .padding(.top, 2).padding(.bottom, 14)
+                if simple {
+                    // 普通版: where it is going, not what format it is (`FilmLabExportPurpose.swift`).
+                    FilmLabExportPurposeCards(frameIDs: frameIDs)
+                        .padding(.top, 2).padding(.bottom, 10)
+                } else {
+                    RecipeChips(recipe: recipe, admit: { ExportRecipe.opening($0) }, wraps: true, cards: true)
+                        .padding(.top, 2).padding(.bottom, 14)
+                }
             }
         }
+        // 预览效果 is this column's: leaving 导出 puts the photo back.
+        .onDisappear { FilmLabExportPurposeUI.shared.previewing = false }
     }
 
     // MARK: 文件 and 存到
@@ -133,10 +150,14 @@ struct ExportModeSection: View {
         @Bindable var ui = ui
         let recipe = FilmLabExportRecipe.binding(settings, recipes)
         let r = recipe.wrappedValue
+        // 普通版 has no 文件: the purpose decides the file, and says what it is on its card.
+        let simple = FeatureFlags.simpleWindow
         return VStack(alignment: .leading, spacing: 0) {
-            ColumnSectionHeader(title: L("File"), folded: fileFolded, id: "export.file",
-                                value: FilmLabExportRecipe.specs(r)) { fileFolded.toggle() }
-            if !fileFolded {
+            if !simple {
+                ColumnSectionHeader(title: L("File"), folded: fileFolded, id: "export.file",
+                                    value: FilmLabExportRecipe.specs(r)) { fileFolded.toggle() }
+            }
+            if !simple, !fileFolded {
                 VStack(spacing: 0) {
                     ExportRow(label: L("Format"), height: 42) { FormatSwitch(recipe: recipe) }.modifier(Separated())
                     QualitySliderRow(recipe: recipe).modifier(Separated())
@@ -218,7 +239,7 @@ struct FilmLabExportFooter: View {
 
     var body: some View {
         @Bindable var ui = ui
-        let r = FilmLabExportRecipe.binding(settings, recipes).wrappedValue
+        let r = recipeNow
         // While a batch runs — and until its last card has landed — the foot is the tray the pictures land in
         // (`FilmLabExportTray`); when it has ended, what came of it (`FilmLabExportDone`); otherwise what will be made.
         let trayShown = run.isRunning || (run.isFinished && !FilmLabExportShow.shared.cards.isEmpty)
@@ -272,16 +293,39 @@ struct FilmLabExportFooter: View {
                   FilmLabCheckArgs.value("--filmlab-export-folder") != nil, !FilmLabCheckArgs.exportWent else { return }
             FilmLabCheckArgs.exportWent = true
             try? await Task.sleep(for: .seconds(wait))
-            if !busy, !frameIDs.isEmpty { start(FilmLabExportRecipe.binding(settings, recipes).wrappedValue) }
+            if !busy, !frameIDs.isEmpty { start(recipeNow) }
         }
+    }
+
+    /// What the button exports with: 专业版's kept recipe, or in 普通版 the chosen purpose's (`FilmLabExportPurposeUI`).
+    private var recipeNow: ExportRecipe {
+        FeatureFlags.simpleWindow ? FilmLabExportPurposeUI.shared.recipe(settings)
+                                  : FilmLabExportRecipe.binding(settings, recipes).wrappedValue
+    }
+
+    /// 普通版: the purpose whose place would crop a picture of this export, where 加白边 was chosen for it.
+    private var bordered: FilmLabExportPurpose? {
+        guard FeatureFlags.simpleWindow, FilmLabExportPurposeUI.shared.border else { return nil }
+        let p = FilmLabExportPurposeUI.shared.purpose
+        return FilmLabExportPurposeUI.cropped(frameIDs, by: p, model: model) != nil ? p : nil
+    }
+
+    /// The summary's first line: "TIFF 16-bit · ProPhoto · Full", or in 普通版 "发朋友圈 · JPEG · 2560 px".
+    private func headline(_ r: ExportRecipe) -> String {
+        guard FeatureFlags.simpleWindow else { return FilmLabExportRecipe.specs(r) }
+        let p = FilmLabExportPurposeUI.shared.purpose
+        var parts = [p.footName, r.format.title, p.sizeWord]
+        if bordered != nil { parts.append(L("White border")) }
+        return parts.joined(separator: Fmt.dot)
     }
 
     /// "TIFF 16-bit · ProPhoto · Full" over "→ ericxu › Desktop", the count at the right.
     private func summary(_ r: ExportRecipe) -> some View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(FilmLabExportRecipe.specs(r)).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.text)
+                Text(headline(r)).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.text)
                     .lineLimit(1).minimumScaleFactor(0.85)
+                    .accessibilityIdentifier("filmlab.export.headline")
                 HStack(spacing: 4) {
                     Image(systemName: r.destination == .files ? "folder" : "square.and.arrow.up").font(Theme.Font.ui(10.5))
                     Text(r.destination == .files ? (ui.folder.map { MacExportFolder.place($0) } ?? L("No folder yet"))
@@ -328,10 +372,15 @@ struct FilmLabExportFooter: View {
             ui.picking = true
             return
         }
-        // A check's export leaves the kept recipe as it is (it is the same one unless the check chose another).
-        if FilmLabCheckArgs.value("--filmlab-export-folder") == nil { settings.recipe = recipe }
+        // A check's export leaves the kept recipe as it is (it is the same one unless the check chose another); so does
+        // 普通版's, whose recipe is its purpose's and not the kept one.
+        if FilmLabCheckArgs.value("--filmlab-export-folder") == nil, !FeatureFlags.simpleWindow { settings.recipe = recipe }
+        let border = bordered
         if !run.start(frameIDs, recipe: recipe, folder: folder, exporter: exporter) {
             ui.refused = L("The export could not begin. Try again in a moment.")
+        } else if let border, let fits = border.fits {
+            // 加白边: each picture the place would crop is laid on its white sheet as it is saved.
+            FilmLabExportPurposeBorder.follow(run, fits: fits, quality: recipe.quality)
         }
     }
 }

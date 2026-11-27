@@ -483,7 +483,7 @@ bool Pipeline::build(const Params& params, std::string& error) {
     // CCTF encoding. Each print profile carries its measured native-Y ->
     // extended-Y table. No table means no calibrated EDR; never substitute
     // another paper.
-    if (params_.print_render.edr_enabled && !params_.io.scan_film && !di_active_) {
+    if (edr_runs() && !di_active_) {
         const EdrToneMap& edr = params_.print.data.edr_tone_map;
         if (!edr.available()) {
             error = "print profile '" + params_.print.info.stock + "' has no calibrated EDR tone map";
@@ -500,8 +500,23 @@ bool Pipeline::build(const Params& params, std::string& error) {
             double(edr.target_log2_y.size()),
         };
         baked_.edr_params = gpu_->upload_persistent_f32(p, 8, error);
-        baked_.edr_lut = gpu_->upload_persistent_f32(edr.target_log2_y.data(),
-                                                     edr.target_log2_y.size(), error);
+        // API-SPEC §26: `edr_amount` a scales the table's move of log2 Y. The kernels read the table on a uniform
+        // log2-Y axis (sample k at domain[0] + span · k / (n − 1)), on which the identity is that axis itself, so
+        // the table at a is mix(axis, table, a), baked here, and the kernels are unchanged. 1 is the measured table
+        // to the bit; 0 never gets here (`edr_runs`).
+        const double amount = edr_amount();
+        if (amount >= 1.0) {
+            baked_.edr_lut = gpu_->upload_persistent_f32(edr.target_log2_y.data(),
+                                                         edr.target_log2_y.size(), error);
+        } else {
+            const size_t count = edr.target_log2_y.size();
+            std::vector<double> blended(count);
+            for (size_t k = 0; k < count; ++k) {
+                const double axis = edr.domain_log2_y[0] + span * double(k) / double(count - 1);
+                blended[k] = axis + amount * (edr.target_log2_y[k] - axis);
+            }
+            baked_.edr_lut = gpu_->upload_persistent_f32(blended.data(), count, error);
+        }
         if (!baked_.edr_params || !baked_.edr_lut) return false;
     }
 
@@ -599,7 +614,7 @@ bool Pipeline::build(const Params& params, std::string& error) {
 #endif
     // `scan_hdr_scale`, after the gamut on either path (`print_linear`).
     node_count_ += (scan_hdr_.active && !scan_hdr_.stretch && scan_hdr_.output_scale != 1.0) ? 1 : 0;
-    node_count_ += params_.print_render.edr_enabled && !params_.io.scan_film ? 1 : 0;
+    node_count_ += edr_runs() ? 1 : 0;
     node_count_ += params_.scanner.lens_blur > 0.0 ? 1 : 0;              // scanner_blur
     node_count_ += (params_.scanner.unsharp_mask[0] > 0.0 &&
                     params_.scanner.unsharp_mask[1] > 0.0) ? 1 : 0;      // unsharp
@@ -2224,10 +2239,20 @@ bool Pipeline::node_xyz_to_rgb(const Image& in, Image& out, std::string& error) 
     return matmul3(in, baked_.xyz_to_rgb, out, error);
 }
 
+double Pipeline::edr_amount() const {
+    const double a = params_.print_render.edr_amount;
+    return std::isfinite(a) ? std::clamp(a, 0.0, 1.0) : 1.0;
+}
+
+bool Pipeline::edr_runs() const {
+    return params_.print_render.edr_enabled && !params_.io.scan_film && edr_amount() > 0.0;
+}
+
 bool Pipeline::node_edr(const Image& in, Image& out, std::string& error) {
     // No print profile has no measured paper response, so EDR is explicitly
     // disabled for the direct scan path and leaves its legacy output alone.
-    if (!params_.print_render.edr_enabled || params_.io.scan_film) { out = in; return true; }
+    // An amount of 0 is the print without EDR, to the bit (API-SPEC §26).
+    if (!edr_runs()) { out = in; return true; }
     Timer t(this, "scanning.edr");
     if (!baked_.edr_params || !baked_.edr_lut) { error = "EDR calibration is not available"; return false; }
     if (!alloc_like(in, out, error)) return false;

@@ -15,6 +15,49 @@
 import SwiftUI
 import UIKit
 
+/// The strip's picture box cut out of an unmarked kept film canvas. Frames that cannot be cropped safely keep
+/// the ordinary FrameView, as the grid does.
+struct FrameThumbnail: View {
+    struct Source {
+        var picture: PictureRef
+        var size: CGSize
+        var geometry = Geometry.default
+        var printCrop = Geometry.default
+
+        var pictureSize: CGSize { geometry.outputSize(for: size) }
+        var outputSize: CGSize { printCrop.onFinished(pictureSize).outputSize(for: pictureSize) }
+        var aspect: CGFloat { max(outputSize.width / max(outputSize.height, 1), 0.05) }
+    }
+
+    let source: Source
+    let pointSize: CGFloat
+
+    var body: some View {
+        Group {
+            if source.printCrop.isIdentity {
+                picture(points: pointSize)
+            } else {
+                GeometryPicture(geometry: source.printCrop.onFinished(source.pictureSize), imageSize: source.pictureSize,
+                                contentMode: .fit) { points in
+                    picture(points: max(points, pointSize))
+                }
+            }
+        }
+        // A different source must not keep FramePicture/CroppedPicture's previous decoded bitmap while loading:
+        // otherwise a decorated thumbnail can flash back on screen after the mode has already hidden it.
+        .id(source.picture)
+    }
+
+    @ViewBuilder private func picture(points: CGFloat) -> some View {
+        if source.geometry.isIdentity {
+            FramePicture(picture: source.picture, pointSize: points, contentMode: .fit)
+        } else {
+            CroppedPicture(picture: source.picture, pointSize: points, contentMode: .fit,
+                           geometry: source.geometry, sourceSize: source.size)
+        }
+    }
+}
+
 struct FrameView: View {
     let frame: LibraryFrame
     /// The long edge it is drawn at, in points.

@@ -41,36 +41,59 @@ struct MacModeSwitch: View {
     let choose: (WorkspaceMode) -> Void
     /// Read so the row redraws when Settings turns the advanced tools on or off.
     private var showAdvanced: Bool { ProMode.shared.on }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The zero-spacing row's measured widths also locate each tab, without assuming equal label lengths.
+    @State private var segmentWidths: [WorkspaceMode: CGFloat] = [:]
 
     var body: some View {
+        let modes: [WorkspaceMode] = showAdvanced ? WorkspaceMode.allCases : [.library, .develop, .personalize, .export]
         HStack(spacing: 0) {
-            ForEach(showAdvanced ? WorkspaceMode.allCases : [.library, .develop, .personalize, .export], id: \.self) { mode in
+            ForEach(modes, id: \.self) { mode in
                 let on = current == mode
                 let allowed = enabled(mode)
                 Button { choose(mode) } label: {
                     Text(mode.title)
                         .font(MacMetric.font(12, .medium))
-                        .lineLimit(1).minimumScaleFactor(0.75)
+                        .lineLimit(1).fixedSize()
                         .foregroundStyle(on ? Theme.onSelection : allowed ? Theme.secondaryText : Theme.faint)
-                        .frame(maxWidth: .infinity)
                         .frame(height: MacMetric.pt(22))
-                        .background {
-                            // Design A: a rounded tab inside a rounded tray, not a capsule (2026-11-24).
-                            if on { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.selection) }
-                        }
-                        .padding(.horizontal, 1)
+                        // Equal air round every title: 二级调色 and Personalize keep their natural font size.
+                        .padding(.horizontal, MacMetric.pt(12))
+                        .frame(minWidth: MacMetric.pt(48))
                         .frame(height: MacMetric.pt(30))
                         .contentShape(Rectangle())
+                        // The title's colour turns as the tab slides under it (`FilmLabModePill`).
+                        .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: on)
                 }
                 .disabled(!allowed)
                 .help(allowed ? "" : (unavailable(mode) ?? ""))
                 .accessibilityHint(allowed ? "" : (unavailable(mode) ?? ""))
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .accessibilityIdentifier("mac.mode.\(mode.rawValue)")
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                    segmentWidths[mode] = width
+                }
             }
         }
         .padding(.horizontal, 1)
+        // Design A: a rounded tab inside a rounded tray, not a capsule (2026-11-24). The tab is one shape for the row,
+        // so it slides from the mode left to the mode pressed (2026-11-25, `FilmLabModeTransition.swift`).
+        .background {
+            if let index = modes.firstIndex(of: current), let width = segmentWidths[current],
+               modes.allSatisfy({ segmentWidths[$0] != nil }) {
+                let leading = modes.prefix(index).reduce(CGFloat.zero) { $0 + (segmentWidths[$1] ?? 0) }
+                // Give the existing pill one measured segment's room, plus its two tray insets. Its own 1 pt
+                // tab insets, shape and Reduce Motion stay intact; the outer frame and padding slide together.
+                FilmLabModePill(count: 1, index: 0)
+                    .frame(width: width + 2)
+                    .padding(.leading, leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(FilmLabModeMotion.pill(reduce: reduceMotion), value: current)
+            }
+        }
         .background { RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous).fill(Theme.card).frame(height: MacMetric.pt(26)) }
+        // The project name gives way first in the narrow bar; the mode labels never compress.
+        .fixedSize()
     }
 }
 

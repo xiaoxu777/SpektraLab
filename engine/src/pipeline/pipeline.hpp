@@ -930,6 +930,9 @@ private:
     bool node_negative_hue(const Image& negative, const Image& in, Image& out, std::string& error);
     bool node_xyz_to_rgb(const Image& in, Image& out, std::string& error);
     bool node_edr(const Image& in, Image& out, std::string& error);
+    /// `edr_amount`, clamped to 0 … 1 (API-SPEC §26), and whether the EDR node runs at all: on, a print, an amount.
+    double edr_amount() const;
+    bool edr_runs() const;
     double edr_edge_sigma() const;   // API-SPEC §25: the picture edge's blur, px (EDR's weight)
     bool node_gamut_compress(const Image& in, Image& out, std::string& error);
     bool node_scan_hdr_scale(const Image& in, Image& out, std::string& error);

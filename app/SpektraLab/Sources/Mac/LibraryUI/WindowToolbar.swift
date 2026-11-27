@@ -16,6 +16,65 @@
 
 import SwiftUI
 
+/// Intrinsic widths, in the bar's own points. The probes report labels, never another live button or popover.
+enum WindowBarPiece: Hashable {
+    case home, title, sidebar, mode, actions, edition, export, strip
+    case cropFull, cropCompact, copyFull, copyCompact, pasteFull, pasteCompact
+}
+
+struct WindowBarMeter {
+    let report: (WindowBarPiece, CGFloat) -> Void
+}
+
+private struct WindowBarInputs: Equatable {
+    let width: CGFloat
+    let hasCrop: Bool
+    let hasClipboard: Bool
+    let hasExport: Bool
+    let hasStrip: Bool
+    let centreAllowed: Bool
+}
+
+/// Plain reference storage on purpose: a geometry callback may change these numbers at every resize step,
+/// but no body observes them. Only a different fitting level or centring answer writes SwiftUI state.
+@MainActor
+private final class WindowBarWidths {
+    var inputs: WindowBarInputs?
+    var pieces: [WindowBarPiece: CGFloat] = [:]
+
+    func budget(level: Int) -> (required: CGFloat, centreClearance: CGFloat)? {
+        guard let inputs else { return nil }
+        var needed: [WindowBarPiece] = [.home, .title, .sidebar, .mode, .actions, .edition]
+        if inputs.hasCrop { needed += [.cropFull, .cropCompact] }
+        if inputs.hasClipboard { needed += [.copyFull, .copyCompact, .pasteFull, .pasteCompact] }
+        if inputs.hasExport { needed += [.export] }
+        if inputs.hasStrip { needed += [.strip] }
+        guard needed.allSatisfy({ pieces[$0] != nil }) else { return nil }
+        func width(_ part: WindowBarPiece) -> CGFloat { pieces[part] ?? 0 }
+
+        let gap = MacMetric.pt(level == 4 ? 4 : 10)
+        let title = level == 4 ? 0 : min(width(.title), MacMetric.pt(level == 0 ? 160 : 60))
+        var left = width(.home) + gap + width(.sidebar)
+        if inputs.hasCrop { left += MacMetric.pt(8) + width(level >= 3 ? .cropCompact : .cropFull) }
+        if title > 0 { left += gap + title }
+
+        var right = width(.actions) + gap + width(.edition)
+        if inputs.hasClipboard {
+            right += width(level >= 2 ? .copyCompact : .copyFull)
+                + width(level >= 2 ? .pasteCompact : .pasteFull) + 2 * gap
+        }
+        if inputs.hasExport { right += gap + width(.export) }
+        if inputs.hasStrip { right += gap + width(.strip) }
+
+        // Three outer gaps: left → mode → spacer → right. The title/crop/clipboard and right-hand groups'
+        // internal gaps are counted above. The edges are the actual, unscaled `.padding(.horizontal, 12)`.
+        let required = 24 + left + width(.mode) + right + 3 * gap + MacMetric.pt(8)
+        // The mode's half-width must clear BOTH flanks, not just fit the sum of the row's widths.
+        let clearance = (inputs.width - 24 - width(.mode)) / 2 - max(left, right) - gap
+        return (required, clearance)
+    }
+}
+
 /// The window's top bar: `controls` at the leading edge, `actions` at the trailing one, then the
 /// browser's toggle.
 struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
@@ -24,28 +83,61 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     var export: (() -> Void)? = nil
     /// The strip's toggle: 冲洗, 二级调色 and 导出 have the strip; 图库's grid is its own browser.
     var stripToggle = true
-    @ViewBuilder var controls: Controls
+    var hasCrop = false
+    var hasClipboard = true
+    @ViewBuilder var controls: (Int, WindowBarMeter) -> Controls
     /// 图库 · 冲洗 · 编辑 (`MacModeSwitch`, the owner, 2026-10-27): centred in the window where the window
-    /// is at least `centreFrom` Mac points wide, else right after the shared controls.
+    /// clears `centreFrom` and both measured flanks, else right after the shared controls.
     @ViewBuilder var mode: Mode
-    @ViewBuilder var actions: Actions
+    @ViewBuilder var actions: (Int, WindowBarMeter) -> Actions
 
     @AppStorage(InterfaceScale.key) private var scaleChoice = InterfaceScale.standard.rawValue
     /// The page's factor round the bar (`interfaceScaled(.macPoints)`): window points per bar point.
     @Environment(\.interfaceFactor) private var factor
     /// Whether the mode row stands in the window's centre (`centred(width:)`), kept as the answer and not as the
     /// width (2026-11-22): the bar read the window's size, so every step of a window resize re-made the bar and
-    /// what it holds. Now a resize changes it only where it crosses `centreFrom`.
-    @State private var centred = true
+    /// what it holds. Now a resize changes it only where it crosses the centre/measured-fit boundaries.
+    @State private var centred = false
+    /// Start with the narrow row until its intrinsic widths arrive. Levels: natural title; 60 pt title;
+    /// icon-only clipboard; icon-only crop; no title. Level 4 also retains the narrow row's 4 pt gaps.
+    @State private var compact = 4
+    @State private var widths = WindowBarWidths()
 
     /// The bar's height, one in every mode.
     static var height: CGFloat { MacMetric.pt(35) }   // 44 until 2026-11-16: the owner asked for ~20 % less
     /// The window width (Mac points, at 100 %) from which the mode row stands in the window's centre
     /// (decided 2026-10-27). At a larger interface scale everything is larger, so the threshold is too.
     static var centreFrom: CGFloat { 1200 }
-    /// The mode row's width in the bar.
-    /// 54 a mode: five in 专业版 since 个性化 (2026-11-25), four in 普通版.
-    static var modeWidth: CGFloat { MacMetric.pt(CGFloat(WorkspaceMode.shown.count) * 54) }
+
+    private func reportWidth(_ part: WindowBarPiece, _ width: CGFloat) {
+        guard widths.pieces[part] != width else { return }
+        widths.pieces[part] = width
+        updateLayout()
+    }
+
+    private func updateLayout() {
+        guard let inputs = widths.inputs, inputs.width > 0,
+              let current = widths.budget(level: compact) else { return }
+        let slack = MacMetric.pt(16)
+        var next = compact
+        if current.required > inputs.width {
+            // Tighten as soon as the current row would overflow. A roomier row must earn the slack back,
+            // so rounding or a one-point resize cannot bounce between two neighbouring levels.
+            next = (0...4).first { (widths.budget(level: $0)?.required ?? .infinity) <= inputs.width } ?? 4
+        } else {
+            for level in 0..<compact {
+                if let budget = widths.budget(level: level), budget.required + slack <= inputs.width {
+                    next = level
+                    break
+                }
+            }
+        }
+        if next != compact { compact = next }
+        if let budget = widths.budget(level: next) {
+            let now = inputs.centreAllowed && budget.centreClearance >= 0
+            if now != centred { centred = now }
+        }
+    }
 
     /// The bar is the window's width: `width` bar points are `width × factor` window points, which are the
     /// scene points `WindowShape` measures the window in over the page's own factor (`followsWindow`).
@@ -58,29 +150,60 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     }
 
     var body: some View {
+        // Passing a reporter does not read the reference box's contents in body.
+        let meter = WindowBarMeter(report: reportWidth)
+        let gap = MacMetric.pt(compact == 4 ? 4 : 10)
         ZStack {
             // A project opening: the bar's groups arrive from the left, 35 ms apart (`FilmLabLibraryEntrance`); at any
             // other time they are simply there.
-            HStack(spacing: MacMetric.pt(10)) {
-                FilmLabHomeButton().filmLabArrive(0)
-                controls.filmLabArrive(1)
-                if !centred { mode.frame(width: Self.modeWidth).filmLabArrive(3) }
+            HStack(spacing: gap) {
+                HStack(spacing: gap) {
+                    FilmLabHomeButton().fixedSize()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.home, $0) }
+                        .filmLabArrive(0)
+                    HStack(spacing: gap) { controls(compact, meter) }.fixedSize().filmLabArrive(1)
+                }
+                // MacModeSwitch keeps its labels' intrinsic widths at every compact level.
+                if !centred { measuredMode(meter).filmLabArrive(3) }
                 Spacer(minLength: MacMetric.pt(8))
-                actions.filmLabArrive(5)
-                ProModeSwitch().filmLabArrive(6)
-                if let export { FilmLabExportButton(action: export).filmLabArrive(7) }
-                if stripToggle { browserToggle.filmLabArrive(8) }
+                HStack(spacing: gap) {
+                    HStack(spacing: gap) { actions(compact, meter) }.fixedSize().filmLabArrive(5)
+                    ProModeSwitch().fixedSize()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.edition, $0) }
+                        .filmLabArrive(6)
+                    if let export {
+                        FilmLabExportButton(action: export).fixedSize()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.export, $0) }
+                            .filmLabArrive(7)
+                    }
+                    if stripToggle {
+                        browserToggle.fixedSize()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.strip, $0) }
+                            .filmLabArrive(8)
+                    }
+                }.fixedSize()
             }
-            if centred { mode.frame(width: Self.modeWidth).filmLabArrive(3) }
+            if centred { measuredMode(meter).filmLabArrive(3) }
         }
+        // Measure the room offered by the window, not an over-wide row's ideal size. Compaction must not feed
+        // its own contents' width back into the next threshold decision; this frame does not clip the row.
+        .frame(minWidth: 0, maxWidth: .infinity)
         .padding(.horizontal, 12)
         .frame(height: Self.height)
         .background(Theme.chrome)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.wall).frame(height: 1) }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
-            let now = centred(width: width)
-            if now != centred { centred = now }
+        .onGeometryChange(for: WindowBarInputs.self) { room in
+            WindowBarInputs(width: room.size.width, hasCrop: hasCrop, hasClipboard: hasClipboard,
+                            hasExport: export != nil, hasStrip: stripToggle, centreAllowed: centred(width: room.size.width))
+        } action: { inputs in
+            widths.inputs = inputs
+            updateLayout()
         }
+    }
+
+    private func measuredMode(_ meter: WindowBarMeter) -> some View {
+        mode.fixedSize()
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.mode, $0) }
     }
 
     /// The browser, there or not: its icon mirrors the column's (`sidebar.right`, as the old column

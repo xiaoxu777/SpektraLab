@@ -105,6 +105,7 @@ enum MacLibraryGo {
     /// becomes the selection the browser shows.
     static func choose(_ mode: WorkspaceMode, rows: [MacImage], model: AppServices) {
         guard mode != .library, let image = modePicture(rows) else { return }
+        FilmLabModeMotion.wanted = mode
         let browser = MacLibraryBrowser.shared
         browser.selection = [image.id]
         browser.focus = image.id
@@ -159,6 +160,7 @@ struct MainWindowLayout: View {
     @Environment(AppRouter.self) private var router
     @Environment(FrameCatalog.self) private var library
     @AppStorage(InterfaceScale.key) private var scaleChoice = InterfaceScale.standard.rawValue
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// A drag the import page takes is over the window (`MacImportDropZone`, `MacDropOffer`).
     @State private var dropWatch = MacImportDropWatch()
 
@@ -220,7 +222,7 @@ struct MainWindowLayout: View {
         .overlay(alignment: .top) {
             OwnReads { FilmLabDropNote() }.interfaceScaled(.macPoints).allowsHitTesting(false)
         }
-        .onAppear { FilmLabDrop.shared.model = model; FilmLabCheckArgs.showPage(model: model) }
+        .onAppear { FilmLabDrop.shared.model = model; FilmLabCheckArgs.showPage(model: model); FilmLabModeProbe.startIfAsked(model: model) }
         // What a paste just did, over the picture while 冲洗/二级调色/导出 is in front (the library says it in its sidebar).
         .overlay(alignment: .bottom) {
             if develop != nil {
@@ -508,34 +510,179 @@ struct MainWindowLayout: View {
         }()
         // What 复制 copies from: the open frame, or in 图库 the first chosen picture that is a frame already.
         let copySource = dev?.frameID ?? browser.primary(rows)?.develop.map(\.frameID).flatMap { library.frame($0)?.id }
-        return WindowToolbar(browser: browser, export: exportGo, stripToggle: inDevelop) {
-            FilmLabRollName(store: store)
-            sharedControls(store, rows, dev)
+        // The bar's own change with the mode (导出's button comes and goes, the roll's name gives way in a narrow window)
+        // moves with the switch's tab instead of jumping under it (2026-11-25, `FilmLabModeTransition.swift`).
+        let mode: WorkspaceMode = inDevelop ? (dev?.surface ?? FilmLabModeMotion.wanted ?? .develop) : .library
+        return WindowToolbar(browser: browser, export: exportGo, stripToggle: inDevelop,
+                             hasCrop: dev != nil, hasClipboard: !(dev?.inCrop ?? false)) { compact, meter in
+            rollName(store, compact: compact)
+            sharedControls(store, rows, dev, compact: compact >= 3, meter: meter)
+                .background {
+                    // This is the title's capped natural width even while the visible title is short or absent.
+                    // It is plain text, not a second control, and does not take room from the live bar.
+                    rollTitle(store.selectedSource?.name ?? "", cap: 160)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.title, $0) }
+                        .opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+                }
         } mode: {
             modeSwitch(rows, dev, inDevelop: inDevelop)
-        } actions: {
-            if let dev, !dev.inCrop { MacDevelopActions(bar: dev) }
-            // 图库 only: 合成, of the pictures chosen (the owner's decision 10).
-            else if !inDevelop, !FeatureFlags.simpleWindow {
-                MacCombineMenu(chosen: browser.picked(in: rows),
-                               makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
-                               makePair: { images in actions.makePair(images, store: store, model: model) })
+        } actions: { compact, meter in
+            HStack(spacing: 0) {
+                if let dev, !dev.inCrop { MacDevelopActions(bar: dev) }
+                // 图库 only: 合成, of the pictures chosen (the owner's decision 10).
+                else if !inDevelop, !FeatureFlags.simpleWindow {
+                    MacCombineMenu(chosen: browser.picked(in: rows),
+                                   makeDouble: { images in actions.makeDouble(images, store: store, model: model) },
+                                   makePair: { images in actions.makePair(images, store: store, model: model) })
+                }
             }
+            .fixedSize()
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.actions, $0) }
             // 复制 ▾ and 粘贴 ▾, in every mode (the owner: "入口要看得见").
             if !(dev?.inCrop ?? false) {
-                FilmLabCopyButton(frameID: copySource)
-                FilmLabPasteButton(store: store, rows: rows, develop: dev)
+                clipboardButton(copy: true, frameID: copySource, store: store, rows: rows, develop: dev, compact: compact >= 2, meter: meter)
+                clipboardButton(copy: false, frameID: copySource, store: store, rows: rows, develop: dev, compact: compact >= 2, meter: meter)
+            }
+        }
+        // (Under Reduce Motion the bar is simply in its new places, as the tab is.)
+        .animation(FilmLabModeMotion.pill(reduce: reduceMotion), value: mode)
+    }
+
+    /// Level 0 uses the actual name up to the existing cap, not a reserved 160 pt for every project. The same
+    /// text supplies the invisible measurement; level 1 shortens it before either kind of button loses a word.
+    @ViewBuilder private func rollName(_ store: any MacLibraryData, compact: Int) -> some View {
+        if compact < 4, let name = store.selectedSource?.name, !name.isEmpty {
+            rollTitle(name, cap: compact == 0 ? 160 : 60).help(name)
+        }
+    }
+
+    private func rollTitle(_ name: String, cap: CGFloat) -> some View {
+        Text(name)
+            .font(MacMetric.font(12.5, .medium))
+            .foregroundStyle(Theme.secondaryText)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .frame(maxWidth: MacMetric.pt(cap), alignment: .leading)
+            .fixedSize()
+    }
+
+    /// These are the same panels and bindings as FilmLabCopyButton/FilmLabPasteButton. The bar owns the compact
+    /// labels here so shrinking it never replaces a button or closes a panel that is already open.
+    private func clipboardButton(copy: Bool, frameID: LibraryFrame.ID?, store: any MacLibraryData, rows: [MacImage],
+                                 develop: MacDevelopBar?, compact: Bool, meter: WindowBarMeter) -> some View {
+        @Bindable var ui = FilmLabClipboardUI.shared
+        let held = library.clipboard != nil
+        let enabled = copy ? frameID != nil : held
+        let title = copy ? L("Copy") : L("Paste")
+        return Button {
+            if copy { ui.copyShown = true } else { ui.pasteShown = true }
+        } label: {
+            clipboardLabel(symbol: copy ? "doc.on.doc" : "doc.on.clipboard", title: title,
+                           open: copy ? ui.copyShown : ui.pasteShown, compact: compact)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : Theme.disabledOpacity)
+        .help(copy ? L("Copy settings (⌘C); choose which (⇧⌘C)")
+                  : held ? L("Paste settings (⌘V); choose where (⇧⌘V)") : L("Nothing is copied yet"))
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(copy ? "filmlab.bar.copy" : "filmlab.bar.paste")
+        .onAppear { if copy { FilmLabCheckArgs.openPanel(); FilmLabResizeProbe.startIfAsked() } }
+        .background {
+            // Both label variants stay measurable at every level. There is only one button and one popover;
+            // these intrinsic probes have neither actions nor accessibility elements.
+            HStack(spacing: 0) {
+                clipboardLabel(symbol: copy ? "doc.on.doc" : "doc.on.clipboard", title: title, open: false, compact: false)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(copy ? .copyFull : .pasteFull, $0) }
+                clipboardLabel(symbol: copy ? "doc.on.doc" : "doc.on.clipboard", title: title, open: false, compact: true)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(copy ? .copyCompact : .pasteCompact, $0) }
+            }
+            .fixedSize().opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+        }
+        .popover(isPresented: copy ? $ui.copyShown : $ui.pasteShown, arrowEdge: .bottom) {
+            if copy {
+                if let frameID {
+                    // Sized by `FilmLabPanelPopover`: left to `interfaceScaled` alone the popover came up 79 pt square.
+                    FilmLabPanelPopover(width: MacMetric.pt(320)) {
+                        FilmLabCopyPanel(frameID: frameID) { ui.copyShown = false }
+                    }
+                    .appEnvironment(model)
+                    .appColorScheme()
+                }
+            } else {
+                FilmLabPanelPopover(width: MacMetric.pt(340)) {
+                    FilmLabPastePanel(store: store, rows: rows, develop: develop) { ui.pasteShown = false }
+                }
+                .appEnvironment(model)
+                .appColorScheme()
             }
         }
     }
 
-    @ViewBuilder private func sharedControls(_ store: any MacLibraryData, _ rows: [MacImage], _ dev: MacDevelopBar?) -> some View {
+    @ViewBuilder private func clipboardLabel(symbol: String, title: String, open: Bool, compact: Bool) -> some View {
+        if compact {
+            HStack(spacing: MacMetric.pt(5)) {
+                Image(systemName: symbol).font(MacMetric.font(12, .medium))
+                Image(systemName: "chevron.down").font(MacMetric.font(8.5, .bold)).foregroundStyle(Theme.dim)
+            }
+            .foregroundStyle(Theme.text)
+            .padding(.horizontal, MacMetric.pt(6))
+            .frame(height: MacMetric.pt(24))
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous))
+            .overlay {
+                if open { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).strokeBorder(Theme.accent, lineWidth: 1.5) }
+            }
+            .contentShape(Rectangle())
+        } else {
+            FilmLabBarLabel(symbol: symbol, title: title, chevron: true, open: open)
+        }
+    }
+
+    private func cropLabel(compact: Bool, cropping: Bool) -> some View {
+        HStack(spacing: MacMetric.pt(5)) {
+            Image(systemName: "crop").font(MacMetric.font(12, .medium))
+            if !compact { Text(L("Crop")).font(MacMetric.font(12, .medium)).fixedSize() }
+        }
+        .foregroundStyle(cropping ? Theme.onSelection : Theme.text)
+        .padding(.horizontal, MacMetric.pt(8))
+        .frame(height: MacMetric.pt(22))
+        .background(RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(cropping ? Theme.selection : Theme.card))
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder private func sharedControls(_ store: any MacLibraryData, _ rows: [MacImage], _ dev: MacDevelopBar?,
+                                            compact: Bool, meter: WindowBarMeter) -> some View {
         if let dev {
-            MacSharedControls(store: store, browser: browser, columnShown: dev.columnShown,
-                              toggleColumn: dev.toggleColumn,
-                              lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
-                              fullGrid: { MacLibraryGo.fullGrid(model: model) },
-                              crop: dev.crop, cropping: dev.inCrop, cropEnabled: dev.cropEnabled, sort: false)
+            HStack(spacing: MacMetric.pt(8)) {
+                MacSharedControls(store: store, browser: browser, columnShown: dev.columnShown,
+                                  toggleColumn: dev.toggleColumn,
+                                  lightTable: { MacLibraryGo.putOnLightTable($0, model: model) },
+                                  fullGrid: { MacLibraryGo.fullGrid(model: model) },
+                                  crop: nil, cropping: dev.inCrop, cropEnabled: dev.cropEnabled, sort: false)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.sidebar, $0) }
+                Button(action: dev.crop) {
+                    cropLabel(compact: compact, cropping: dev.inCrop)
+                }
+                .buttonStyle(.plain)
+                .disabled(!dev.cropEnabled)
+                .opacity(dev.cropEnabled ? 1 : 0.4)
+                .help(L("Crop"))
+                .accessibilityLabel(L("Crop"))
+                .accessibilityAddTraits(dev.inCrop ? .isSelected : [])
+                .accessibilityIdentifier("mac.bar.crop")
+                .background {
+                    HStack(spacing: 0) {
+                        cropLabel(compact: false, cropping: false).fixedSize()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.cropFull, $0) }
+                        cropLabel(compact: true, cropping: false).fixedSize()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.cropCompact, $0) }
+                    }
+                    .fixedSize().opacity(0).allowsHitTesting(false).accessibilityHidden(true)
+                }
+            }
         } else {
             let picture = browser.primary(rows)
             MacSharedControls(store: store, browser: browser, columnShown: browser.sidebarShown,
@@ -545,31 +692,33 @@ struct MainWindowLayout: View {
                               // FilmLab 暗房 (design A): 图库's grid header has the sort, and Crop is C or the picture's
                               // menu, so the bar keeps room for its own buttons.
                               crop: nil, cropEnabled: picture != nil, sort: false)
+                .fixedSize()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.sidebar, $0) }
         }
     }
 
     @ViewBuilder private func modeSwitch(_ rows: [MacImage], _ dev: MacDevelopBar?, inDevelop: Bool) -> some View {
-        if inDevelop {
-            MacModeSwitch(current: dev?.surface ?? .develop) { mode in
-                switch mode {
-                case .library: router.toLibrary()
-                case .develop, .export, .edit, .personalize:
-                    browser.fullGrid = false      // a surface wants the picture: the viewer comes back
-                    dev?.chooseSurface(mode)
-                }
-            }
-            .rowEnabled(!(dev?.inCrop ?? false))
-        } else {
-            // 冲洗 and 编辑 need no selection (the owner, 2026-10-27); only a library with no rows stands
-            // them down, saying why in place.
-            MacModeSwitch(current: .library,
-                          enabled: { mode in mode == .library || !rows.isEmpty },
-                          unavailable: { mode in (mode == .library || !rows.isEmpty) ? nil : L("There is no picture to open") },
-                          choose: { mode in
+        // One switch for 图库 and the editing modes (2026-11-25): made in two branches, it was two views, and its tab
+        // could not slide from 图库 to the mode pressed (`FilmLabModePill`). Until the develop page has told the bar
+        // its mode (a frame), the switch wears the one 图库's row asked for.
+        let current: WorkspaceMode = inDevelop ? (dev?.surface ?? FilmLabModeMotion.wanted ?? .develop) : .library
+        // 冲洗 and 编辑 need no selection (the owner, 2026-10-27); only a library with no rows stands
+        // them down, saying why in place.
+        let open: (WorkspaceMode) -> Bool = { mode in inDevelop || mode == .library || !rows.isEmpty }
+        MacModeSwitch(current: current, enabled: open,
+                      unavailable: { mode in open(mode) ? nil : L("There is no picture to open") },
+                      choose: { mode in
+                          if !inDevelop {
                               browser.fullGrid = false
                               MacLibraryGo.choose(mode, rows: rows, model: model)
-                          })
-        }
+                          } else if mode == .library {
+                              router.toLibrary()
+                          } else {
+                              browser.fullGrid = false      // a surface wants the picture: the viewer comes back
+                              dev?.chooseSurface(mode)
+                          }
+                      })
+            .rowEnabled(!(inDevelop && (dev?.inCrop ?? false)))
     }
 
     // MARK: the browser
@@ -647,7 +796,8 @@ struct MainWindowLayout: View {
 }
 
 /// The mode's content: the library page (mounted always, hidden under 冲洗/编辑), and the develop page
-/// over it while a develop is on the path. No transition: the swap is the frame it happens in.
+/// over it while a develop is on the path. The develop page arrives through a veil and the library page fades back
+/// in (FilmLab, 2026-11-25: `FilmLabModeTransition.swift`); the page that leaves is gone in the frame it happens in.
 ///
 /// Equatable on the mode alone (2026-11-22): the shell's reader makes it again at every step of a window resize, and
 /// made again it re-ran `LibraryScreen` — the hidden library page with it — though nothing it shows had changed. What
@@ -680,12 +830,15 @@ private struct ShellContent: View, Equatable {
     /// The last size seen and the settle's timer, in a box nothing observes (written at every step).
     @State private var settle = Settle()
     private final class Settle { var size: CGSize?; var task: Task<Void, Never>? }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     nonisolated static func == (a: Self, b: Self) -> Bool { a.develop == b.develop && a.covered == b.covered }
 
     var body: some View {
         // Read when the mode changes (this body runs again then), so the hidden page keeps the size of its last frame in front.
         let held = develop == nil ? nil : front.size
+        let motion = FilmLabModeMotion.animation(reduce: reduceMotion)
+        let _ = FilmLabModeMotion.calm = reduceMotion || FilmLabModeMotion.calmCheck
         ZStack {
             // Holds the stack at the size it is offered while the library page is out. Without it the stack is empty
             // under the home page (no develop page either), measures 0, and that reads as one more resize: the page
@@ -698,7 +851,10 @@ private struct ShellContent: View, Equatable {
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
                     if develop == nil { front.size = size }
                 }
-                .opacity(develop == nil ? 1 : 0)
+                // 图库 ↔ an editing mode (2026-11-25, `FilmLabModeTransition.swift`): back in 图库 this page fades in; under
+                // a mode it is hidden at once (the develop page arrives through a veil of its own). Only the opacity is
+                // animated: the page's size (held, or the window's again) is never on the move.
+                .animation(develop == nil ? motion : nil) { $0.opacity(develop == nil ? 1 : 0) }
                 .allowsHitTesting(develop == nil)
                 .accessibilityHidden(develop != nil)
             }
@@ -706,6 +862,9 @@ private struct ShellContent: View, Equatable {
                 RouteContent(route: develop)
                     .id(develop)
             }
+            // The develop page arrives through a veil the colour of the window, which fades off it (`FilmLabModeVeil`);
+            // the page that leaves is taken down in the frame the mode changes in, as it always was.
+            if develop != nil { FilmLabModeVeil() }
         }
         .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in resized(to: size) }
         .transaction { $0.animation = nil }

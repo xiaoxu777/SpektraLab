@@ -503,8 +503,9 @@ def leak_seed_spot_edge(e, base):
     # the seed
     names = [f["name"] for f in e.params_schema().get("fields", [])]
     # (then `leak_edge`, 2026-11-16, the last native field before preview_long_edge: `leak_edge_layer`)
-    check("leak_seed" in names and names.index("leak_seed") + 2 == names.index("preview_long_edge"),
-          "leak_seed is in the schema, followed by leak_edge and then preview_long_edge")
+    # (and `edr_amount`, 2026-11-25, API-SPEC §26, after leak_edge)
+    check("leak_seed" in names and names.index("leak_seed") + 3 == names.index("preview_long_edge"),
+          "leak_seed is in the schema, followed by leak_edge, edr_amount and then preview_long_edge")
     if "leak_seed" not in names:
         return
     dark = flat(1200, 800, 0.03)
@@ -664,8 +665,8 @@ def leak_edge_layer(e, base):
     by = {f["name"]: f for f in fields}
     le = by.get("leak_edge") or {}
     check("leak_edge" in names and names.index("leak_edge") == names.index("leak_seed") + 1
-          and names.index("leak_edge") + 1 == names.index("preview_long_edge"),
-          "leak_edge is in the schema after leak_seed, the last native field before preview_long_edge")
+          and names.index("leak_edge") + 2 == names.index("preview_long_edge"),
+          "leak_edge is in the schema after leak_seed, then edr_amount (API-SPEC §26), then preview_long_edge")
     if "leak_edge" not in names:
         return
     check(le.get("type") == "float" and le.get("layer") == "shoot" and not le.get("live") and le.get("default") == 0

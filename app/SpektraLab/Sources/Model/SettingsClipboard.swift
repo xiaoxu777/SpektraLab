@@ -202,7 +202,8 @@ enum ClipboardGroup: String, CaseIterable, Codable, Sendable, Identifiable {
             return "\(e) · \(d)"
         case .hdr:
             let hdr = edit.hdr ? L("HDR") + " " + String(format: "%.1f EV", edit.hdrPeak) : L("HDR off")
-            return edit.params.extendedDynamicRange ? "EDR" + Fmt.dot + hdr : hdr
+            let edr = edit.params.edrAmount < 1 ? "EDR \(Int((edit.params.edrAmount * 100).rounded()))%" : "EDR"
+            return edit.params.extendedDynamicRange ? edr + Fmt.dot + hdr : hdr
         case .watermark:
             return edit.watermarks.summary(names: WatermarkNames.library())
         case .light, .curve, .colour:
@@ -405,6 +406,7 @@ struct SettingsClip: Codable, Equatable, Sendable {
             out.hdr = s.hdr
             out.hdrPeakStops = s.hdrPeakStops
             out.params.extendedDynamicRange = s.params.extendedDynamicRange
+            out.params.edrAmount = s.params.edrAmount
         }
         // 水印 (PRD-8 §4.4): the target's marks replaced by the source's, each a new placement, those whose PNG the
         // library no longer has left out (`pastedWatermarks` says how many), at most 4. The numbers travel as they are:

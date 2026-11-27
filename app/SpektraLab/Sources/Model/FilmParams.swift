@@ -601,7 +601,8 @@ struct FilmParams: Codable, Equatable, Sendable {
             antihalationRemoved = "antihalationRemoved"
         case printBrightnessStops = "printBrightnessStops", yFilterShift = "yFilterShift",
             mFilterShift = "mFilterShift", glareActive = "glareActive", scanFilm = "scanFilm"
-        case edrValue = "extendedDynamicRange", edrChosenOff = "edrOff", preflashExposure = "preflashExposure",
+        case edrValue = "extendedDynamicRange", edrChosenOff = "edrOff", edrAmountValue = "edrAmount",
+            preflashExposure = "preflashExposure",
             contrastMask = "contrastMask", sceneLatitude = "sceneLatitude", effects = "effects",
             printEffects = "printEffects"
         case digitalIntermediate = "digitalIntermediate"
@@ -728,6 +729,20 @@ struct FilmParams: Codable, Equatable, Sendable {
     }
     private var edrValue = false
     private var edrChosenOff: Bool? = nil
+
+    /// **EDR 应用多少, how much of the print's EDR is laid on** (API-SPEC §26; the owner, 2026-11-25: "EDR 功能应该可以手动
+    /// 调整应用多少吧"), 0 … 1: 1 is the paper's measured EDR table as before, 0 the print without EDR. The output stage's,
+    /// after the print (`edr_amount`); the paper's data is never rewritten. Kept under `edrAmount` only once moved, so an
+    /// edit that never moved it is the same JSON as before and reads as 1; sent only while EDR applies and it is under 1,
+    /// so an engine without §26 is never named it and every older frame's stamp stays as it was.
+    var edrAmount: Double {
+        get { edrAmountValue.map { $0.isFinite ? min(max($0, 0), 1) : 1 } ?? 1 }
+        set {
+            let v = newValue.isFinite ? min(max(newValue, 0), 1) : 1
+            edrAmountValue = v > 1 - 1e-9 ? nil : v
+        }
+    }
+    private var edrAmountValue: Double? = nil
     /// Settings' Enable EDR by Default (`AppSettings.edrByDefault` sets it at launch and on a change). Off until turned
     /// on, there or by the page's switch.
     nonisolated(unsafe) static var edrByDefault = false
@@ -868,6 +883,7 @@ struct FilmParams: Codable, Equatable, Sendable {
         digitalIntermediate = try c.decodeIfPresent(Bool.self, forKey: .digitalIntermediate) ?? false
         edrValue = try c.decodeIfPresent(Bool.self, forKey: .edrValue) ?? false
         edrChosenOff = try c.decodeIfPresent(Bool.self, forKey: .edrChosenOff)
+        edrAmountValue = try? c.decodeIfPresent(Double.self, forKey: .edrAmountValue)
         preflashExposure = try c.decodeIfPresent(Double.self, forKey: .preflashExposure) ?? 0
         contrastMask = try c.decodeIfPresent(ContrastMaskSettings.self, forKey: .contrastMask)
             ?? ContrastMaskSettings()
@@ -965,6 +981,10 @@ struct FilmParams: Codable, Equatable, Sendable {
             ("digital_intermediate_blue_compensation",
              .bool(digitalIntermediate && FilmParams.diBlueCompensation), .print),
         ]
+        // API-SPEC §26: only while EDR applies and is turned down (`sometimesSent` takes it back to 1 when it leaves).
+        if effectiveExtendedDynamicRange, edrAmount < 1 {
+            fields.append(("edr_amount", .double(edrAmount), .print))
+        }
         fields += pairPlacementWire
         return fields
     }
@@ -1031,6 +1051,8 @@ struct FilmParams: Codable, Equatable, Sendable {
                                                        "leak_seed": .double(0),
                                                        // API-SPEC §21.9 (2026-11-16): the edge burn, sent only while on.
                                                        "leak_edge": .double(0),
+                                                       // API-SPEC §26 (2026-11-25): EDR's amount, sent only while under 1.
+                                                       "edr_amount": .double(1),
                                                        // PRD-E (RFC-052 §6.4): sent only while a 场景 layer acts; its
                                                        // rest takes the set away from an open session.
                                                        "scene_layers": .string("")]

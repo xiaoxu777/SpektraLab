@@ -13,6 +13,9 @@
 //     *potential* headroom), and it comes back live when one is attached or the window moves onto one. Greyed
 //     too while EDR is on (the engine measures the curve on the print without EDR and refuses it with EDR on,
 //     API-SPEC §19.2), or where the engine gave the session no curve.
+//  1b. **EDR Amount** (`FilmParams.edrAmount`, API-SPEC §26, the owner 2026-11-25: "EDR 功能应该可以手动调整应用多少吧"):
+//     0–100 % of the paper's EDR table, laid on after the print (`edr_amount`); 100 % is today's EDR, 0 % the print
+//     without it. Greyed while EDR is off or stands down.
 //  3. **HDR Peak Brightness** (`FrameEdit.hdrPeak`, stops over SDR white): the curve's H. 2 stops (H 4,
 //     `A_H4`) is today's picture. Disabled while HDR is off.
 //
@@ -64,6 +67,16 @@ struct HighDynamicRangeGroup: View {
                                         set: { on in session.switchEDR(on) }),
                           id: "v5.develop.edr")
                     .rowEnabled(edrReason == nil)
+                // EDR 应用多少 (API-SPEC §26; the owner, 2026-11-25): 0 % is the print without EDR, 100 % today's EDR.
+                ValueSlider(title: L("EDR Amount"), value: session.binding(\.params.edrAmount),
+                            range: 0...1, rest: 1,
+                            text: { "\(Int(($0 * 100).rounded()))%" }, detentAtRest: true,
+                            labelWidth: Self.labelWidth(L("HDR Peak Brightness")),
+                            onEditingChanged: session.editing(.print))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .accessibilityIdentifier("v5.develop.edr-amount")
+                    .rowEnabled(edrReason == nil && params.extendedDynamicRange)
                 toggleRow(L("Enable HDR"), note: hdrReason,
                           isOn: Binding(get: { edit.hdr }, set: { on in session.switchHDR(on) }),
                           id: "v5.develop.hdr")

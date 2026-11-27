@@ -285,6 +285,10 @@ const SchemaField kFields[] = {
     // the few print-layer fields that still invalidates a cached negative: the
     // live tier's was made at the old size, and `spk_set_params` drops that
     // tier's state when this changes.
+    // API-SPEC §26 (2026-11-25): the EDR master's amount, 0 … 1 (1 = the paper's measured table, as before; 0 = no
+    // EDR, to the bit). Native-only, PRINT (the node is after the print), not live (the blend is baked with the
+    // table), after `leak_edge` in NATIVE_ONLY's order.
+    {"edr_amount",               "print_render.edr_amount",               F, PRINT, true, 0.0, 1.0, false},
     {"preview_long_edge",        "io.preview_long_edge",                  I, PRINT, true, 800.0, 8192.0, false},};
 
 const SchemaField* find_field(const std::string& name) {
@@ -373,6 +377,7 @@ double* float_slot(Params& p, const std::string& path) {
     if (path == "film_render.leak.rate") return &p.film_render.leak.rate;
     if (path == "film_render.leak.front") return &p.film_render.leak.front;
     if (path == "film_render.leak.edge") return &p.film_render.leak.edge;
+    if (path == "print_render.edr_amount") return &p.print_render.edr_amount;
     if (path == "film_render.overscan.falloff") return &p.film_render.overscan.falloff;
     return nullptr;
 }

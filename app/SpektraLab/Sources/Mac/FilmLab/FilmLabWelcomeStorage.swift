@@ -379,20 +379,9 @@ private struct CardShape: Shape {
 
 // MARK: - motion
 
-private enum Ease { case `in`, out, inOut }
-
-/// How far `s` is from `a` to `b`, held to 0…1.
-private func phase(_ s: Double, _ a: Double, _ b: Double) -> Double { min(max((s - a) / (b - a), 0), 1) }
-
-private func ease(_ kind: Ease, _ t: Double) -> Double {
-    switch kind {
-    case .in: t * t
-    case .out: 1 - pow(1 - t, 3)
-    case .inOut: t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2
-    }
-}
-
-/// A spring's wobble after a landing, `u` seconds on: 0 before it, a few fast swings dying away.
-private func pop(_ u: Double) -> Double { u <= 0 ? 0 : exp(-8 * u) * sin(18 * u) }
-
-private func lerp(_ a: CGFloat, _ b: CGFloat, _ t: Double) -> CGFloat { a + (b - a) * CGFloat(t) }
+// The tour's drawings share these (`WelcomeMotion`, FilmLabWelcomeExport.swift).
+private typealias Ease = WelcomeEase
+private func phase(_ s: Double, _ a: Double, _ b: Double) -> Double { WelcomeMotion.phase(s, a, b) }
+private func ease(_ kind: Ease, _ t: Double) -> Double { WelcomeMotion.ease(kind, t) }
+private func pop(_ u: Double) -> Double { WelcomeMotion.pop(u) }
+private func lerp(_ a: CGFloat, _ b: CGFloat, _ t: Double) -> CGFloat { WelcomeMotion.lerp(a, b, t) }

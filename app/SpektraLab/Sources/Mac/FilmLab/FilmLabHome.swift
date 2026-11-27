@@ -271,8 +271,8 @@ struct FilmLabHomeView: View {
     }
 
     /// 修改本地图片目录: one control, Finder's panel for the photo folder imports are copied into (the owner, 2026-11-25:
-    /// "内容直接改为修改本地图片目录", for a sentence and a separate Change…). The folder is its tooltip, and its small grey
-    /// text where that fits on the line; copy or leave them where they are is its right-click menu.
+    /// "内容直接改为修改本地图片目录", for a sentence and a separate Change…). The folder is its tooltip only (the owner,
+    /// 2026-11-25: "直接把后面的路径删掉"); copy or leave them where they are is its right-click menu.
     private var storageLine: some View {
         let imports = FilmLabImport.shared
         let label = HStack(spacing: MacMetric.pt(5)) {
@@ -281,15 +281,7 @@ struct FilmLabHomeView: View {
         }
         .foregroundStyle(Theme.accent)
         return Button { Task { await imports.chooseFolder() } } label: {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: MacMetric.pt(8)) {
-                    label
-                    Text(imports.mode == .copy ? imports.folderShown : L("Imports stay where they are"))
-                        .font(MacMetric.font(11.5)).foregroundStyle(Theme.dim).lineLimit(1).fixedSize()
-                }
-                label
-            }
-            .contentShape(Rectangle())
+            label.contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(imports.folder.path)
@@ -326,16 +318,13 @@ struct FilmLabHomeView: View {
             FilmStripLoop(height: MacMetric.pt(86))
                 .frame(maxWidth: MacMetric.pt(520))
                 .mask(LinearGradient(colors: [.clear, .black, .black, .clear], startPoint: .leading, endPoint: .trailing))
+            // The title straight over its buttons (the owner, 2026-11-25, of the line that was under it: "这行字直接删掉").
             Text(L("Your first roll")).font(MacMetric.font(20, .bold)).foregroundStyle(Theme.text)
-            Text(L("Insert the card and import its photos. Each import is one roll."))
-                .font(MacMetric.font(13)).foregroundStyle(Theme.dim)
-                .multilineTextAlignment(.center).frame(maxWidth: MacMetric.pt(440))
-                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: MacMetric.pt(12)) {
                 FilmLabNewProjectButton()
                 openButton(store, large: true)
             }
-            .padding(.top, MacMetric.pt(4))
+            .padding(.top, MacMetric.pt(2))
             Text(L("Or drag them onto this page.")).font(MacMetric.font(12)).foregroundStyle(Theme.dim)
             storageLine
             if let refused {

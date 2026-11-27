@@ -514,6 +514,12 @@ NATIVE_ONLY = {
         "path": "film_render.leak.edge", "type": "float", "layer": "shoot",
         "default": 0.0, "live": False, "range": [0.0, 4.0],
     },
+    # API-SPEC §26 (2026-11-25): how much of the EDR master is laid on. The
+    # reference has the switch only; 1 is its EDR, 0 none.
+    "edr_amount": {
+        "path": "print_render.edr_amount", "type": "float", "layer": "print",
+        "default": 1.0, "live": False, "range": [0.0, 1.0],
+    },
 }
 
 

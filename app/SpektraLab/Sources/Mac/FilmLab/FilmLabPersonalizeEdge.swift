@@ -1,9 +1,15 @@
 //  FilmLabPersonalizeEdge.swift — 个性化's 片边: the switch, and the film formats as pictures of this photo.
 //
 //  The choice is seen, not read: each card is this picture laid in that format's film (`FilmCanvasView`, as the Film
-//  Edge flow's cards draw it, larger), three across. 普通版 offers the everyday formats; 专业版 every format behind the
-//  flow's filter, then the view, 调整取景 and the five edge tools (`EdgeStepPanel(flat:)`). The film's own 尺寸
+//  Edge flow's cards draw it, larger), three across, named as a person who never shot film would name it ("6×6 方画幅",
+//  "正方形": `FilmEdgeFormat.everydayName` / `everydayShape`). 普通版 offers the everyday formats; 专业版 every format
+//  behind the filter, then 更多细节 (the five edge tools, `EdgeStepPanel(flat:)`) and 调整画面位置. The film's own 尺寸
 //  (`FilmSizeSection`: the size the film is developed as while no edge is on) follows the section in the column.
+//
+//  **换一台相机** (the owner, 2026-11-25: "片边的换一台相机的功能怎么没了，记得加上去，同时写的通俗易懂一点"): the camera
+//  body's seed (`filmEdge.cameraSeed`, the Body tool's 换一台) — the same kind of camera, another one of them, whose
+//  frame corners, margins and holes fall a little differently. It was in the column flat before 个性化 folded the tools
+//  away; it is a row of its own now, in both versions, under the cards.
 //
 //  The acts are `FilmEdgeColumn`'s, through the session: the switch (the first time on, the film lies the way the
 //  picture does, shot through this Mac's body), and a format's card (the gate lies the way the picture does, the cut
@@ -26,7 +32,8 @@ struct FilmLabEdgeSection: View {
     private var pro: Bool { !FeatureFlags.simpleWindow }
 
     /// 普通版's cards: the formats most people mean by a film edge. The chosen one is always among them.
-    private static let everyday: [FilmEdgeFormat] = [.f135, .f6x6, .f645, .f6x7, .xpan, .sprocket135]
+    private static let everyday: [FilmEdgeFormat] = [.f135, .half, .f6x6, .f645, .f6x7, .xpan]
+    @State private var diceTurns = 0.0
 
     private var filter: FilmEdgeFormat.Filter {
         let kept = DevelopPanelPrefs.shared.filmEdgeFilter
@@ -47,31 +54,38 @@ struct FilmLabEdgeSection: View {
 
     var body: some View {
         FilmLabPersonalizeSection(title: L("Film Edge"), symbol: "film",
-                                  value: edge.format.label + Fmt.dot + edge.view.label,
+                                  value: edge.format.everydayName + Fmt.dot + edge.view.everydayLabel,
                                   isOn: Binding(get: { edge.active && appliesFilm }, set: { setFilmEdge($0) }),
                                   enabled: appliesFilm, id: "film-edge") {
             VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    FilmLabPersonalizeLabel(L("Camera"))
+                    Text(L("Each kind of camera leaves a different frame and border on the film."))
+                        .font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if pro {
                     SegmentedSwitch(options: FilmEdgeFormat.Filter.offered(),
                                     selection: Binding(get: { filter }, set: { f in
                                         withAnimation(.easeOut(duration: 0.18)) { DevelopPanelPrefs.shared.filmEdgeFilter = f }
                                     }),
-                                    title: \.label, track: Theme.card, size: 12)
+                                    title: { $0.everydayLabel }, track: Theme.card, size: 12)
                         .accessibilityLabel(L("Film Format Filter"))
                         .accessibilityIdentifier("filmlab.personalize.edge.filter")
                     if !cards.contains(edge.format) {
-                        Text(L("Chosen: \(edge.format.label)")).font(Theme.Font.ui(11.5, .medium)).foregroundStyle(Theme.dim)
+                        Text(L("Chosen: \(edge.format.everydayName)")).font(Theme.Font.ui(11.5, .medium)).foregroundStyle(Theme.dim)
                     }
                 }
                 styleGrid
+                anotherCamera
                 HStack(spacing: 10) {
-                    FilmLabPersonalizeLabel(L("View"))
+                    FilmLabPersonalizeLabel(L("Show"))
                     // Greyed where the format draws one view whatever is kept (135 Full Width: Strip).
                     let open = FilmEdgeOptions.view(edge)
                     SegmentedSwitch(options: FilmEdgeView.allCases,
                                     selection: Binding(get: { edge.view },
                                                        set: { v in if open, v != edge.view { session.change { $0.filmEdge.mode = v } } }),
-                                    title: \.label, segmentWidth: 84, track: Theme.card)
+                                    title: { $0.everydayLabel }, segmentWidth: 96, track: Theme.card)
                         .rowEnabled(open)
                         .accessibilityIdentifier("filmlab.personalize.edge.view")
                 }
@@ -79,6 +93,49 @@ struct FilmLabEdgeSection: View {
             }
             .padding(.horizontal, 16)
         }
+    }
+
+    // MARK: 换一台相机
+
+    /// The same kind of camera, another one of them: a new body seed (the Body tool's 换一台), so the frame's corners,
+    /// margins and holes fall a little differently. The dice turns once a tap, so the tap is seen to have done something
+    /// even where the change on the edge is a hair's.
+    private var anotherCamera: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L("Another camera")).font(Theme.Font.ui(13, .semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                Text(L("Same kind, another one: its border is a little different."))
+                    .font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Button(action: rollBody) {
+                HStack(spacing: 6) {
+                    EdgeToolGlyph(tool: .body, color: Theme.text).frame(width: 16, height: 16)
+                        .rotationEffect(.degrees(diceTurns))
+                    Text(L("Camera No. \(max(edge.cameraSeed, 1))"))
+                        .font(Theme.Font.ui(12.5, .medium)).foregroundStyle(Theme.text).lineLimit(1).fixedSize()
+                        .contentTransition(.numericText())
+                }
+                .padding(.horizontal, 12).frame(height: 30)
+                .background(Theme.card, in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(PressStyle())
+            .help(L("Another camera"))
+            .accessibilityLabel(L("Another camera"))
+            .accessibilityValue(L("Camera No. \(max(edge.cameraSeed, 1))"))
+            .accessibilityIdentifier("filmlab.personalize.edge.another")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(Theme.card.opacity(0.55), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+    }
+
+    private func rollBody() {
+        var next = edge.cameraSeed
+        while next == edge.cameraSeed { next = Int.random(in: FilmEdgeSettings.bodyRange) }
+        withAnimation(.easeOut(duration: 0.35)) { diceTurns += 180 }
+        withAnimation(.easeOut(duration: 0.18)) { session.change { $0.filmEdge.cameraSeed = next } }
     }
 
     // MARK: the formats
@@ -129,8 +186,9 @@ struct FilmLabEdgeSection: View {
                 }
                 .frame(width: box.width, height: box.height)
                 VStack(spacing: 1) {
-                    Text(format.cardTitle).font(Theme.Font.ui(12.5, .semibold)).foregroundStyle(Theme.text).lineLimit(1)
-                    Text(format.cardDetail).font(Theme.Font.ui(10.5)).foregroundStyle(Theme.dim).lineLimit(1).minimumScaleFactor(0.75)
+                    Text(format.everydayName).font(Theme.Font.ui(12.5, .semibold)).foregroundStyle(Theme.text)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    Text(format.everydayShape).font(Theme.Font.ui(10.5)).foregroundStyle(Theme.dim).lineLimit(1).minimumScaleFactor(0.75)
                 }
             }
             .padding(.top, 8).padding(.bottom, 7)
@@ -144,8 +202,8 @@ struct FilmLabEdgeSection: View {
         .buttonStyle(PressStyle())
         // A format this stock was never made in is shown, and cannot be chosen.
         .rowEnabled(made)
-        .help(made ? format.label : format.label + L(", not made in this film"))
-        .accessibilityLabel(format.label + ", " + format.aspectText + (made ? "" : L(", not made in this film")))
+        .help(made ? format.everydayName : format.everydayName + L(", not made in this film"))
+        .accessibilityLabel(format.everydayName + ", " + format.everydayShape + (made ? "" : L(", not made in this film")))
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("filmlab.personalize.edge.style." + format.rawValue)
     }
@@ -159,7 +217,7 @@ struct FilmLabEdgeSection: View {
                     HStack(spacing: 5) {
                         Image(systemName: "chevron.right").font(Theme.Font.ui(9.5, .bold))
                             .rotationEffect(.degrees(moreShown ? 90 : 0))
-                        Text(L("Edge Details")).font(Theme.Font.ui(12.5, .medium))
+                        Text(L("More details")).font(Theme.Font.ui(12.5, .medium))
                     }
                     .foregroundStyle(Theme.secondaryText)
                     .frame(height: 26)
@@ -169,7 +227,7 @@ struct FilmLabEdgeSection: View {
                 .accessibilityIdentifier("filmlab.personalize.edge.more")
                 Spacer(minLength: 0)
                 Button { router.show(.crop(frame.id)) } label: {
-                    Label(L("Adjust Framing"), systemImage: "crop").font(Theme.Font.ui(12.5, .medium)).foregroundStyle(Theme.text)
+                    Label(L("Move the picture"), systemImage: "crop").font(Theme.Font.ui(12.5, .medium)).foregroundStyle(Theme.text)
                         .padding(.horizontal, 10).frame(height: 26)
                         .background(Theme.card, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                         .contentShape(Rectangle())
@@ -223,4 +281,68 @@ struct FilmLabEdgeSection: View {
             }
         }
     }
+}
+
+// MARK: - in everyday words
+
+/// 个性化's names for the formats, the filter and the view: what a person who never shot film would call them. The
+/// model's own labels (`label`, `cardTitle`) stay the film edge flow's and the clipboard's.
+extension FilmEdgeFormat {
+    var everydayName: String {
+        switch self {
+        case .f135: L("35mm full frame")
+        case .half: L("Half frame")
+        case .f645: L("645 medium format")
+        case .f6x6: L("6×6 square")
+        case .f6x7: L("6×7 medium format")
+        case .f6x8: L("6×8 medium format")
+        case .f6x9: L("6×9 medium format")
+        case .xpan: L("XPan wide")
+        case .sprocket135: L("35mm full width")
+        case .f6x12: L("6×12 wide")
+        case .f6x17: L("6×17 wide")
+        case .super8: L("Super 8 movie")
+        case .cine16: L("16mm movie")
+        case .cine35: L("35mm movie")
+        case .cine65: L("70mm movie")
+        case .cine65x15: L("70mm giant screen")
+        }
+    }
+
+    /// What the frame looks like.
+    var everydayShape: String {
+        switch self {
+        case .f135, .f6x9: L("The usual 3:2")
+        case .half: L("Tall, 3:4")
+        case .f645, .f6x8: L("Close to 4:3")
+        case .f6x6: L("Square shape")
+        case .f6x7: L("Close to 5:4")
+        case .xpan: L("Long, 2.7:1")
+        case .sprocket135: L("Picture over the holes")
+        case .f6x12: L("Long, 2:1")
+        case .f6x17: L("Very long, 3:1")
+        case .super8: L("Home movies")
+        case .cine16: L("Small movie film")
+        case .cine35: L("Cinema film")
+        case .cine65: L("Big screen")
+        case .cine65x15: L("Film runs sideways")
+        }
+    }
+}
+
+extension FilmEdgeFormat.Filter {
+    var everydayLabel: String {
+        switch self {
+        case .all: L("All", as: "formats")
+        case .film135: L("135 film")
+        case .film120: L("120 film")
+        case .panoramic: L("Wide", as: "formats")
+        case .cine: L("Cine")
+        }
+    }
+}
+
+extension FilmEdgeView {
+    /// 整条胶片: the whole width with its holes and print; 只留细边: a thin dark border round the picture.
+    var everydayLabel: String { self == .strip ? L("Whole film") : L("Thin border") }
 }

@@ -328,6 +328,12 @@ struct PrintRenderParams {
     // Print-layer EDR master toggle. It defaults off so the legacy print
     // path remains byte-identical until the user opts in.
     bool edr_enabled = false;
+    // API-SPEC §26 (2026-11-25): how much of the EDR master is laid on, 0 … 1.
+    // The paper's measured table moves the print's Y in log2; `edr_amount`
+    // scales that move (log2 Y + a · (table − log2 Y)), so 1 is the table to
+    // the bit and 0 is the print without EDR to the bit (the node is not run).
+    // The measured table itself is never rewritten: the blend is baked beside it.
+    double edr_amount = 1.0;
 };
 
 // RFC-023's Scene Latitude Mapping: a pointwise gain before spectral

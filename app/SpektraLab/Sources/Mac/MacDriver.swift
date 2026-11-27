@@ -54,7 +54,8 @@
 //.fold.effects; .fold.open: all four open)
 //      notifyutil -p com.spektralab.mac.drive.applyfilm.off   # the open page's Apply Film Emulation (.applyfilm.on)
 //      notifyutil -p com.spektralab.mac.drive.hdr.on     # the open page's Enable HDR (.hdr.off), through its session
-//      notifyutil -p com.spektralab.mac.drive.edr.on     # …its print's EDR (.edr.off); .hdr.peak.1/.2/.3: HDR Peak Brightness;
+//      notifyutil -p com.spektralab.mac.drive.edr.on     # …its print's EDR (.edr.off; .edr.amount.0/.50/.100: EDR 强度);
+//                                                         .hdr.peak.1/.2/.3: HDR Peak Brightness;
 //                                                         .fold.hdr / .open.hdr: 解码 › 高动态范围 folded or open
 //      notifyutil -p com.spektralab.mac.drive.curve       # the open page on Edit › Adjust › 曲线 (.curve.set: an S on
 //                                                         RGB and a lift on red, .curve.0: none; on the curve in
@@ -151,6 +152,14 @@ enum MacDriver {
                 e.dateBack.active = true
             } }),
             ("dateonly", { m in edit(m) { e, _ in e.filmEdge.active = false; e.dateBack.active = true } }),
+            // The film edge alone, no date: the case the strip can show without the edge by cutting the kept
+            // develop to its picture box (`Layer2Copies.stripThumbnail`).
+            ("edgeonly", { m in edit(m) { e, f in
+                e.filmEdge.active = true
+                if e.filmEdge.cameraSeed == 0 { e.filmEdge.cameraSeed = m.settings.bodySeed }
+                e.filmEdge.turn = e.filmEdge.format.defaultTurn(pictureAspect: f.originalSize.aspect)
+                e.dateBack.active = false
+            } }),
             // The film on the frame (a negative: its paper stays), and the film edge's format.
             ("film.gold200", { m in edit(m) { e, _ in e.params.filmStock = "kodak_gold_200"; e.params.printStock = "kodak_supra_endura" } }),
             ("film.provia", { m in edit(m) { e, _ in e.params.filmStock = "fujifilm_provia_100f" } }),
@@ -379,6 +388,10 @@ enum MacDriver {
             ("hdr.peak.1", { m in page(m) { $0.change { $0.hdrPeak = 1 } } }),
             ("hdr.peak.3", { m in page(m) { $0.change { $0.hdrPeak = 3 } } }),
             ("hdr.peak.2", { m in page(m) { $0.change { $0.hdrPeak = 2 } } }),
+            // EDR 强度 (API-SPEC §26, 2026-11-25): 0 %, 50 % and back to 100 %.
+            ("edr.amount.0", { m in page(m) { $0.change { $0.params.edrAmount = 0 } } }),
+            ("edr.amount.50", { m in page(m) { $0.change { $0.params.edrAmount = 0.5 } } }),
+            ("edr.amount.100", { m in page(m) { $0.change { $0.params.edrAmount = 1 } } }),
             ("fold.enlarger", { _ in DevelopPanelPrefs.shared.enlargerCollapsed = true }),
             ("open.enlarger", { _ in DevelopPanelPrefs.shared.enlargerCollapsed = false }),
             ("enlarger.set", { m in page(m) { $0.change { $0.params.printBrightnessStops = 0.5; $0.params.yFilterShift = 0.1

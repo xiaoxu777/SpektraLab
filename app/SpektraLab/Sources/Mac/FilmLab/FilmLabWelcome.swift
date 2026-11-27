@@ -88,7 +88,7 @@ struct FilmLabWelcome: View {
             WelcomePage(art: AnyView(DevelopArt()),
                         eyebrow: L("Step 2 · Develop"),
                         title: L("Pick a film look"),
-                        text: L("Click a thumbnail to change the film. Sliders set brightness and warmth."))
+                        text: L("Choose a film you like, then adjust exposure and colour temperature from there."))
         case 3:
             WelcomePage(art: AnyView(ExportArt()),
                         eyebrow: L("Step 3 · Export"),
@@ -223,10 +223,12 @@ private struct ChooseModePage: View {
                 .font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)
             HStack(spacing: MacMetric.pt(18)) {
                 card(pro: false, symbol: "sparkles", title: L("Simple"), who: L("Quick results"),
-                     lines: [L("Change film in one click"), L("Brightness and warmth"), L("Add a little film grain"),
-                             L("Add a film border"), L("Save as JPEG in one step")])
+                     lines: [L("Quickly choose a film"), L("Brightness and warmth adjustments"), L("Add film grain"),
+                             L("Add a film border"), L("Simple export")])
+                // The Pro card's first line leads into its list, so it has no dot (the owner, 2026-11-25).
                 card(pro: true, symbol: "slider.horizontal.3", title: L("Pro"), who: L("Fine control"),
-                     lines: [L("Everything in Simple, plus:"), L("Curves for the light and dark parts"), L("Glow around highlights"),
+                     lead: L("Everything in Simple, plus:"),
+                     lines: [L("Curves for the light and dark parts"), L("Glow around highlights"),
                              L("Local edits, like the sky or a face"), L("More formats, print colour settings")])
             }
             .padding(.top, MacMetric.pt(16))
@@ -239,7 +241,7 @@ private struct ChooseModePage: View {
         .onAppear { withAnimation(.spring(duration: 0.6, bounce: 0.2)) { shown = true } }
     }
 
-    private func card(pro: Bool, symbol: String, title: String, who: String, lines: [String]) -> some View {
+    private func card(pro: Bool, symbol: String, title: String, who: String, lead: String? = nil, lines: [String]) -> some View {
         let chosen = (WelcomeCheck.on ? checkPro : ProMode.shared.on) == pro
         return Button {
             if WelcomeCheck.on { withAnimation(.smooth(duration: 0.25)) { checkPro = pro } } else { FilmLabHome.shared.setPro(pro) }
@@ -258,6 +260,10 @@ private struct ChooseModePage: View {
                     Text(who).font(MacMetric.font(12, .medium)).foregroundStyle(chosen ? Theme.accent : Theme.dim)
                 }
                 VStack(alignment: .leading, spacing: MacMetric.pt(5)) {
+                    if let lead {
+                        Text(lead).foregroundStyle(Theme.secondaryText).fixedSize(horizontal: false, vertical: true)
+                            .font(MacMetric.font(12.5))
+                    }
                     ForEach(lines, id: \.self) { line in
                         HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
                             Text("·").foregroundStyle(Theme.dim)
@@ -434,51 +440,6 @@ private struct SliderSketch: View {
                     .frame(height: g.size.height)
                 }
                 .frame(width: MacMetric.pt(170), height: 16)
-            }
-        }
-    }
-}
-
-/// 导出: the roll's pictures flying into a folder, a bar filling, a tick.
-private struct ExportArt: View {
-    private static let cycle = 3.6
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { t in
-            let p = t.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: Self.cycle) / Self.cycle
-            let done = p > 0.78
-            HStack(spacing: MacMetric.pt(40)) {
-                ZStack {
-                    ForEach(0..<4, id: \.self) { i in
-                        let start = 0.12 * Double(i), local = min(max((p - start) / 0.35, 0), 1)
-                        let look = welcomeLooks[i]
-                        SceneSketch(top: look.top, bottom: look.bottom)
-                            .frame(width: MacMetric.pt(92), height: MacMetric.pt(64))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
-                            .rotationEffect(.degrees(Double(i - 2) * 6 * (1 - local)))
-                            .offset(x: CGFloat(local) * MacMetric.pt(190) + CGFloat(i) * 4, y: -CGFloat(sin(local * .pi)) * 40 + CGFloat(i) * 4)
-                            .scaleEffect(1 - 0.55 * local)
-                            .opacity(local >= 1 ? 0 : 1)
-                    }
-                }
-                .frame(width: MacMetric.pt(120))
-                Spacer().frame(width: MacMetric.pt(30))
-                VStack(spacing: MacMetric.pt(12)) {
-                    ZStack {
-                        Image(systemName: "folder.fill").font(.system(size: MacMetric.pt(80))).foregroundStyle(Theme.accent.opacity(0.9))
-                        Image(systemName: "checkmark").font(MacMetric.font(26, .heavy)).foregroundStyle(Theme.onSelection)
-                            .offset(y: MacMetric.pt(6))
-                            .scaleEffect(done ? 1 : 0.2).opacity(done ? 1 : 0)
-                            .animation(.spring(duration: 0.4, bounce: 0.5), value: done)
-                    }
-                    .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.card).frame(width: MacMetric.pt(130), height: 6)
-                        Capsule().fill(Theme.accent).frame(width: MacMetric.pt(130) * min(p / 0.78, 1), height: 6)
-                    }
-                    Text(done ? L("\(4) saved") : "JPEG · 24 MP").font(MacMetric.font(11, .medium)).foregroundStyle(Theme.dim)
-                        .contentTransition(.opacity)
-                }
             }
         }
     }
