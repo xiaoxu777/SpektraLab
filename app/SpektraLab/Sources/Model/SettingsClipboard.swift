@@ -356,7 +356,7 @@ struct SettingsClip: Codable, Equatable, Sendable {
             // The film and its date travel; the picture's place in the gate
             // is this frame's own, as a crop is, and a frame keeps its body.
             let (framing, body) = (out.filmEdge.framing, out.filmEdge.cameraSeed)
-            out.filmEdge = s.filmEdge
+            out.filmEdge = s.filmEdge // Includes scan (nil is Natural) and its editable fog/leaks.
             // And the film lies the way *this* picture does (the owner, 2026-11-05: an upright
             // picture's film edge pasted onto a wide one came out upright). What travels is the
             // source's turn against its own picture's lie (`turn(of:from:onto:)`).
@@ -429,6 +429,8 @@ struct SettingsClip: Codable, Equatable, Sendable {
     /// (the review, 2026-11-05). With the source's shape unknown (`sourceAspect` nil), only the half
     /// turn is known to be a choice, as a format card keeps it (`FilmEdgeColumn.pick`).
     static func turn(of edge: FilmEdgeSettings, from source: Double?, onto shown: Double) -> Int {
+        // A direction picked in FilmLab is absolute; only an automatic strip follows the target's shape.
+        if let orientation = edge.orientation { return orientation.turn(keeping: edge.turn) }
         let lie = edge.format.defaultTurn(pictureAspect: shown)
         guard let source else { return lie + (edge.turn >= 2 ? 2 : 0) }
         let chosen = ((edge.turn - edge.format.defaultTurn(pictureAspect: source)) % 4 + 4) % 4

@@ -298,7 +298,7 @@ enum HistoryFields {
         f("edit.filmEdge.active", .filmEdge, { $0.edit.filmEdge.active }) { r in HistoryLabel("Film Edge", valueKey: on(r.edit.filmEdge.active)) },
         f(["edit.filmEdge.cameraSeed", "edit.filmEdge.edgeBrightness", "edit.filmEdge.fog", "edit.filmEdge.format", "edit.filmEdge.frameNumber",
            "edit.filmEdge.gate", "edit.filmEdge.holes", "edit.filmEdge.leaks", "edit.filmEdge.mode", "edit.filmEdge.turn",
-           "edit.filmEdge.framing", "edit.filmEdge.perforation"], .filmEdge, edgeShape) { _ in
+           "edit.filmEdge.framing", "edit.filmEdge.perforation", "edit.filmEdge.orientation", "edit.filmEdge.scan"], .filmEdge, edgeShape) { _ in
             HistoryLabel("Film Edge")
         },
         f("edit.frameSeed", .filmEdge, { $0.edit.frameSeed }) { _ in HistoryLabel("Another frame") },

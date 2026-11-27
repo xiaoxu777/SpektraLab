@@ -9,6 +9,7 @@ enum SettingsPage: Hashable {
     case sources, storage, newFrames, previewSize, recipe, credits, workingLimit, previewLimit, diagnostics, language
     /// the mode, the background and the interface scale (AppearancePage.swift).
     case appearance
+    case shortcuts, agents
     /// One recipe's page; nil makes a new one.
     case recipeEdit(ExportRecipe.ID?)
     /// 水印's library (the Mac's Settings › Watermarks; the 图层 panel's 管理水印… asks for it).

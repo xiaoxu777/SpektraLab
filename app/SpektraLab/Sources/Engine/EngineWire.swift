@@ -202,6 +202,13 @@ extension FrameEdit {
         var edge = filmEdge
         if edge.cameraSeed == 0 { edge.cameraSeed = film.bodySeed }
         for field in edge.wire(edgeText: film.edgeText, frameSeed: frameSeed, fNumber: film.fNumber) { wire[field.name] = field.value }
+        if edge.effective, edge.view == .strip {
+            wire["overscan_carrier"] = .string(edge.scanCarrier)
+        }
+        // scanner_lens_blur is intentionally not sent yet. previewLongEdge is the decode's
+        // requested size, not the actual post-cut, overscanned render (and nil at Full). Scaling
+        // by it would soften the preview and export differently. The finish below the engine
+        // uses the actual output size; blur awaits an exact render-size input to this wire.
         for field in dateBack.wire(text: film.dateText, filmEdge: filmEdge, dataText: film.dataText) { wire[field.name] = field.value }
         // PRD-D (`LensEdge.swift`): the frame's leak, with the overscan seeds it reads when the film edge is off, and
         // the lens in front of it. A frame's own develop only (`film` given): never a stock card's or a meter's.

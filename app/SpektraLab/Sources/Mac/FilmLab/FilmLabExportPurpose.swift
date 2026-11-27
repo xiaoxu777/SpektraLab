@@ -104,8 +104,11 @@ struct FilmLabExportPurpose: Identifiable, Equatable {
         }
     }
 
-    /// "JPEG · sRGB · 长边 2560 · 画质 90": the card's one grey line.
-    @MainActor var specs: String { FilmLabExportRecipe.specs(recipe) }
+    /// "JPEG · 约 2.4 MB": the card and pinned foot share the button's export selection and estimate.
+    @MainActor func specs(frameIDs: [LibraryFrame.ID], model: AppServices) -> String {
+        FilmLabExportSizeEstimate.summary(recipe, frameIDs: frameIDs, model: model,
+                                        borderFits: FilmLabExportPurposeUI.shared.border ? fits : nil)
+    }
 
     /// Which way a picture of shape `aspect` is outside what the place shows: nil where it is shown whole.
     func cropped(_ aspect: Double) -> Cropped? {
@@ -131,6 +134,8 @@ final class FilmLabExportPurposeUI {
     /// A check's launch that makes the choices itself keeps none of them.
     private static let checking = CommandLine.arguments.contains("--filmlab-export-border")
         || CommandLine.arguments.contains("--filmlab-export-walk")
+        || CommandLine.arguments.contains("--filmlab-export-preview-toggle")
+        || CommandLine.arguments.contains("--filmlab-export-choose-walk")
     private static let asked = FilmLabCheckArgs.value("--filmlab-export-purpose").flatMap(FilmLabExportPurpose.Kind.init(rawValue:))
 
     var kind: FilmLabExportPurpose.Kind = FilmLabExportPurposeUI.asked
@@ -151,6 +156,28 @@ final class FilmLabExportPurposeUI {
 
     var purpose: FilmLabExportPurpose { FilmLabExportPurpose(kind: kind) }
 
+    /// Capture the matched move without clicks. Keep the two-second gaps in slow mode too: a 4× move takes 1.4 s.
+    /// Like export-walk, this check never persists its purpose/border choices.
+    @ObservationIgnored private var previewToggled = false
+    func previewToggleIfAsked() {
+        guard !previewToggled,
+              let wait = FilmLabCheckArgs.value("--filmlab-export-preview-toggle").flatMap(Double.init),
+              wait.isFinite, wait >= 0 else { return }
+        previewToggled = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(wait))
+            if !self.purpose.isSocial { self.kind = .moments }
+            self.previewing = true
+            try? await Task.sleep(for: .seconds(2))
+            self.previewing = false
+            try? await Task.sleep(for: .seconds(2))
+            self.kind = .instagram
+            self.previewing = true
+            try? await Task.sleep(for: .seconds(2))
+            self.second.toggle()
+        }
+    }
+
     /// A check's launch only (`--filmlab-export-walk SECONDS`, for `--capture-window`): the choices made one after
     /// another with that long between them, as clicks would make them, so each state can be captured while the app
     /// runs: Instagram, its preview, the second view, the dark feed, 小红书, the white border, the photo back, 保存到电脑.
@@ -166,6 +193,42 @@ final class FilmLabExportPurposeUI {
             for act in steps {
                 try? await Task.sleep(for: .seconds(step))
                 withAnimation(.easeOut(duration: 0.2)) { act() }
+            }
+        }
+    }
+
+    /// Preview-only selection walk. The view owns/cancels the task when the preview closes. No frame is opened,
+    /// rendered or exported here. Reuse the launch check's existing frame-adoption entry point when necessary;
+    /// no image loader or rendering path is introduced for the walk.
+    func chooseWalkIfAsked(model: AppServices) async {
+        guard let seconds = FilmLabCheckArgs.value("--filmlab-export-choose-walk").flatMap(Double.init),
+              seconds.isFinite, seconds > 0 else { return }
+        let counts = [2, 3, 4, 1, 4]
+        let platforms: [FilmLabExportPurpose.Kind] = [.instagram, .weibo, .xiaohongshu, .moments]
+        var step = 0
+        var platform = 0
+        while !Task.isCancelled {
+            do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+            guard previewing, FilmLabFinish.shared.page == .export, purpose.isSocial else { continue }
+            guard !model.exporter.isExporting else { continue }
+            let store = MacLibraryUI.store(model)
+            let rows = Array(FilmLabRollFilterState.shared.apply(store.images, library: model.library).prefix(4))
+            guard !rows.isEmpty else { continue }
+            if step == counts.count {
+                kind = platforms[platform % platforms.count]
+                platform += 1
+                step = 0
+            } else {
+                let chosen = Array(rows.prefix(counts[step]))
+                let source = store.selectedSourceID, collection = store.selectedCollectionID
+                if chosen.contains(where: { $0.develop?.frameID == nil }) {
+                    guard (try? await store.frames(for: chosen.map(\.id), focus: nil)) != nil else { continue }
+                }
+                guard !Task.isCancelled, previewing, FilmLabFinish.shared.page == .export,
+                      !model.exporter.isExporting, source == store.selectedSourceID,
+                      collection == store.selectedCollectionID else { continue }
+                MacLibraryBrowser.shared.selection = Set(chosen.map(\.id))
+                step += 1
             }
         }
     }
@@ -252,7 +315,7 @@ struct FilmLabExportPurposeCards: View {
                                 Text(tag).font(Theme.Font.ui(12, .medium)).foregroundStyle(on ? Theme.accent : Theme.secondaryText).lineLimit(1)
                             }
                         }
-                        Text(p.specs).font(Theme.Font.ui(11)).monospacedDigit().foregroundStyle(Theme.dim)
+                        Text(p.specs(frameIDs: frameIDs, model: model)).font(Theme.Font.ui(11)).monospacedDigit().foregroundStyle(Theme.dim)
                             .lineLimit(1).minimumScaleFactor(0.85)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -288,7 +351,7 @@ struct FilmLabExportPurposeCards: View {
                     .accessibilityIdentifier("filmlab.export.purpose.border")
             }
             Button {
-                withAnimation(.easeOut(duration: 0.2)) { ui.previewing.toggle() }
+                ui.previewing.toggle() // the preview owns the move and retains the phone through its return
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: ui.previewing ? "photo" : "iphone").font(Theme.Font.ui(13, .medium))

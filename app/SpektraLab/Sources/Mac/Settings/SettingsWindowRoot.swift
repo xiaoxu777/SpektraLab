@@ -1,32 +1,10 @@
-//  SettingsWindowRoot.swift — the Mac's Settings: a page over the whole window, as Import and Export are.
-//
-//  The owner, 2026-10-24: "The current settings menu is still the window code, and we need to bring the
-//  v1.3.3 type of information density back (it does not mean it has to look the same as v1.3.3), and we
-//  do a full redo on the settings, most ideally a separate page just like import / export."
-//
-//  - **Every way in is this page.** `CoverRoute.settings` shows it on the Mac (`CoverContent`): ⌘,
-//    (`AppMenuCommands`), the Mac library's "+" › Settings and › Sources (`MacLibrarySidebar`), Develop's
-//    actions menu, a disk banner's Sources. `SettingsRequest` names the window page asked for; it opens the
-//    section that holds it. The window's and the reference device's Settings (`SettingsScreen`) are as they were.
-//  - **A preferences window's shape, in v2's language**: the title bar (Done at its trailing edge, and
-//    Escape), the sections in a column at the left (the import page's column, the library sidebar's
-//    rows and its white selection), the chosen section's groups at the right, every setting of it on
-//    one page at macOS sizes — no drill-down pages, no 44-pt rows. The one page a row opens is General's
-//    *Supporters* (`MacSettingsSupporters`), which holds no setting: it takes General's place, under a
-//    way back.
-//  - **Eight sections**, from what the settings are: General (language, about and licences),
-//    Appearance (the mode, the background, the interface scale: AppearancePage.swift, 2026-10-24), Develop (what new frames develop with, the preview size, lens correction, the film edge's body),
-//    Export (the recipes, edited in place), Watermarks (水印's library, 2.4.1: `MacSettingsWatermarks`), Sources (the Mac library's catalogs, sessions and folders),
-//    Storage (what the app keeps, the three budgets and their usage), Diagnostics (the log, what it
-//    holds, this build).
-//  - **What the Mac leaves out of the window's Settings** is `MacSettingsCoverage`'s table, each with its
-//    reason; `--settings-check` reads the window's Settings sources and fails on an item the table does
-//    not account for.
-
+// Settings is a cover over the existing window. Ordinary choices stay on the first seven pages;
+// maintenance lives under one disclosure. Page requests open that disclosure without persisting it.
 import SwiftUI
 
 enum MacSettingsSection: String, CaseIterable, Hashable {
-    case general, appearance, develop, export, watermarks, sources, storage, diagnostics
+    case general, appearance, develop, export, watermarks, shortcuts, about
+    case engine, sources, storage, diagnostics, agents, supporters
 
     var title: String {
         switch self {
@@ -35,9 +13,14 @@ enum MacSettingsSection: String, CaseIterable, Hashable {
         case .develop: L("Develop")
         case .export: L("Export")
         case .watermarks: L("Watermarks")
+        case .shortcuts: L("Shortcuts")
+        case .about: L("About")
+        case .engine: L("Develop engine")
         case .sources: L("Sources")
         case .storage: L("Storage")
         case .diagnostics: L("Diagnostics")
+        case .agents: L("Agents")
+        case .supporters: L("Supporters")
         }
     }
 
@@ -48,23 +31,40 @@ enum MacSettingsSection: String, CaseIterable, Hashable {
         case .develop: "camera.filters"
         case .export: "square.and.arrow.up"
         case .watermarks: "signature"
+        case .shortcuts: "keyboard"
+        case .about: "info.circle"
+        case .engine: "slider.horizontal.3"
         case .sources: "books.vertical"
         case .storage: "internaldrive"
         case .diagnostics: "stethoscope"
+        case .agents: "terminal"
+        case .supporters: "heart"
         }
     }
 
-    /// The section that holds a window page a way in asked for (`SettingsRequest`).
+    var advanced: Bool {
+        switch self {
+        case .engine, .sources, .storage, .diagnostics, .agents, .supporters: true
+        default: false
+        }
+    }
+    var available: Bool { self != .agents || ProMode.shared.on }
+    static var visible: [Self] { allCases.filter(\.available) }
+
     init(_ page: SettingsPage?) {
         switch page {
         case .sources?: self = .sources
         case .storage?, .workingLimit?, .previewLimit?: self = .storage
-        case .newFrames?, .previewSize?: self = .develop
+        case .newFrames?: self = .develop
+        case .previewSize?: self = .engine
         case .recipe?, .recipeEdit?: self = .export
         case .watermarks?: self = .watermarks
         case .diagnostics?: self = .diagnostics
         case .appearance?: self = .appearance
-        case .language?, .credits?, nil: self = .general
+        case .credits?: self = .about
+        case .shortcuts?: self = .shortcuts
+        case .agents?: self = .agents
+        case .language?, nil: self = .general
         }
     }
 }
@@ -72,169 +72,187 @@ enum MacSettingsSection: String, CaseIterable, Hashable {
 struct SettingsWindowRoot: View {
     @Environment(AppRouter.self) private var router
     @State private var section: MacSettingsSection
-    /// General › About › Supporters is shown in the General section's place.
-    @State private var supporters: Bool
+    @State private var advanced: Bool
 
     init() {
-        _section = State(initialValue: MacSettingsSection(SettingsRequest.take()))
-        var supporters = false
-        #if DEBUG
-        supporters = Self.supportersAsked
+        let request = MacSettingsSection(SettingsRequest.take())
+        let asked: MacSettingsSection = Self.supportersAsked ? .supporters : request
         Self.supportersAsked = false
-        #endif
-        _supporters = State(initialValue: supporters)
+        let shown: MacSettingsSection = asked.available ? asked : .general
+        _section = State(initialValue: shown)
+        _advanced = State(initialValue: shown.advanced)
     }
 
     #if DEBUG
-    /// `MacDriver`'s way to a section, or to Supporters, while the page is up (`userInfo`: "section", a
-    /// section's raw value, and "supporters", a Bool).
     static let drive = Notification.Name("com.spektralab.mac.settings.drive")
-    /// Supporters asked for before the page is up: the page opens on it.
-    static var supportersAsked = false
     #endif
+    /// Kept for the existing debug driver and the Release screenshot argument. Consumed once.
+    static var supportersAsked = false
 
     var body: some View {
         VStack(spacing: 0) {
             titleBar
-            Rectangle().fill(Theme.wall).frame(height: 1)
+            MacSettingsHairline()
             HStack(spacing: 0) {
-                sidebar
-                    .frame(width: MacMetric.pt(MacSettingsMetric.sidebar))
-                    .background(Theme.background)
+                sidebar.frame(width: MacMetric.pt(MacSettingsMetric.sidebar))
                 Rectangle().fill(Theme.wall).frame(width: 1)
                 content
             }
         }
-        .background(Theme.panel.ignoresSafeArea())
+        .background(Theme.background.ignoresSafeArea())
         .appColorScheme()
         .macPageActions(confirm: { router.dismissCover() }, cancel: { router.dismissCover() })
-        .onAppear {
-            #if DEBUG
-            MacSettingsCheck.attach(section: section) { section = $0 }
-            #endif
-        }
-        .onChange(of: section) { _, now in
-            #if DEBUG
-            MacSettingsCheck.attach(section: now) { section = $0 }
-            #endif
+        .onAppear { attachCheck() }
+        .onChange(of: section) { _, _ in attachCheck() }
+        .onChange(of: ProMode.shared.on) { _, _ in
+            if !section.available { choose(.general) }
         }
         .onDisappear {
             #if DEBUG
             MacSettingsCheck.detach()
             #endif
         }
-        .macSettingsDriven { asked, shows in
-            section = asked
-            supporters = shows
-        }
+        .macSettingsDriven { asked, supporters in choose(supporters ? .supporters : asked) }
     }
 
-    // MARK: the bars
+    private func choose(_ asked: MacSettingsSection) {
+        section = asked.available ? asked : .general
+        if section.advanced { advanced = true }
+    }
+
+    private func attachCheck() {
+        #if DEBUG
+        MacSettingsCheck.attach(section: section) { choose($0) }
+        #endif
+    }
 
     private var titleBar: some View {
-        ZStack {
-            Text(L("Settings")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                .accessibilityAddTraits(.isHeader)
-                .macSettingsItem("Settings")
-            HStack {
-                Spacer(minLength: 0)
-                Button(L("Done")) { router.dismissCover() }
-                    .buttonStyle(MacSettingsButtonStyle(kind: .primary))
-                    .accessibilityIdentifier("mac.settings.done")
-                    .macSettingsItem("Done")
-            }
-            .padding(.horizontal, MacMetric.pt(10))
+        HStack {
+            Text(L("Settings")).font(MacMetric.font(16, .semibold))
+                .accessibilityAddTraits(.isHeader).macSettingsItem("Settings")
+            Spacer()
+            Button(L("Done")) { router.dismissCover() }
+                .buttonStyle(MacSettingsButtonStyle(kind: .primary))
+                .accessibilityIdentifier("mac.settings.done").macSettingsItem("Done")
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: MacMetric.pt(MacMetric.gridHeader))
+        .foregroundStyle(Theme.text)
+        .padding(.horizontal, MacMetric.pt(20))
+        .frame(height: MacMetric.pt(54))
         .background(Theme.chrome)
     }
 
     private var sidebar: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-                ForEach(MacSettingsSection.allCases, id: \.self) { s in
-                    let on = s == section
-                    Button { section = s; supporters = false } label: {
-                        HStack(spacing: MacMetric.pt(6)) {
-                            // Design A: the chosen line raised on the card with an amber glyph, as 图库's sidebar.
-                            Image(systemName: s.symbol).font(MacMetric.font(13))
-                                .foregroundStyle(on ? Theme.accent : Theme.dim)
-                                .frame(width: MacMetric.pt(18))
-                            Text(s.title).font(MacMetric.font(13, on ? .semibold : .regular))
-                                .foregroundStyle(on ? Theme.text : Theme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, MacMetric.pt(8))
-                        .frame(minHeight: MacMetric.pt(28))
-                        .background {
-                            if on { RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous).fill(Theme.card) }
-                        }
-                        .contentShape(Rectangle())
+                ForEach(MacSettingsSection.visible.filter { !$0.advanced }, id: \.self) { sidebarRow($0) }
+                Rectangle().fill(Theme.wall).frame(height: 1).padding(.vertical, MacMetric.pt(6))
+                Button {
+                    advanced.toggle()
+                    if !advanced && section.advanced { choose(.general) }
+                } label: {
+                    HStack(spacing: MacMetric.pt(10)) {
+                        Image(systemName: "slider.horizontal.3").frame(width: MacMetric.pt(18))
+                        Text(L("Advanced", as: "settings"))
+                        Spacer(minLength: 0)
+                        Image(systemName: advanced ? "chevron.down" : "chevron.right").font(MacMetric.font(10, .semibold))
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                    .accessibilityIdentifier("mac.settings.section.\(s.rawValue)")
+                    .font(MacMetric.font(14, .medium)).foregroundStyle(Theme.secondaryText)
+                    .padding(.horizontal, MacMetric.pt(12)).frame(minHeight: MacMetric.pt(36))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityValue(advanced ? L("On") : L("Off"))
+                .accessibilityIdentifier("mac.settings.advanced")
+                if advanced {
+                    ForEach(MacSettingsSection.visible.filter(\.advanced), id: \.self) { sidebarRow($0) }
                 }
             }
-            .padding(.horizontal, MacMetric.pt(6))
+            .padding(.horizontal, MacMetric.pt(10))
             .padding(.vertical, MacMetric.pt(8))
         }
         .scrollIndicators(.automatic)
+        .background(Theme.chrome.opacity(0.45))
+    }
+
+    private func sidebarRow(_ s: MacSettingsSection) -> some View {
+        Button { choose(s) } label: {
+            HStack(spacing: MacMetric.pt(10)) {
+                if !s.advanced {
+                    Image(systemName: s.symbol).frame(width: MacMetric.pt(18))
+                        .foregroundStyle(s == section ? Theme.accent : Theme.dim)
+                }
+                Text(s.title).foregroundStyle(s == section ? Theme.text : Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .font(MacMetric.font(s.advanced ? 13 : 14, s == section ? .semibold : .regular))
+            .padding(.leading, MacMetric.pt(s.advanced ? 40 : 12))
+            .padding(.trailing, MacMetric.pt(12))
+            .frame(minHeight: MacMetric.pt(s.advanced ? 30 : 36))
+            .background(s == section ? Theme.card : .clear, in: RoundedRectangle(cornerRadius: MacMetric.pt(8)))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(s == section ? .isSelected : [])
+        .accessibilityIdentifier("mac.settings.section.\(s.rawValue)")
     }
 
     private var content: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
-                // Appearance draws its own large title (ChatGPT's page, AppearancePage.swift).
-                if section == .general && supporters {
-                    supportersTitle
-                } else if section != .appearance {
-                    Text(section.title).font(MacMetric.font(17, .semibold)).foregroundStyle(Theme.text)
-                        .accessibilityAddTraits(.isHeader)
-                }
+            VStack(alignment: .leading, spacing: MacMetric.pt(MacSettingsMetric.gap)) {
+                Text(section.title).font(MacMetric.font(24, .semibold)).foregroundStyle(Theme.text)
+                    .accessibilityAddTraits(.isHeader)
                 switch section {
-                case .general where supporters: MacSettingsSupporters()
-                case .general: MacSettingsGeneral(openSupporters: { supporters = true })
+                case .general: MacSettingsGeneral()
                 case .appearance: AppearanceSettings(style: .mac)
                 case .develop: MacSettingsDevelop()
                 case .export: MacSettingsRecipes()
-        case .watermarks: MacSettingsWatermarks()
+                case .watermarks: MacSettingsWatermarks()
+                case .shortcuts: FilmLabSettingsShortcuts()
+                case .about: FilmLabSettingsAbout()
+                case .engine: MacSettingsDevelop(engineOnly: true)
                 case .sources: MacSettingsSources(close: { router.dismissCover() })
                 case .storage: MacSettingsStorage()
                 case .diagnostics: MacSettingsDiagnostics()
+                case .agents: FilmLabSettingsAgents()
+                case .supporters: MacSettingsSupporters()
                 }
             }
-            .padding(.horizontal, MacMetric.pt(20))
-            .padding(.top, MacMetric.pt(16))
-            .padding(.bottom, MacMetric.pt(28))
             .frame(maxWidth: MacMetric.pt(MacSettingsMetric.readable), alignment: .leading)
-            .frame(maxWidth: .infinity)
-            .id(supporters && section == .general ? "supporters" : section.rawValue)
+            .padding(.horizontal, MacMetric.pt(28))
+            .padding(.vertical, MacMetric.pt(28))
+            .frame(maxWidth: .infinity, alignment: .top)
+            .id(section)
         }
         .scrollIndicators(.automatic)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background)
     }
+}
 
-    /// Supporters' title, under the way back to General.
-    private var supportersTitle: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
-            Button { supporters = false } label: {
-                HStack(spacing: MacMetric.pt(3)) {
-                    Image(systemName: "chevron.left").font(MacMetric.font(11, .semibold))
-                    Text(MacSettingsSection.general.title).font(MacMetric.font(12))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .foregroundStyle(Theme.secondaryText)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("mac.settings.supporters.back")
-            Text(L("Supporters")).font(MacMetric.font(17, .semibold)).foregroundStyle(Theme.text)
-                .accessibilityAddTraits(.isHeader)
+/// Screenshot routing only: no preference or fixture is written, in Debug or Release.
+@MainActor
+enum FilmLabSettingsCheck {
+    static func openIfAsked(router: AppRouter, arguments: [String] = CommandLine.arguments) {
+        guard let i = arguments.firstIndex(of: "--filmlab-settings"), i + 1 < arguments.count else { return }
+        let page: SettingsPage
+        switch arguments[i + 1] {
+        case "general": page = .language
+        case "appearance": page = .appearance
+        case "develop": page = .newFrames
+        case "export": page = .recipe
+        case "watermarks": page = .watermarks
+        case "sources": page = .sources
+        case "storage": page = .storage
+        case "diagnostics": page = .diagnostics
+        case "supporters", "about": page = .credits
+        case "shortcuts": page = .shortcuts
+        case "engine": page = .previewSize
+        case "agents": page = .agents
+        default: return
         }
+        SettingsRequest.next = page
+        SettingsWindowRoot.supportersAsked = arguments[i + 1] == "supporters"
+        router.show(.settings)
     }
 }
 

@@ -1,17 +1,4 @@
-//  MacSettingsRecipes.swift — Settings › Export on the Mac: the recipes, and the chosen one edited in place.
-//
-//  The window's *Recipes* page and its recipe pages (`RecipePages.swift`) as one section:
-//  - **The list**: every saved recipe, what it makes under its name; the one Export opens with ticked at
-//    its leading edge (a click on the tick chooses it, as a tap on the window's row does); a click on the
-//    row shows that recipe in the group under the list.
-//  - **The recipe**: its name (empty names it for what it makes), and the Export page's own choices —
-//    Format, Size (Full, 12 MP, or a long or short edge typed in pixels, never under 16), Colour,
-//    Quality, Naming (the file's name, issue #111), Save to. Each change is kept as it is made
-//    (`ExportRecipeStore.update`), and Export follows it when the recipe is the one it opens with (the window page's `follow`).
-//  - **New Recipe** saves what Export would open with now as a recipe of its own and shows it (the window
-//    makes a draft first and saves it with *Add Recipe*; a Mac list adds the row at once). **Delete
-//    Recipe…** asks first; the last recipe stays.
-
+// Export defaults. Simple uses only naming and destination; Pro edits stored recipes in place.
 import SwiftUI
 
 struct MacSettingsRecipes: View {
@@ -28,9 +15,13 @@ struct MacSettingsRecipes: View {
     private var current: ExportRecipe? { (shown.flatMap { recipes.recipe($0) }) ?? ticked ?? recipes.recipes.first }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
-            list
-            if let recipe = current { editor(recipe) }
+        VStack(alignment: .leading, spacing: MacMetric.pt(MacSettingsMetric.gap)) {
+            if ProMode.shared.on {
+                list
+                if let recipe = current { editor(recipe) }
+            } else {
+                MacSettingsGroup(title: nil, footer: recipes.problem) { fileRows(sharedDefaults) }
+            }
         }
         .onAppear { load(current) }
         .onChange(of: current?.id) { _, _ in load(current) }
@@ -45,8 +36,7 @@ struct MacSettingsRecipes: View {
     // MARK: the list
 
     private var list: some View {
-        MacSettingsGroup(title: L("Recipes"),
-                         footer: L("The ticked recipe is what Export opens with. Choose a recipe to change it, rename it or delete it.")) {
+        MacSettingsGroup(title: L("Recipes")) {
             ForEach(Array(recipes.recipes.enumerated()), id: \.element.id) { i, recipe in
                 row(recipe, last: i == recipes.recipes.count - 1)
             }
@@ -66,39 +56,42 @@ struct MacSettingsRecipes: View {
 
     private func row(_ recipe: ExportRecipe, last: Bool) -> some View {
         let isTicked = recipe.id == ticked?.id
-        let isShown = recipe.id == current?.id
-        return HStack(spacing: MacMetric.pt(8)) {
-            Button {
-                settings.recipe = recipe
-            } label: {
-                Image(systemName: isTicked ? "largecircle.fill.circle" : "circle")
-                    .font(MacMetric.font(14)).foregroundStyle(isTicked ? (isShown ? Theme.onSelection : Theme.accent) : Theme.dim)
-                    .frame(width: MacMetric.pt(20), height: MacMetric.pt(20))
-                    .contentShape(Rectangle())
+        let selected = recipe.id == current?.id
+        return MacSettingsRow(label: recipe.name, detail: RecipeWords.makes(recipe), last: last) {
+            if isTicked {
+                Text(L("Default", as: "recipe")).font(MacMetric.font(12, .medium)).foregroundStyle(Theme.accent)
+            } else if selected {
+                Button(L("Set as default")) { settings.recipe = recipe }
+                    .buttonStyle(MacSettingsButtonStyle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(recipe.name)
-            .accessibilityHint(L("What Export opens with"))
-            .accessibilityAddTraits(isTicked ? .isSelected : [])
-            HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(8)) {
-                Text(recipe.name).font(MacMetric.font(13, .medium)).foregroundStyle(isShown ? Theme.onSelection : Theme.text)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: MacMetric.pt(8))
-                Text(RecipeWords.makes(recipe)).font(MacMetric.font(11)).foregroundStyle(isShown ? Theme.onSelection.opacity(0.7) : Theme.dim)
-                    .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { shown = recipe.id }
         }
-        .padding(.horizontal, MacMetric.pt(8))
-        .frame(minHeight: MacMetric.pt(26))
         .background {
-            if isShown { RoundedRectangle(cornerRadius: MacMetric.pt(5), style: .continuous).fill(Theme.selection) }
+            RoundedRectangle(cornerRadius: MacMetric.pt(8))
+                .fill(selected ? Theme.card.opacity(0.45) : .clear)
+                .padding(.horizontal, MacMetric.pt(4))
+                .padding(.vertical, MacMetric.pt(2))
         }
-        .padding(.horizontal, MacMetric.pt(4))
-        .padding(.vertical, MacMetric.pt(1))
+        .contentShape(Rectangle()).onTapGesture { shown = recipe.id }
+        .focusable()
+        .onKeyPress(.space) { shown = recipe.id; return .handled }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { shown = recipe.id }
         .accessibilityIdentifier("mac.settings.recipe")
+    }
+
+    /// Read the latest default at each write, changing only the two fields Simple actually uses.
+    /// Update a stored recipe only if it matched before the edit; a custom export must not overwrite it by id.
+    private var sharedDefaults: Binding<ExportRecipe> {
+        Binding(get: { settings.recipe }, set: { edited in
+            let before = settings.recipe
+            let saved = recipes.saved(as: before)
+            var next = before
+            next.naming = edited.naming
+            next.destination = edited.destination
+            if let saved { recipes.update(saved.id, with: next) }
+            settings.recipe = next
+        })
     }
 
     // MARK: the recipe
@@ -106,7 +99,7 @@ struct MacSettingsRecipes: View {
     private func editor(_ recipe: ExportRecipe) -> some View {
         let draft = Binding<ExportRecipe>(get: { recipes.recipe(recipe.id) ?? recipe }, set: { change(recipe.id, $0) })
         return MacSettingsGroup(title: recipe.name, footer: recipes.problem, capitals: false) {
-            MacSettingsRow(label: L("Name"), caption: L("Left empty, the recipe is named for what it makes.")) {
+            MacSettingsRow(label: L("Name")) {
                 MacSettingsField(placeholder: recipe.builtName, text: $name, width: 220) { commitName(recipe.id) }
                     .accessibilityLabel(L("Recipe name"))
             }
@@ -133,16 +126,24 @@ struct MacSettingsRecipes: View {
                 }
             }
             .macSettingsItem("Quality")
-            MacSettingsRow(label: L("Naming"), caption: L("For example: \(draft.wrappedValue.fileName(Self.sampleContext))")) {
-                naming(draft)
-            }
-            .macSettingsItem("Naming")
-            MacSettingsRow(label: L("Save to"), last: true) {
-                MacSettingsPopUp(label: L("Save to"), options: ExportRecipe.Destination.allCases.map { ($0, $0.shownTitle) },
-                                 selection: draft.destination)
-            }
-            .macSettingsItem("Save to")
+            fileRows(draft)
         }
+    }
+
+    @ViewBuilder private func fileRows(_ draft: Binding<ExportRecipe>) -> some View {
+        MacSettingsRow(label: L("File naming"), detail: L("For example: \(draft.wrappedValue.fileName(Self.sampleContext))")) {
+            naming(draft)
+        }
+        .macSettingsItem("Naming")
+        MacSettingsRow(label: L("Separator")) {
+            MacSettingsSegments(label: L("Separator"), options: ExportRecipe.Naming.separators.map { ($0, $0 == " " ? L("Space") : $0) },
+                                selection: draft.naming.separator)
+        }
+        MacSettingsRow(label: L("Save to"), last: true) {
+            MacSettingsSegments(label: L("Save to"), options: ExportRecipe.Destination.allCases.map { ($0, $0.shownTitle) },
+                                selection: draft.destination)
+        }
+        .macSettingsItem("Save to")
     }
 
     /// The name the Naming row's example is made from: 1.x's model frame.
@@ -156,19 +157,17 @@ struct MacSettingsRecipes: View {
             ForEach(draft.wrappedValue.naming.order) { t in
                 let on = draft.wrappedValue.naming.isOn(t)
                 Button { draft.wrappedValue.naming.toggle(t) } label: {
-                    Text(t.title).font(MacMetric.font(11.5, on ? .semibold : .medium))
+                    Text(t.title).font(MacMetric.font(13, on ? .semibold : .medium))
                         .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
                         .padding(.horizontal, MacMetric.pt(8))
-                        .frame(height: MacMetric.pt(20))
-                        .background(Capsule().fill(on ? Theme.selection : Theme.field))
+                        .frame(minHeight: MacMetric.pt(MacSettingsMetric.control))
+                        .background(Capsule().fill(on ? Theme.accent : Theme.field))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .fixedSize()
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
-            MacSettingsPopUp(label: L("Separator"), options: ExportRecipe.Naming.separators.map { ($0, $0 == " " ? L("Space") : $0) },
-                             selection: draft.naming.separator)
         }
     }
 
@@ -235,8 +234,9 @@ struct MacSettingsRecipes: View {
     }
 
     private func change(_ id: ExportRecipe.ID, _ now: ExportRecipe) {
+        let follows = ticked?.id == id
         recipes.update(id, with: now)
-        follow(id)
+        if follows, let saved = recipes.recipe(id) { settings.recipe = saved }
     }
 
     private func commitName(_ id: ExportRecipe.ID) {
@@ -248,7 +248,7 @@ struct MacSettingsRecipes: View {
 
     /// Export opens with this recipe: it opens with it as it is now.
     private func follow(_ id: ExportRecipe.ID) {
-        guard settings.recipe.id == id, let now = recipes.recipe(id), now != settings.recipe else { return }
+        guard ticked?.id == id, let now = recipes.recipe(id), now != settings.recipe else { return }
         settings.recipe = now
     }
 
@@ -261,8 +261,10 @@ struct MacSettingsRecipes: View {
     }
 
     private func delete() {
-        guard let id = current?.id, recipes.remove(id) else { return }
-        if settings.recipe.id == id, let first = recipes.recipes.first { settings.recipe = first }
+        guard let id = current?.id else { return }
+        let wasDefault = ticked?.id == id
+        guard recipes.remove(id) else { return }
+        if wasDefault, let first = recipes.recipes.first { settings.recipe = first }
         shown = nil
     }
 }

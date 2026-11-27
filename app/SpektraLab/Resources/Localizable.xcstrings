@@ -1,6 +1,574 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Custom colour": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "カスタムカラー" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自定颜色" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自訂顏色" } }
+      }
+    },
+    "Switch Simple / Pro": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "通常 / Pro を切り替え" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "切换普通 / 专业" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "切換普通 / 專業" } }
+      }
+    },
+    "Adobe lens profiles": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "Adobe レンズプロファイル" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Adobe 镜头配置文件" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "Adobe 鏡頭描述檔" } }
+      }
+    },
+    "Advanced {settings}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "詳細設定" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "高级" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "進階" } }
+      }
+    },
+    "Black-and-white film needs black-and-white paper.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "白黒フィルムには白黒印画紙を使います。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "黑白胶片需用黑白相纸。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "黑白底片需用黑白相紙。" } }
+      }
+    },
+    "Clear rating": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "評価を解除" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "取消评级" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "取消評級" } }
+      }
+    },
+    "Copy to photo location": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "写真の保存先にコピー" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "拷贝到照片位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "拷貝到照片位置" } }
+      }
+    },
+    "Default EDR": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "標準の EDR" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "默认 EDR" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "預設 EDR" } }
+      }
+    },
+    "Default HDR": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "標準の HDR" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "默认 HDR" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "預設 HDR" } }
+      }
+    },
+    "Default {recipe}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "標準" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "默认" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "預設" } }
+      }
+    },
+    "Develop engine": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "現像エンジン" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "冲洗引擎" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "沖洗引擎" } }
+      }
+    },
+    "Edition": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "エディション" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "版本" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "版本" } }
+      }
+    },
+    "Extend selection": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "選択範囲を拡大" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "扩展选择" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "擴展選取" } }
+      }
+    },
+    "File naming": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイル名" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件命名" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "檔案命名" } }
+      }
+    },
+    "Hold {space bar}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "押している間" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按住" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "按住" } }
+      }
+    },
+    "Leave in place": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "元の場所に残す" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "留在原处" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "留在原處" } }
+      }
+    },
+    "LibRaw is not included in this build.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "このビルドに LibRaw は含まれません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此版本不含 LibRaw。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "此版本不含 LibRaw。" } }
+      }
+    },
+    "Move selection": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "選択を移動" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "移动选择" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "移動選取" } }
+      }
+    },
+    "No log available.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "ログはありません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂无日志。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "暫無日誌。" } }
+      }
+    },
+    "On import": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "読み込み時" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "导入时" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "匯入時" } }
+      }
+    },
+    "Photo location": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "写真の保存先" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "照片位置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "照片位置" } }
+      }
+    },
+    "Photos {settings}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "写真" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "照片" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "照片" } }
+      }
+    },
+    "Pro adds grading and local edits.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "Pro ではカラーグレーディングと部分編集が使えます。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "专业版增加二级调色和局部编辑。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "專業版增加二級調色和局部編輯。" } }
+      }
+    },
+    "Selection {shortcuts}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "写真の選択" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选片" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選片" } }
+      }
+    },
+    "Set as default": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "標準に設定" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "设为默认" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "設為預設" } }
+      }
+    },
+    "Shortcuts": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "ショートカット" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "快捷键" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "快速鍵" } }
+      }
+    },
+    "Slides do not use paper.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "リバーサルフィルムは印画紙を使いません。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "反转片不使用相纸。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正片不使用相紙。" } }
+      }
+    },
+    "Toggle {space bar}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "切り替え" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "切换" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "切換" } }
+      }
+    },
+    "Transparent PNG only.": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "背景が透明な PNG のみ。" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "仅限透明背景的 PNG。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "僅限透明背景的 PNG。" } }
+      }
+    },
+    "Viewing {shortcuts}": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "表示" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "查看" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "檢視" } }
+      }
+    },
+    "Scan look": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "スキャン質感" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "扫描质感" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "掃描質感" } }
+      }
+    },
+    "Clean": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "クリーン" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "干净" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "乾淨" } }
+      }
+    },
+    "Natural": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "自然" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自然" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "自然" } }
+      }
+    },
+    "Strong": {
+      "localizations": {
+        "ja": { "stringUnit": { "state": "translated", "value": "強め" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "明显" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "明顯" } }
+      }
+    },
+    "Post {export preview}": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投稿"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帖子"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼文"
+          }
+        }
+      }
+    },
+    "Hold ⌘ and pick a few to see them together": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘ を押しながら複数選んで、並べた様子を見てみましょう"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按住 ⌘ 多选几张，看看放在一起的样子"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "按住 ⌘ 多選幾張，看看放在一起的樣子"
+          }
+        }
+      }
+    },
+    "Exporting print…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書き出し中…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在导出…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在輸出…"
+          }
+        }
+      }
+    },
+    "Film format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルム判型"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底片画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "底片畫幅"
+          }
+        }
+      }
+    },
+    "Smaller film, coarser grain and wider halation." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "判型が小さいほど、粒子が粗く、ハレーションが広がります。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画幅越小，颗粒越粗、光晕越大。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫幅越小，顆粒越粗、光暈越大。"
+          }
+        }
+      }
+    },
+    "Follows the film edge: %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フィルムエッジに追従：%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随片边：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟隨片邊：%@"
+          }
+        }
+      }
+    },
+    "8mm movie" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8mm 映画"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8mm 电影"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "8mm 電影"
+          }
+        }
+      }
+    },
+    "110 pocket film" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "110 ポケット"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "110 小胶卷"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "110 小膠卷"
+          }
+        }
+      }
+    },
+    "120 medium format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 中判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 中画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "120 中畫幅"
+          }
+        }
+      }
+    },
+    "4×5 large format" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4×5 大判"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4×5 大画幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4×5 大畫幅"
+          }
+        }
+      }
+    },
+    "Direction" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向き"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方向"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方向"
+          }
+        }
+      }
+    },
+    "Across" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横置き"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "横放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橫放"
+          }
+        }
+      }
+    },
+    "Upright" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縦置き"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "竖放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "豎放"
+          }
+        }
+      }
+    },
+    "about %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "約%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "约 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "約 %@"
+          }
+        }
+      }
+    },
+    "%@ photos, about %@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@枚で約%2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 张约 %2$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 張約 %2$@"
+          }
+        }
+      }
+    },
     "  ·  %@ of %@" : {
       "localizations" : {
         "ja" : {
@@ -20549,6 +21117,28 @@
         }
       }
     },
+    "Made for and by ericxu" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ericxu が自分のために制作したカスタム版"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ericxu 的定制版"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ericxu 的訂製版"
+          }
+        }
+      }
+    },
     "Magenta" : {
       "localizations" : {
         "ja" : {
@@ -22079,6 +22669,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增半格組"
+          }
+        }
+      }
+    },
+    "New numbers" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "番号を変える"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换一组数字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換一組數字"
           }
         }
       }
@@ -26615,6 +27227,104 @@
             "value" : "上一張照片"
           }
         }
+      }
+    },
+    "The photo changed. Open the signature pad again." : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "写真が変わりました。サイン画面を開き直してください。" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "照片已切换，请重新打开签名板。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "照片已切換，請重新開啟簽名板。" } }
+      }
+    },
+    "Print {watermark text style}" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "活字" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "印刷" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "印刷" } }
+      }
+    },
+    "Handwritten" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "手書き" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "手写" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "手寫" } }
+      }
+    },
+    "Hannotate" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Hannotate" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "手札体" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "手札體" } }
+      }
+    },
+    "HanziPen" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "HanziPen" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "翩翩体" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "翩翩體" } }
+      }
+    },
+    "Xingkai" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "行楷" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "行楷" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "行楷" } }
+      }
+    },
+    "Wawati" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Wawati" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "娃娃体" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "娃娃體" } }
+      }
+    },
+    "Snell Roundhand" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Snell Roundhand" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Snell Roundhand" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Snell Roundhand" } }
+      }
+    },
+    "Bradley Hand" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Bradley Hand" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Bradley Hand" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Bradley Hand" } }
+      }
+    },
+    "Savoye" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Savoye" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Savoye LET" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "Savoye LET" } }
+      }
+    },
+    "No handwriting font for this text." : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この文字に対応する手書き書体がありません。" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "没有适合这段文字的手写字体。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "沒有適合這段文字的手寫字體。" } }
+      }
+    },
+    "Signature" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "手書きサイン" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "手写签名" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "手寫簽名" } }
+      }
+    },
+    "Draw one" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "書く" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "写一个" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "寫一個" } }
+      }
+    },
+    "Use" : {
+      "localizations" : {
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "使用" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "使用" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "使用" } }
       }
     },
     "Print" : {

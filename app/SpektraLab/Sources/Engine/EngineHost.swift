@@ -144,6 +144,11 @@ final class EngineHost: FrameSource, @unchecked Sendable {
         /// What the picture is made from (`DevelopStamp`).
         var stamp: String
         var purpose: Purpose
+        /// App-side scan captured with this request, never looked up from a photo that may have
+        /// changed while its job waited. Nil means no scan finish (cards and edge-less renders).
+        var scanFinish: FilmEdgeScan? = nil
+        /// Full-view caches already contain the finish; an export reading one must not add it again.
+        var scanFinishApplied = false
         /// A half-frame pair: the frame is this piece, composed by the host,
         /// and `source`, `isRAW`, `decode`, `longEdge` and `cut` are not read
         /// (each picture of the piece has its own). `frameID` is the pair's.
@@ -604,6 +609,7 @@ final class EngineHost: FrameSource, @unchecked Sendable {
               let reader = FullRender.Reader(ask.url, stamp: ask.stamp) else { return nil }
         let started = DispatchTime.now().uptimeNanoseconds
         let pixels = try reader.pixels(device: device)
+        lock.lock(); requests[job.id]?.scanFinishApplied = true; lock.unlock()
         let ms = Double(DispatchTime.now().uptimeNanoseconds - started) / 1e6
         log.info("an export from the kept full render: \(pixels.size.width) x \(pixels.size.height) read in \(ms, format: .fixed(precision: 0)) ms")
         onDelivery?(.proxy(frame: r.frameID, event: RawProxy.Event(url: ask.url, bytes: Int64(reader.header.fileBytes), made: false)))
@@ -794,10 +800,21 @@ final class EngineHost: FrameSource, @unchecked Sendable {
         }
     }
 
-    func deliver(_ job: RenderJob, _ pixels: RenderedPixels) {
+    func deliver(_ job: RenderJob, _ incoming: RenderedPixels) {
         guard let r = request(job.id) else { return }
         do {
-            // The page's zoom: the render as the engine made it, on disk, and nothing more.
+            // The one finish point: still encoded ProPhoto, before full-view storage, destination
+            // conversion, Edit's export pass and finished watermarks. The viewer and purpose mock-up
+            // consume this same canvas; cached exports carry these already-finished pixels.
+            let pixels: RenderedPixels
+            if r.wearsFilm, !r.scanFinishApplied, let scan = r.scanFinish, scan != .clean {
+                let seed: Int
+                if case .double(let value) = r.wire["overscan_frame_seed"] { seed = Int(value) } else { seed = 0 }
+                pixels = try FilmEdgeScanFinish.shared.apply(to: incoming, settings: scan, seed: seed)
+            } else {
+                pixels = incoming
+            }
+            // The page's zoom: the working-space canvas including its scan finish, before any destination transform.
             if case .fullView(let ask) = r.purpose {
                 let started = DispatchTime.now().uptimeNanoseconds
                 // An edit while it is written stops it (it was 6 s of the zoom before vImage made the half size).

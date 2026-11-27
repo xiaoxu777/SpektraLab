@@ -44,6 +44,7 @@
 		07CAD6596F43CCFA445A22F8 /* LCPReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LCPReader.swift; sourceTree = "<group>"; };
 		07D34A6DB4AABF2A042C13B2 /* FilmLabWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabWelcome.swift; sourceTree = "<group>"; };
 		07D41F3BE91FDA82433733CE /* RenderQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF55B480EDB2D0B74A40403 /* RenderQueue.swift */; };
+		08C0E6045E3D2B7AEDC6E084 /* FilmLabExportSizeEstimate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C276167AE66CAE990004898F /* FilmLabExportSizeEstimate.swift */; };
 		091120469326DFB285F3E52E /* ExportRecipeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportRecipeStore.swift; sourceTree = "<group>"; };
 		091777C259CD64E2D1342678 /* FilmLabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */; };
 		0970B2C002A7B1DE65BE7372 /* LensCorrection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4589C937C8B8B08EA119D7D /* LensCorrection.swift */; };
@@ -93,6 +94,7 @@
 		0F1F06C1E0FCD37464AAB7B4 /* AdjustSliders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustSliders.swift; sourceTree = "<group>"; };
 		0F9A1452D64CDD2461BF4B31 /* HistogramPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD5DC2E22462390BE2E041F /* HistogramPanel.swift */; };
 		0FB360C0872C14CAC3ED2463 /* ExportRecipeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 091120469326DFB285F3E52E /* ExportRecipeStore.swift */; };
+		0FB72E295997415C558C2114 /* FilmEdgeScanFinish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359E9DDCB55215C400DC2F77 /* FilmEdgeScanFinish.swift */; };
 		0FD35F0A448C42364924AB8E /* MacCheckFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCheckFolder.swift; sourceTree = "<group>"; };
 		1004577F499CCD09FBEEBE81 /* Gallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gallery.swift; sourceTree = "<group>"; };
 		10A187E71E276CDB08F36834 /* SampleFrames */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SampleFrames; path = build/SampleFrames; sourceTree = "<group>"; };
@@ -136,9 +138,11 @@
 		161EBEFC891AC53A97FCB352 /* FilmLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81B876A5D0C7EED692836B18 /* FilmLayout.swift */; };
 		16A14C264BA9EF1E287D512B /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2702D0710CF3F5F03168FB49 /* Navigation.swift */; };
 		16D1F2827872C407464745F4 /* ValueSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA7BD07773A70475583DDB0 /* ValueSlider.swift */; };
+		16D536AC8C863E202AF6239C /* FilmLabMotionFlightProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = B621D0D3F880B114E70CFAD1 /* FilmLabMotionFlightProbe.swift */; };
 		16E0093FB8EA7FE5616A593D /* Adjustments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054B31A9712678F4D236936D /* Adjustments.swift */; };
 		16E48AD36FE51DE8269F8385 /* AgentExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentExecutor.swift; sourceTree = "<group>"; };
 		180F8E4A85CDF29CCE6FD27B /* PairLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairLayout.swift; sourceTree = "<group>"; };
+		189B243FC6B69135C7E12507 /* FilmLabPersonalizeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7081302D3B420D28DBD40491 /* FilmLabPersonalizeText.swift */; };
 		189D2B3A2C29A1E283E10E59 /* EditTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTool.swift; sourceTree = "<group>"; };
 		18A66CDB19FD202EDFAC3662 /* PairSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairSnapshots.swift; sourceTree = "<group>"; };
 		18BF2C4AB0F45CDB1C0B2BB7 /* LatitudeMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatitudeMeter.swift; sourceTree = "<group>"; };
@@ -156,8 +160,10 @@
 				A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */,
 				FDC2D134DE185DB921CAE80E /* FilmLabExportAnimation.swift */,
 				8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */,
+				8F7C6679A1BC285C13455161 /* FilmLabExportPreviewMotion.swift */,
 				BEF7E13F266B20E4AC8713D5 /* FilmLabExportPurpose.swift */,
 				BF8BF8BC0B346DA8D2239EC4 /* FilmLabExportPurposePreview.swift */,
+				C276167AE66CAE990004898F /* FilmLabExportSizeEstimate.swift */,
 				E45CB29765FCB769FE67563C /* FilmLabFlags.swift */,
 				F22BB9D93B2F3ECF74A2F163 /* FilmLabFlagViews.swift */,
 				AB34CCFF142F2E32396C5C6E /* FilmLabGradeTabs.swift */,
@@ -169,10 +175,16 @@
 				EEA351A2774080F5E7495D54 /* FilmLabLibraryEntrance.swift */,
 				04CD90128FEA625CDBF14A4B /* FilmLabLibraryPreview.swift */,
 				06F3D411A2060D3C3279A297 /* FilmLabModeTransition.swift */,
+				541CC8B7AADD9226B1A86BA4 /* FilmLabMotionFlight.swift */,
+				B621D0D3F880B114E70CFAD1 /* FilmLabMotionFlightProbe.swift */,
+				1E9F089CACB3DC9D4AA8EF4D /* FilmLabMotionPhotoProbe.swift */,
 				5FF4DCE9E7C1EA60439BB334 /* FilmLabOpen.swift */,
 				E33EE1F35F3BBF757B0023A9 /* FilmLabPersonalize.swift */,
+				6A80D4A7031A119345484AF6 /* FilmLabPersonalizeCheck.swift */,
 				BD14ECCE64DD69A7ACFBDCEB /* FilmLabPersonalizeEdge.swift */,
 				52D1FC767AD6E8B6D2856409 /* FilmLabPersonalizeMark.swift */,
+				86AFD6DC355CC60A18AA4840 /* FilmLabPersonalizeSignature.swift */,
+				7081302D3B420D28DBD40491 /* FilmLabPersonalizeText.swift */,
 				DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */,
 				4FE4799103FDE94A2683282E /* FilmLabResizeProbe.swift */,
 				7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */,
@@ -196,6 +208,7 @@
 		1E2B3E251BEC10443B273D58 /* PictureMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C698E75392E85547D54B70 /* PictureMemory.swift */; };
 		1E51731BDF2C3970D7AFD1AF /* PairFramePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairFramePicker.swift; sourceTree = "<group>"; };
 		1E70BA0B3D0B661D4865D7A5 /* CopySettingsDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 935FD39F1EE1B7BBEAF29F48 /* CopySettingsDialog.swift */; };
+		1E9F089CACB3DC9D4AA8EF4D /* FilmLabMotionPhotoProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabMotionPhotoProbe.swift; sourceTree = "<group>"; };
 		1F020A6723BA2CC6AA7BC9E9 /* MacDevelopBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EE332ABA7A3CB0E346E2A2 /* MacDevelopBrowser.swift */; };
 		1F2FF81FE037254132B20407 /* CineonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B8FCB241B760C31B19D437 /* CineonView.swift */; };
 		1FBB59631541578ECEEF7D39 /* ArrangeStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangeStage.swift; sourceTree = "<group>"; };
@@ -300,6 +313,7 @@
 		33C9660A75AB3E2D370A08C4 /* SchedulerTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B324599BA5B3E6294F0068 /* SchedulerTypes.swift */; };
 		3407893D836FC1D0CFA7BE71 /* SceneLatitude.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneLatitude.swift; sourceTree = "<group>"; };
 		35245F9112593AB19FF961C6 /* LightTableGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFB405806E63F6C279CA59B7 /* LightTableGestures.swift */; };
+		359E9DDCB55215C400DC2F77 /* FilmEdgeScanFinish.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmEdgeScanFinish.swift; sourceTree = "<group>"; };
 		36B38B9C9FFE22398D8D2550 /* FilmEdgeJourney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmEdgeJourney.swift; sourceTree = "<group>"; };
 		372B02868E392477EDB043A3 /* Import */ = {
 			isa = PBXGroup;
@@ -364,6 +378,7 @@
 			sourceTree = "<group>";
 		};
 		3AAF0ABEE8747A2B20FA2D0E /* DIView-Cineon-to-ProPhoto.cube in Resources */ = {isa = PBXBuildFile; fileRef = 118EBCE8C1BD9A1EF7D22272 /* DIView-Cineon-to-ProPhoto.cube */; };
+		3AB5053BEDF4F46F980F6EE8 /* FilmLabPersonalizeSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86AFD6DC355CC60A18AA4840 /* FilmLabPersonalizeSignature.swift */; };
 		3ACD468BEE98427E6184291C /* MacMemoryCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1E1B5711C9AC5BC58A6677 /* MacMemoryCheck.swift */; };
 		3B047320A8AB1EA3FD75D4AA /* DrawnIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73C1C4218B1914A13ED2F03 /* DrawnIcons.swift */; };
 		3B0AB8287D50EE02A5F6F785 /* FilmStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA6762F27E98C62A0A37EE5 /* FilmStrip.swift */; };
@@ -421,6 +436,7 @@
 		432FBC8B7A045AD33D18A7CE /* FilmLabProjects.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */; };
 		43E84A02E7DA493A8BA0E80D /* Geometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Geometry.swift; sourceTree = "<group>"; };
 		4492CEFB9E17CBE1A0A7756C /* StripProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripProbe.swift; sourceTree = "<group>"; };
+		44B8FC9D11A7D79AFB759E36 /* FilmLabMotionFlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 541CC8B7AADD9226B1A86BA4 /* FilmLabMotionFlight.swift */; };
 		44D5D1E6C5949563F8A371FA /* ColourPads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColourPads.swift; sourceTree = "<group>"; };
 		44F53DF9FD982ECF0C81122E /* MacScrollZoom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260942587A06E41C0BCDEAE9 /* MacScrollZoom.swift */; };
 		44F712D885D71CA13A9BFEF7 /* DesignGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F388FDC24A33E67153771D /* DesignGallery.swift */; };
@@ -578,6 +594,7 @@
 		53B3241373AB4016E8C0D18E /* StockGridPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C576F98A4B95B41F1E912C27 /* StockGridPanel.swift */; };
 		53BA58019251248590395073 /* RemovalWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B236436D38BA2CD30190B4 /* RemovalWords.swift */; };
 		53CC1B28785C9CABAF2F77C2 /* Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sheets.swift; sourceTree = "<group>"; };
+		541CC8B7AADD9226B1A86BA4 /* FilmLabMotionFlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabMotionFlight.swift; sourceTree = "<group>"; };
 		5436B67517003D17CA925F6F /* MaskPointer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskPointer.swift; sourceTree = "<group>"; };
 		548B4BA44F76C00C49192494 /* RecipeChips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeChips.swift; sourceTree = "<group>"; };
 		552FC62CD932EB1BF35E2B1D /* AgentWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentWire.swift; sourceTree = "<group>"; };
@@ -838,6 +855,7 @@
 				69A3D5D19DF0480A6EEB4DDE /* StockPairPicker.swift */,
 				3FF3C8302FA0456C550BA545 /* FilmCanvasView.swift */,
 				F019CAF403B56357060EF8D3 /* FilmEdgeResolver.swift */,
+				0FB72E295997415C558C2114 /* FilmEdgeScanFinish.swift */,
 				8483640F95DD62C7F5D74052 /* FilmEdgeStock.swift */,
 				42DAC20CE3A11E82F5C57DFB /* FilmGeometry.swift */,
 				161EBEFC891AC53A97FCB352 /* FilmLayout.swift */,
@@ -870,8 +888,10 @@
 				2918D511AE485C203E1C9127 /* FilmLabCopier.swift */,
 				C2DC8BA866A5113DD689EC41 /* FilmLabExportAnimation.swift */,
 				F327F52B5308BEF31D70B261 /* FilmLabExportLog.swift */,
+				BD6B2505E79DA008EB83161F /* FilmLabExportPreviewMotion.swift */,
 				1BFE363029BC598DB52A5769 /* FilmLabExportPurpose.swift */,
 				2F3BCE66F9F05E86638085F2 /* FilmLabExportPurposePreview.swift */,
+				08C0E6045E3D2B7AEDC6E084 /* FilmLabExportSizeEstimate.swift */,
 				4C7F4FCD697BB0D5E2B9346C /* FilmLabFlagViews.swift */,
 				6A96AD8DDE65C52F0087DFD0 /* FilmLabFlags.swift */,
 				23616ABD54877786FE7F2712 /* FilmLabGradeTabs.swift */,
@@ -883,10 +903,16 @@
 				DB88D909CEFCCD7D3DFFBA4A /* FilmLabLibraryEntrance.swift */,
 				323A311505565768CB39A7F3 /* FilmLabLibraryPreview.swift */,
 				80EA7B960DEF40B52F4109B6 /* FilmLabModeTransition.swift */,
+				44B8FC9D11A7D79AFB759E36 /* FilmLabMotionFlight.swift */,
+				16D536AC8C863E202AF6239C /* FilmLabMotionFlightProbe.swift */,
+				F89E7B2B310202A03399A986 /* FilmLabMotionPhotoProbe.swift */,
 				A573EBB0EBF5CD18ACCBB6E4 /* FilmLabOpen.swift */,
 				45F0AAE3E0B6C4392DF40A78 /* FilmLabPersonalize.swift */,
+				D2569EE64B5B2AF1DFB6D112 /* FilmLabPersonalizeCheck.swift */,
 				555AC531A641CC949C9C0B91 /* FilmLabPersonalizeEdge.swift */,
 				993697A494FFFF89D337630B /* FilmLabPersonalizeMark.swift */,
+				3AB5053BEDF4F46F980F6EE8 /* FilmLabPersonalizeSignature.swift */,
+				189B243FC6B69135C7E12507 /* FilmLabPersonalizeText.swift */,
 				432FBC8B7A045AD33D18A7CE /* FilmLabProjects.swift */,
 				B601C6573DE819F945B3EC59 /* FilmLabResizeProbe.swift */,
 				949DC9B2496450AEC0E04987 /* FilmLabRollFilter.swift */,
@@ -980,6 +1006,7 @@
 				3ACD468BEE98427E6184291C /* MacMemoryCheck.swift */,
 				9152B5330E8742D119A8D8EE /* MacRenderCache.swift */,
 				87C2C796F387FC849381F734 /* MacRenderCheck.swift */,
+				DC0FCD6755F8E9ED51BC9183 /* FilmLabSettingsPages.swift */,
 				6ACEB6A3B360F096E2EFE063 /* MacSettingsCheck.swift */,
 				84A57786F406596B7EB6FD96 /* MacSettingsCoverage.swift */,
 				3BC9DABE408C88E90577D6A6 /* MacSettingsDevelop.swift */,
@@ -1088,6 +1115,7 @@
 			children = (
 				ABAEE27F621ED5477C8CD315 /* FilmCanvasView.swift */,
 				77050384F72B91CF75DB1310 /* FilmEdgeResolver.swift */,
+				359E9DDCB55215C400DC2F77 /* FilmEdgeScanFinish.swift */,
 				2CA80992883C4894E66FF5A8 /* FilmEdgeStock.swift */,
 				F0CBE4AFB72208EBD6FAA83D /* FilmGeometry.swift */,
 				81B876A5D0C7EED692836B18 /* FilmLayout.swift */,
@@ -1163,6 +1191,7 @@
 		69C698E75392E85547D54B70 /* PictureMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureMemory.swift; sourceTree = "<group>"; };
 		69EC72ABA6AA86A1C1A073AF /* LookTransactions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0251BA3150C8B651326A7921 /* LookTransactions.swift */; };
 		6A7DE718C2AF7A05C67F7EFB /* RawProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23AAFD9BE0F7A57D346DB49 /* RawProxy.swift */; };
+		6A80D4A7031A119345484AF6 /* FilmLabPersonalizeCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabPersonalizeCheck.swift; sourceTree = "<group>"; };
 		6A96AD8DDE65C52F0087DFD0 /* FilmLabFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45CB29765FCB769FE67563C /* FilmLabFlags.swift */; };
 		6ACEB6A3B360F096E2EFE063 /* MacSettingsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47FCAF8EA089197D6648F37 /* MacSettingsCheck.swift */; };
 		6BA042FEE31B72B7784D3BC1 /* MacImportSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportSession.swift; sourceTree = "<group>"; };
@@ -1227,6 +1256,7 @@
 			sourceTree = "<group>";
 		};
 		703D18873770C875EAF17CC5 /* GamutProof.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamutProof.swift; sourceTree = "<group>"; };
+		7081302D3B420D28DBD40491 /* FilmLabPersonalizeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabPersonalizeText.swift; sourceTree = "<group>"; };
 		70C0619AA6FE760AD6A50259 /* MacLightTableMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203435A2388291ACDE8A0A8 /* MacLightTableMenu.swift */; };
 		7118AA9831CD52A358BE6C08 /* Watermark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Watermark.swift; sourceTree = "<group>"; };
 		7165086F9BFB0E066DEB29BD /* MacWatermarkHandCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatermarkHandCheck.swift; sourceTree = "<group>"; };
@@ -1322,6 +1352,7 @@
 		85184072DF0F2A41EB70F6A1 /* MacImportDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B2019A7C8009687F3B163E /* MacImportDrop.swift */; };
 		85871CDF06A93EC639715F79 /* MaskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskStore.swift; sourceTree = "<group>"; };
 		86668A6A636992A786357B85 /* CurvePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurvePanel.swift; sourceTree = "<group>"; };
+		86AFD6DC355CC60A18AA4840 /* FilmLabPersonalizeSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabPersonalizeSignature.swift; sourceTree = "<group>"; };
 		86F0048ACF8DBD8EBE70899E /* MacCombineMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacCombineMenu.swift; sourceTree = "<group>"; };
 		87520CEDDC9B20D0BC2F20CF /* RecipeChips.swift in Sources */ = {isa = PBXBuildFile; fileRef = 548B4BA44F76C00C49192494 /* RecipeChips.swift */; };
 		878FC0EE300F2ABA05D2360E /* WatermarkShelf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5667F524E62B2741299C5AF2 /* WatermarkShelf.swift */; };
@@ -1382,6 +1413,7 @@
 		8E64F6B4F2B88FDE5DD69BBF /* SpkIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpkIcon.swift; sourceTree = "<group>"; };
 		8E8A77E55D52918BC5778B05 /* Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Format.swift; sourceTree = "<group>"; };
 		8EC59C235B45943D46211365 /* MacWatermarkHandCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7165086F9BFB0E066DEB29BD /* MacWatermarkHandCheck.swift */; };
+		8F7C6679A1BC285C13455161 /* FilmLabExportPreviewMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabExportPreviewMotion.swift; sourceTree = "<group>"; };
 		8F7D9781A4CD00E26D4D55CD /* StockPreviewRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockPreviewRules.swift; sourceTree = "<group>"; };
 		902EC57EF384C3F937548EEE /* PairOriginalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AEF1053C986EBC89A174A4A /* PairOriginalPreview.swift */; };
 		9036911B81CC1B40F2E6B7CC /* HistoryLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryLabel.swift; sourceTree = "<group>"; };
@@ -1795,6 +1827,7 @@
 		B5ED08D2F119177330D977D9 /* MacSettingsParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B25F129F000D39DBFA29CA /* MacSettingsParts.swift */; };
 		B5F77A7E86A66AAFFCDE7B16 /* MacExportHDRCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D54DFB0F3A009780734FA1 /* MacExportHDRCheck.swift */; };
 		B601C6573DE819F945B3EC59 /* FilmLabResizeProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE4799103FDE94A2683282E /* FilmLabResizeProbe.swift */; };
+		B621D0D3F880B114E70CFAD1 /* FilmLabMotionFlightProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabMotionFlightProbe.swift; sourceTree = "<group>"; };
 		B644B44AB8C9E4450A58A317 /* CostModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostModel.swift; sourceTree = "<group>"; };
 		B68814B263C505B7156BB47A /* FilmEdgeJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B38B9C9FFE22398D8D2550 /* FilmEdgeJourney.swift */; };
 		B6C1B607FA2EAF792F33BAB8 /* MaskOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskOverlay.swift; sourceTree = "<group>"; };
@@ -1830,6 +1863,7 @@
 		BCD9B74B4A73E19A5A84AF39 /* MacHistoryPageCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF02992C68D02F18BDCB59C /* MacHistoryPageCheck.swift */; };
 		BD14ECCE64DD69A7ACFBDCEB /* FilmLabPersonalizeEdge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabPersonalizeEdge.swift; sourceTree = "<group>"; };
 		BD553434D13550D01DDD9302 /* FilmLabWelcomeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabWelcomeStorage.swift; sourceTree = "<group>"; };
+		BD6B2505E79DA008EB83161F /* FilmLabExportPreviewMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7C6679A1BC285C13455161 /* FilmLabExportPreviewMotion.swift */; };
 		BDEE8AE5F8AD76E74CCF4157 /* LibraryPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA9B4086F546FD4833D8996 /* LibraryPreviews.swift */; };
 		BE520CA670DB5CF255A2FA07 /* MacWatermarkCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAE8884D6A1A513C5484E6D /* MacWatermarkCheck.swift */; };
 		BE7F861D904122EFC7902D6C /* AdjustColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = B940C744C011F1D4533210DD /* AdjustColumn.swift */; };
@@ -1891,6 +1925,7 @@
 		C2409111B1F57851AB13D4C1 /* HDRMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B51D59FABEB45E18D28B9B /* HDRMath.swift */; };
 		C24ECB06AF3EAC6AFB855825 /* MacExportRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED5786A6DCBB92DB6EF94CF /* MacExportRun.swift */; };
 		C26D799E104D4DCF911A44EF /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
+		C276167AE66CAE990004898F /* FilmLabExportSizeEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabExportSizeEstimate.swift; sourceTree = "<group>"; };
 		C289C7854C884A46E5D34D11 /* WindowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayout.swift; sourceTree = "<group>"; };
 		C2DC8BA866A5113DD689EC41 /* FilmLabExportAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC2D134DE185DB921CAE80E /* FilmLabExportAnimation.swift */; };
 		C2EFC26BDDD2FF4AEADF0518 /* StockPreviewRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7D9781A4CD00E26D4D55CD /* StockPreviewRules.swift */; };
@@ -2000,6 +2035,7 @@
 		CEC96E16F4C63591AE0A4892 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				FA37D20A59386B70B81BA833 /* FilmLabSettingsPages.swift */,
 				F47FCAF8EA089197D6648F37 /* MacSettingsCheck.swift */,
 				0B711D31CE0CD25559F91AEF /* MacSettingsCoverage.swift */,
 				A45C20FBEAE9A59459DAD27D /* MacSettingsDevelop.swift */,
@@ -2109,6 +2145,7 @@
 		D0FBFBA73B44578C79838D17 /* Badges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badges.swift; sourceTree = "<group>"; };
 		D16597A7DAFE93B72E432F37 /* AppMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMenuCommands.swift; sourceTree = "<group>"; };
 		D1972080FD6ED57A3CD78CBD /* LibraryBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBrowser.swift; sourceTree = "<group>"; };
+		D2569EE64B5B2AF1DFB6D112 /* FilmLabPersonalizeCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A80D4A7031A119345484AF6 /* FilmLabPersonalizeCheck.swift */; };
 		D264157254C76D9C167F111B /* InfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3C175FF4848E19A59D0E5DE /* InfoSheet.swift */; };
 		D2CC5109473760366947C143 /* MacImportC1Check.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacImportC1Check.swift; sourceTree = "<group>"; };
 		D2D91492B5196DDFFE31A217 /* SettingsWindowRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6EE8038E92C40335E69E36 /* SettingsWindowRoot.swift */; };
@@ -2153,6 +2190,7 @@
 		DB33B55595BF16E3EA8DA383 /* SubjectFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC6A752EB674CEB407ED0AB7 /* SubjectFinder.swift */; };
 		DB88D909CEFCCD7D3DFFBA4A /* FilmLabLibraryEntrance.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA351A2774080F5E7495D54 /* FilmLabLibraryEntrance.swift */; };
 		DBEFF2E8D4957B7E7C46EC83 /* LayerPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayerPage.swift; sourceTree = "<group>"; };
+		DC0FCD6755F8E9ED51BC9183 /* FilmLabSettingsPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA37D20A59386B70B81BA833 /* FilmLabSettingsPages.swift */; };
 		DC6EC72DDD0051EC3633316F /* InterfaceScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1941AC60ACF1B6E715BA33C0 /* InterfaceScale.swift */; };
 		DCDF24286E4A1C29B96A536E /* Rows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E412292F641F321214D4C20 /* Rows.swift */; };
 		DD0C729E6E44F764F7AF1604 /* FilmLabProjects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabProjects.swift; sourceTree = "<group>"; };
@@ -2352,6 +2390,7 @@
 		};
 		F897104136B5BB9B156AC45D /* FullRender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullRender.swift; sourceTree = "<group>"; };
 		F89A74F6D39F026A4F53EE66 /* PairPieceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairPieceView.swift; sourceTree = "<group>"; };
+		F89E7B2B310202A03399A986 /* FilmLabMotionPhotoProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9F089CACB3DC9D4AA8EF4D /* FilmLabMotionPhotoProbe.swift */; };
 		F8D48FF37D111C9D5A4101EA /* MacSettingsSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSettingsSources.swift; sourceTree = "<group>"; };
 		F8F36876F8F23C7B6D9C2E07 /* MacLibrarySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibrarySidebar.swift; sourceTree = "<group>"; };
 		F907D32878BF2F01386214F6 /* AgentWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 552FC62CD932EB1BF35E2B1D /* AgentWire.swift */; };
@@ -2361,6 +2400,7 @@
 		F9C5D986E0DC2D1ED45ADEBF /* CropGuides.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropGuides.swift; sourceTree = "<group>"; };
 		F9E11AE867B58EF93E162646 /* RawBlack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B896AB6571DA424CC845447 /* RawBlack.swift */; };
 		FA311A9977FC502634683319 /* WatermarkActs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatermarkActs.swift; sourceTree = "<group>"; };
+		FA37D20A59386B70B81BA833 /* FilmLabSettingsPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabSettingsPages.swift; sourceTree = "<group>"; };
 		FA503191453842D64286FD0E /* HighDynamicRangeGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighDynamicRangeGroup.swift; sourceTree = "<group>"; };
 		FA61A4EC609AB88F353095D4 /* StockCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockCards.swift; sourceTree = "<group>"; };
 		FADF9681965FC9CA02A9DE69 /* DecodeSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B787AA25680451B11140C5B6 /* DecodeSection.swift */; };

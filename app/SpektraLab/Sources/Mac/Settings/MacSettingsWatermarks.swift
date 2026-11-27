@@ -30,9 +30,7 @@ struct MacSettingsWatermarks: View {
     private let tile = MacMetric.pt(112)
 
     var body: some View {
-        MacSettingsGroup(title: L("Your watermarks"),
-                         footer: L("Only a PNG with a transparent background: a signature, a logo, a handwritten name. "
-                                   + "Place one on a photograph from the Layers panel’s ＋ › Watermark.")) {
+        MacSettingsGroup(title: nil, footer: L("Transparent PNG only.")) {
             VStack(alignment: .leading, spacing: MacMetric.pt(10)) {
                 HStack(spacing: MacMetric.pt(8)) {
                     Text(store.marks.isEmpty ? L("No watermarks yet") : L("\(store.marks.count) watermarks"))
@@ -51,7 +49,7 @@ struct MacSettingsWatermarks: View {
                 grid
             }
             .padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
-            .padding(.vertical, MacMetric.pt(10))
+            .padding(.vertical, MacMetric.pt(MacSettingsMetric.inset))
         }
         .macSettingsItem("Watermarks")
         .alert(L("Can't Add"), isPresented: Binding(get: { refused != nil }, set: { if !$0 { refused = nil } })) {
@@ -110,12 +108,13 @@ struct MacSettingsWatermarks: View {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: MacMetric.pt(14)) {
                     ForEach(store.marks) { mark in tileView(mark) }
                 }
-                .padding(.vertical, MacMetric.pt(4))
             }
         }
         .background {
-            RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous)
-                .strokeBorder(dropping ? Theme.accent : Theme.rule, style: StrokeStyle(lineWidth: dropping ? 2 : 0.5, dash: store.marks.isEmpty ? [4, 3] : []))
+            if dropping {
+                RoundedRectangle(cornerRadius: MacMetric.pt(8), style: .continuous)
+                    .strokeBorder(Theme.accent, lineWidth: 2)
+            }
         }
         .onDrop(of: [UTType.fileURL, UTType.png], isTargeted: $dropping) { providers in
             Task { @MainActor in await drop(providers) }
@@ -134,7 +133,8 @@ struct MacSettingsWatermarks: View {
                     RoundedRectangle(cornerRadius: MacMetric.pt(6), style: .continuous)
                         .strokeBorder(on ? Theme.accent : Theme.rule, lineWidth: on ? 2 : 0.5)
                 }
-            Text(mark.name).font(MacMetric.font(12, .medium)).foregroundStyle(Theme.text).lineLimit(1)
+            Text(mark.name).font(MacMetric.font(13, .medium)).foregroundStyle(Theme.text)
+                .fixedSize(horizontal: false, vertical: true)
             Text("\(mark.w) × \(mark.h) px").font(MacMetric.font(11).monospacedDigit()).foregroundStyle(Theme.dim).lineLimit(1)
         }
         .frame(width: tile, alignment: .leading)

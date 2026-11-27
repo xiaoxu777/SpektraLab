@@ -149,6 +149,7 @@ struct FilmLabLibraryPreview: View {
         let image = browser.primary(rows)
         VStack(spacing: 0) {
             BrowserViewerSplit(image: image, open: open, chosen: browser.selection.count, infoStrip: false)
+                .filmLabFlightPreviewSource()
             if let image { foot(image) }
         }
         .background(Theme.well)

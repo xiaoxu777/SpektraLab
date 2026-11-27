@@ -1,5 +1,168 @@
 import SwiftUI
 
+/// A thumbnail lease, not an environment or Observable value. Only request/image code reads it. A hide releases once;
+/// late callbacks from the old visible drawing cannot reacquire the strip while the panel is hidden.
+@MainActor
+final class FilmLabStockPanelActivity {
+    private(set) var hidden = false
+    private weak var strip: StockStrip?
+    private var client: UUID?
+
+    func pauseRequests() { hidden = true }
+
+    func setHidden(_ hidden: Bool) {
+        guard self.hidden != hidden else { return }
+        self.hidden = hidden
+        if hidden { release() }
+    }
+
+    func claim(_ strip: StockStrip, by client: UUID) {
+        guard !hidden else { return }
+        if self.strip !== strip || self.client != client { release() }
+        self.strip = strip; self.client = client
+    }
+
+    func release() {
+        if let strip, let client { StripClients.release(strip, by: client) }
+        strip = nil; client = nil
+    }
+}
+
+/// Keep the last visible drawing AND its inputs. Hiding does not pass a flag through the grids/Decode or change
+/// their isEnabled environment. Only the outer composited layer changes; the image lease is released afterwards.
+struct FilmLabKeptStockPanel<Content: View>: View, Equatable {
+    let shown: Bool
+    @ViewBuilder var content: (FilmLabStockPanelActivity, Int) -> Content
+    @State private var memory = Memory()
+    @MainActor private final class Memory {
+        var size: CGSize?
+        var drawing: Content?
+        var revision = 0
+        var visit = 0
+        private var visible = false
+        let activity = FilmLabStockPanelActivity()
+
+        func prepare(_ size: CGSize, shown: Bool, make: (FilmLabStockPanelActivity, Int) -> Content) {
+            guard shown, size.width > 0, size.height > 0 else {
+                if !shown { visible = false }
+                activity.pauseRequests()
+                return
+            }
+            if !visible { visit += 1 }
+            visible = true
+            activity.setHidden(false)
+            self.size = size
+            drawing = make(activity, visit)
+            revision += 1
+        }
+    }
+
+    nonisolated static func == (a: Self, b: Self) -> Bool { !a.shown && !b.shown }
+
+    var body: some View {
+        GeometryReader { room in
+            let _ = memory.prepare(room.size, shown: shown, make: content)
+            if let size = memory.size, let drawing = memory.drawing {
+                FilmLabStockPanelContent(owner: ObjectIdentifier(memory), revision: memory.revision, size: size, content: drawing).equatable()
+                    .compositingGroup()
+                    .opacity(shown ? 1 : 0)
+                    .allowsHitTesting(shown)
+                    .accessibilityHidden(!shown)
+            }
+        }
+        // pauseRequests() above is plain storage; observable image releases happen outside body evaluation.
+        .onChange(of: shown) { _, on in if !on { memory.activity.release() } }
+        .onDisappear { memory.activity.pauseRequests(); memory.activity.release() }
+        .transaction { $0.animation = nil; $0.disablesAnimations = true }
+    }
+}
+
+private struct FilmLabStockPanelContent<Content: View>: View, Equatable {
+    let owner: ObjectIdentifier
+    let revision: Int
+    let size: CGSize
+    let content: Content
+    nonisolated static func == (a: Self, b: Self) -> Bool { a.owner == b.owner && a.revision == b.revision }
+    var body: some View { content.frame(width: size.width, height: size.height, alignment: .topLeading) }
+}
+
+/// Small values only, never images or sessions. StockCatalog.shared is an immutable catalogue snapshot (there is no
+/// mutable catalogue revision); a cache owns that snapshot. Shelves expire on favourites changes, words on language.
+@MainActor
+final class StockPanelMemo {
+    static let shared = StockPanelMemo()
+    private let catalog = StockCatalog.shared
+    lazy var films = StockPreviewRules.filmStrip(catalog)
+    private var papers: [String: [StockPreviewCard]] = [:]
+    private var live: [String: Set<StockPreviewCard>] = [:]
+    private struct ShelfKey: Hashable { let cards: [StockPreviewCard]; let shelf: StockShelf }
+    private var shelves: [ShelfKey: [StockPreviewCard]] = [:]
+    private var grouped: [[StockPreviewCard]: [StockBrandGroup]] = [:]
+    private var revision = -1
+    private var language: AppLanguage?
+    private var displays: [StockPreviewCard: Display] = [:]
+    private var colours: [String: Color] = [:]
+
+    struct Display {
+        let name: String, fullName: String
+        let colour: Color, filmColour: Color
+        let cine: Bool, recommended: Bool, starable: Bool
+    }
+
+    func paperShelf(under film: String) -> [StockPreviewCard] {
+        if let kept = papers[film] { return kept }
+        let made = StockPreviewRules.paperShelf(under: film, catalog)
+        papers[film] = made
+        return made
+    }
+
+    func livePapers(under film: String) -> Set<StockPreviewCard> {
+        if let kept = live[film] { return kept }
+        let made = Set(StockPreviewRules.paperStrip(under: film, catalog))
+        live[film] = made
+        return made
+    }
+
+    func cards(_ cards: [StockPreviewCard], on shelf: StockShelf) -> [StockPreviewCard] {
+        let now = StockPersonal.shared.revision
+        if revision != now { revision = now; shelves.removeAll(); grouped.removeAll() }
+        let key = ShelfKey(cards: cards, shelf: shelf)
+        if let kept = shelves[key] { return kept }
+        let made = shelf.cards(cards, catalog)
+        shelves[key] = made
+        return made
+    }
+
+    func groups(_ cards: [StockPreviewCard]) -> [StockBrandGroup] {
+        if let kept = grouped[cards] { return kept }
+        let made = StockPreviewRules.groups(cards, catalog)
+        grouped[cards] = made
+        return made
+    }
+
+    private func colour(_ id: String) -> Color {
+        if let kept = colours[id] { return kept }
+        let made = catalog.stock(id)?.color ?? Theme.card
+        colours[id] = made
+        return made
+    }
+
+    func display(_ card: StockPreviewCard) -> Display {
+        let now = Language.shared.current
+        if language != now { language = now; displays.removeAll() }
+        if let kept = displays[card] { return kept }
+        let stock = catalog.stock(card.stock)
+        let name = stock?.shortName ?? (card.isDigitalIntermediate ? L("Digital Intermediate") : card.isNoPaper ? L("No Paper") : card.stock)
+        let made = Display(name: name, fullName: stock?.name ?? name,
+                           colour: colour(card.stock), filmColour: colour(card.film),
+                           cine: stock?.isCine ?? false,
+                           recommended: card.strip == .paper && catalog.isRecommendedPairing(film: card.film, paper: card.stock),
+                           starable: stock != nil)
+        displays[card] = made
+        return made
+    }
+}
+
 struct StockPreviewPanel: View {
     let session: OpenFrameSession
     let strip: StockStrip
@@ -46,19 +209,28 @@ struct StockPreviewPanel: View {
     private var paperShelf: StockShelf { memory.shelf(.paper, otherwise: paperKind) }
     /// This page's claim on what the strip shows (`StripClients`).
     @State private var client = UUID()
+    @State private var ownActivity = FilmLabStockPanelActivity()
+    var panelActivity: FilmLabStockPanelActivity? = nil
+    var panelVisit = 0
+    private var activity: FilmLabStockPanelActivity { panelActivity ?? ownActivity }
+    private var panelHidden: Bool { activity.hidden }
 
-    private var filmCards: [StockPreviewCard] { filmShelf.cards(strip.filmCards) }
+    private var memo: StockPanelMemo { .shared }
+    private var filmCards: [StockPreviewCard] { memo.cards(memo.films, on: filmShelf) }
     /// Every paper, those that cannot print the film greyed (`StockPreviewRules.paperShelf`);
     /// live are `strip.paperCards` that also print a film on the film row's shelf.
-    private var paperCards: [StockPreviewCard] { paperShelf.cards(allPaperCards) }
+    private var paperCards: [StockPreviewCard] { memo.cards(allPaperCards, on: paperShelf) }
     /// The row before its shelf: what the pill's menu is dimmed by, whatever shelf is chosen.
     private var allPaperCards: [StockPreviewCard] {
-        StockPreviewRules.paperShelf(under: session.edit.params.filmStock)
+        memo.paperShelf(under: session.edit.params.filmStock)
     }
     private func serves(_ card: StockPreviewCard) -> Bool {
         card.strip == .film || StockPreviewRules.paperServes(card.stock, filmShelf: filmShelf)
     }
-    private var cards: [StockPreviewCard] { (filmCards + paperCards).filter { strip.isLive($0) && serves($0) } }
+    private var cards: [StockPreviewCard] {
+        let papers = memo.livePapers(under: session.edit.params.filmStock)
+        return (filmCards + paperCards).filter { ($0.strip == .film || papers.contains($0)) && serves($0) }
+    }
     private var chosenPaper: String { StockPreviewRules.chosenPaper(session.edit.params) }
     /// Under a foldable strip's cards, before the next header.
     static let stripGap: CGFloat = 8
@@ -73,9 +245,10 @@ struct StockPreviewPanel: View {
         Group {
             if room != nil, foldable { gridColumn } else { rowsColumn }
         }
-        .onChange(of: session.edit, initial: true) { _, edit in strip.edit = edit }
+        .onChange(of: session.edit, initial: true) { _, edit in
+            if !panelHidden, strip.edit != edit { strip.edit = edit }
+        }
         .onChange(of: visible) { _, _ in show() }
-        .onChange(of: strip.paperCards) { _, _ in show() }
         .onChange(of: filmShelf) { _, _ in show() }
         .onChange(of: session.edit.params.filmStock) { _, _ in show() }
         .onChange(of: appliesFilm) { _, _ in show() }
@@ -89,13 +262,14 @@ struct StockPreviewPanel: View {
         // different step covers it. Keep the viewport, but release the card
         // references/jobs; on return no preference change is guaranteed.
         .onAppear { show() }
-        .onDisappear { StripClients.release(strip, by: client) }
+        .onDisappear { release() }
+        .onChange(of: panelVisit) { _, _ in show() }
         // Another frame on the kept page (2.4.0 A2b): its strip, given the edit and asked for the cards on screen; the
         // last frame's strip was let go with its session (`StockStrip.leave`). The shelves back to All, as a page made
         // for the frame opened; the rows' sideways places are kept (the same cards, in the same order).
         .onChange(of: ObjectIdentifier(strip)) { _, _ in
+            guard !panelHidden else { return }
             filmKind = .all; paperKind = .all
-            strip.edit = session.edit
             show()
         }
     }
@@ -132,7 +306,7 @@ struct StockPreviewPanel: View {
     private var gridRoom: StripSplit.Room {
         let w = Double(width)
         func section(_ cards: [StockPreviewCard], folded: Bool, dragged: Double?, standard: Double) -> StripSplit.Section {
-            let groups = StockPreviewRules.groups(cards).map { (headed: !$0.brand.isEmpty, count: $0.cards.count) }
+            let groups = memo.groups(cards).map { (headed: !$0.brand.isEmpty, count: $0.cards.count) }
             return .init(open: !folded, min: StockGridRule.minHeight(width: w),
                          content: StockGridRule.contentHeight(groups: groups, width: w), dragged: dragged, standard: standard)
         }
@@ -163,7 +337,7 @@ struct StockPreviewPanel: View {
                 if let crop { cropButton(crop).rowEnabled(appliesFilm) }
             }
             if !filmFolded {
-                StockShelfChips(shelves: StockShelf.film, shelf: memory.binding(.film, kind: $filmKind), all: strip.filmCards)
+                StockShelfChips(shelves: StockShelf.film, shelf: memory.binding(.film, kind: $filmKind), all: memo.films)
                     .rowEnabled(appliesFilm)
                 filmGrid.frame(height: split.film).rowEnabled(appliesFilm)
                 grip(.film, layout, shown: split.film)
@@ -183,11 +357,11 @@ struct StockPreviewPanel: View {
     // A new shelf is a new grid: it starts at its chosen card, or at its first.
     private var filmGrid: some View {
         StockGrid(session: session, strip: strip, cards: filmCards, selected: session.edit.params.filmStock,
-                  width: width, name: "film", visible: $visible, active: appliesFilm).id(filmShelf)
+                  width: width, name: "film", visible: $visible, active: appliesFilm, panelActivity: activity, panelVisit: panelVisit).id(filmShelf)
     }
     private var paperGrid: some View {
         StockGrid(session: session, strip: strip, cards: paperCards, selected: chosenPaper,
-                  width: width, name: "paper", visible: $visible, serves: serves, active: appliesFilm).id(paperShelf)
+                  width: width, name: "paper", visible: $visible, serves: serves, active: appliesFilm, panelActivity: activity, panelVisit: panelVisit).id(paperShelf)
     }
 
     /// A strip's grip, under its cards: it sizes the strip above it and nothing else (`StripSplit.drag`). Each step
@@ -296,9 +470,14 @@ struct StockPreviewPanel: View {
 
     /// The cards on screen are asked for; none while the film is off — they would be pictures of a film not applied.
     private func show() {
-        guard appliesFilm else { StripClients.release(strip, by: client); return }
+        guard !activity.hidden else { return }
+        guard appliesFilm else { release(); return }
+        activity.claim(strip, by: client)
+        if strip.edit != session.edit { strip.edit = session.edit }
         StripClients.show(cards.filter { visible.contains($0.slot) }, on: strip, by: client)
     }
+
+    private func release() { activity.release() }
 
     private func pillsRow(cropInWords: Bool) -> some View {
         HStack(spacing: 8) {
@@ -427,6 +606,7 @@ struct StockShelfChips: View {
             HStack(spacing: 5) {
                 ForEach(shelves) { s in
                     let on = s == shelf
+                    let offered = StockPanelMemo.shared.cards(all, on: s).contains { !$0.isNoPaper }
                     Button { shelf = s } label: {
                         Text(s.title).font(Theme.Font.ui(11.5, on ? .semibold : .medium)).lineLimit(1)
                             .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
@@ -435,8 +615,8 @@ struct StockShelfChips: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .disabled(!s.holdsStock(in: all))
-                    .opacity(s.holdsStock(in: all) ? 1 : Theme.disabledOpacity)
+                    .disabled(!offered)
+                    .opacity(offered ? 1 : Theme.disabledOpacity)
                     .accessibilityAddTraits(on ? .isSelected : [])
                 }
             }
@@ -605,13 +785,16 @@ struct StockCardButton<Face: View>: View {
     var tapped: () -> Void = {}
     /// The card drawn, from what it shows (nil while greyed: nothing is asked for) and whether it is starred.
     @ViewBuilder let face: (StockPreviewState?, Bool) -> Face
+    var panelActivity: FilmLabStockPanelActivity? = nil
+    private var panelHidden: Bool { panelActivity?.hidden ?? false }
 
     var body: some View {
-        Button(action: pick) { face(live ? strip.state(card) : nil, isStarred) }
+        // A mounted but hidden panel must not retain images or keep observing another client's thumbnail arrivals.
+        Button(action: pick) { face(live && !panelHidden ? strip.state(card) : nil, isStarred) }
             .buttonStyle(.plain)
             .accessibilityLabel(accessibilityName)
             .accessibilityIdentifier("stock-preview." + card.slot)
-            .accessibilityValue(live && strip.state(card).isRendering ? L("Developing") : "")
+            .accessibilityValue(live && !panelHidden && strip.state(card).isRendering ? L("Developing") : "")
             .accessibilityAddTraits(selected ? .isSelected : [])
             .accessibilityActions {
                 if card.canBeStarred() { Button(favouriteWord) { toggleFavourite() } }
@@ -638,7 +821,7 @@ struct StockCardButton<Face: View>: View {
     }
 
     private var catalog: StockCatalog { .shared }
-    private var isStarred: Bool { card.canBeStarred() && catalog.isFavourite(card.stock) }
+    private var isStarred: Bool { StockPanelMemo.shared.display(card).starable && catalog.isFavourite(card.stock) }
     private var favouriteWord: String { isStarred ? L("Unfavourite") : L("Favourite") }
     private func toggleFavourite() {
         guard card.canBeStarred() else { return }
@@ -658,9 +841,10 @@ struct StockCardButton<Face: View>: View {
 
     /// The card's name; a cine stock says so, on a paper card the film's recommended paper says so, and a star.
     private var accessibilityName: String {
-        var name: String = catalog.stock(card.stock)?.name ?? card.shownName
-        if StockPreviewRules.wearsCinePill(card) { name += L(", cine") }
-        if card.strip == .paper, catalog.isRecommendedPairing(film: card.film, paper: card.stock) { name += L(", the film's own paper") }
+        let display = StockPanelMemo.shared.display(card)
+        var name = display.fullName
+        if display.cine { name += L(", cine") }
+        if display.recommended { name += L(", the film's own paper") }
         return name + (isStarred ? L(", favourite") : "")
     }
 }

@@ -182,7 +182,7 @@ enum MacSettingsCheck {
         // From another section first: the page opened on General, and only a change draws a section anew.
         select?(.diagnostics)
         try? await Task.sleep(for: .milliseconds(500))
-        for s in MacSettingsSection.allCases {
+        for s in MacSettingsSection.visible {
             forget()
             select?(s)
             try? await Task.sleep(for: .milliseconds(700))
@@ -501,7 +501,7 @@ enum MacSettingsCheck {
             for (name, size) in sizes {
                 let got = await resize(to: size)
                 windows["\(language.rawValue)-\(name)"] = [got.width, got.height]
-                for s in MacSettingsSection.allCases {
+                for s in MacSettingsSection.visible {
                     select?(s)
                     try? await Task.sleep(for: .milliseconds(650))
                     let file = "\(language.rawValue)-\(name)-\(s.rawValue)"

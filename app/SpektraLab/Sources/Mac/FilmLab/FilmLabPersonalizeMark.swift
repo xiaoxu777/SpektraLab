@@ -25,6 +25,14 @@ struct FilmLabMarkSection: View {
     /// The text field is open: no mark is placed yet, or the placed one is being retyped.
     @State private var typing = false
     @State private var text = ""
+    @State private var textStyle: FilmLabTextStyle = .print
+    @State private var textFace = FilmLabHandwriting.faces[0].id
+    @State private var textSeed = UUID()
+    @State private var textTask: Task<Void, Never>?
+    @State private var textRequest = UUID()
+    @State private var signing = false
+    @State private var signatureTarget: WatermarkPlacement?
+    @State private var signatureFrame: UUID?
     @State private var importing = false
     @State private var refusal: String?
     @State private var sizing = false
@@ -42,7 +50,7 @@ struct FilmLabMarkSection: View {
                                   isOn: Binding(get: { anyOn || typing }, set: { setOn($0) }), id: "watermark") {
             VStack(alignment: .leading, spacing: 12) {
                 tiles
-                if typing { textRow }
+                if typing { textRow; textChoices }
                 if let refusal {
                     Text(refusal).font(Theme.Font.ui(11.5)).foregroundStyle(Theme.danger)
                         .fixedSize(horizontal: false, vertical: true)
@@ -65,9 +73,39 @@ struct FilmLabMarkSection: View {
                 }
             }
         }
+        .sheet(isPresented: $signing) {
+            FilmLabSignatureSheet { data in
+                guard session.frame?.id == signatureFrame, current?.id == signatureTarget?.id,
+                      current?.mark == signatureTarget?.mark else { return L("The photo changed. Open the signature pad again.") }
+                guard !session.exportHolds() else { return L("This picture is being exported. Its layers wait until the export is done.") }
+                switch await store.add(data, name: L("Signature")) {
+                case .failure(let why): return why.message
+                case .success(let added):
+                    guard session.frame?.id == signatureFrame, current?.id == signatureTarget?.id,
+                          current?.mark == signatureTarget?.mark else { return L("The photo changed. Open the signature pad again.") }
+                    guard !session.exportHolds() else { return L("This picture is being exported. Its layers wait until the export is done.") }
+                    typing = false; refusal = nil; use(added.mark)
+                    return nil
+                }
+            }
+        }
         // The first mark's handles wait for a click on it: the picture is seen as it will leave the app.
-        .onAppear { pickCurrent(selected: false) }
-        .onChange(of: frame.id) { _, _ in typing = false; refusal = nil; pickCurrent(selected: false) }
+        .onAppear {
+            pickCurrent(selected: false)
+            if let mark = current?.mark, FilmLabTextMark.recipe(of: mark) != nil { editText(mark, focus: false) }
+        }
+        .onChange(of: frame.id) { _, _ in cancelText(); typing = false; refusal = nil; pickCurrent(selected: false) }
+        .onChange(of: text) { _, _ in
+            cancelText(); textSeed = UUID()
+            if textStyle == .hand, !textFaces.contains(where: { $0.id == textFace }), let first = textFaces.first {
+                textFace = first.id
+            }
+        }
+        .onChange(of: current?.mark) { _, mark in
+            if typing, let mark, FilmLabTextMark.recipe(of: mark) != nil { editText(mark, focus: false) }
+        }
+        .onDisappear { cancelText() }
+        .task(id: frame.id) { await checkLaunch() }
     }
 
     /// "© Eric · 右下" under the name: the mark's name, and how many where there are more.
@@ -94,6 +132,7 @@ struct FilmLabMarkSection: View {
                     textFocused = true
                 }
             } else {
+                cancelText()
                 typing = false
                 session.watermarkPick = nil
                 if anyOn { session.change { e in for i in e.watermarks.indices { e.watermarks[i].on = false } } }
@@ -118,21 +157,21 @@ struct FilmLabMarkSection: View {
             tile(width: side, on: typing, label: L("Text", as: "a watermark of typed words"), id: "text") {
                 Text(verbatim: "Aa").font(.system(size: 22, weight: .semibold, design: .serif)).foregroundStyle(Theme.text)
             } action: {
-                text = chosen.flatMap(FilmLabTextMark.text(of:)) ?? ""
-                typing = true
-                textFocused = true
+                editText(chosen, focus: true)
             }
             ForEach(store.marks) { mark in
                 tile(width: side, on: mark.id == chosen && !typing, label: mark.name, id: mark.id.uuidString) {
                     WatermarkThumbnail(mark: mark.id, cell: 5)
                 } action: {
+                    cancelText()
                     typing = false
                     use(mark)
+                    if FilmLabTextMark.recipe(of: mark.id) != nil { editText(mark.id, focus: false) }
                 }
             }
             tile(width: side, on: false, label: L("PNG…"), id: "png") {
                 Image(systemName: "plus").font(Theme.Font.ui(17, .medium)).foregroundStyle(Theme.secondaryText)
-            } action: { importing = true }
+            } action: { cancelText(); importing = true }
         }
         .frame(width: side * 3 + gap * 2, alignment: .leading)
     }
@@ -179,7 +218,7 @@ struct FilmLabMarkSection: View {
                 .accessibilityIdentifier("filmlab.personalize.mark.field")
             Button(L("Use", as: "use this text")) { commitText() }
                 .buttonStyle(FilmLabPanelButtonStyle(primary: true))
-                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(textWords.isEmpty || (textStyle == .hand && !textFaces.contains(where: { $0.id == textFace })))
         }
         .onChange(of: textFocused) { _, now in
             MacLibraryBrowser.shared.typing = now
@@ -187,28 +226,122 @@ struct FilmLabMarkSection: View {
         .onDisappear { MacLibraryBrowser.shared.typing = false }
     }
 
-    private func commitText() {
-        let words = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !words.isEmpty else { return }
+    private var textWords: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var textFaces: [FilmLabHandwriting.Face] { FilmLabHandwriting.available(for: textWords) }
+
+    private var textChoices: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SegmentedSwitch(options: FilmLabTextStyle.allCases,
+                            selection: Binding(get: { textStyle }, set: { style in
+                                textStyle = style
+                                if style == .hand, !textFaces.contains(where: { $0.id == textFace }), let first = textFaces.first {
+                                    textFace = first.id
+                                }
+                                commitText()
+                            }), title: { $0.label }, height: 36, track: Theme.card, size: 14)
+                .accessibilityIdentifier("filmlab.personalize.mark.text.style")
+            if textStyle == .hand {
+                if textFaces.isEmpty {
+                    Text(L("No handwriting font for this text.")).font(Theme.Font.ui(12)).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(textFaces) { face in
+                        let recipe = FilmLabTextRecipe(text: textWords, style: .hand, postScriptName: face.id)
+                        FilmLabHandwritingTile(face: face, words: textWords,
+                                              seed: FilmLabTextMark.existing(recipe, in: store)?.id ?? textSeed,
+                                              width: max(80, (width - 40) / 2), selected: textFace == face.id) {
+                            textFace = face.id
+                            commitText()
+                        }
+                    }
+                }
+                HStack {
+                    Text(L("Signature")).font(Theme.Font.ui(13, .medium)).foregroundStyle(Theme.text)
+                    Spacer(minLength: 8)
+                    Button(L("Draw one")) {
+                        openSignature()
+                    }
+                    .buttonStyle(FilmLabPanelButtonStyle())
+                    .disabled(session.exportHolds())
+                    .accessibilityIdentifier("filmlab.personalize.mark.signature")
+                }
+            }
+        }
+    }
+
+    private func editText(_ mark: UUID?, focus: Bool) {
+        cancelText()
+        let recipe = mark.flatMap(FilmLabTextMark.recipe(of:))
+        text = recipe?.text ?? ""
+        textStyle = recipe?.style ?? .print
+        textFace = recipe?.postScriptName ?? FilmLabHandwriting.faces[0].id
+        textSeed = UUID()
+        typing = true
+        textFocused = focus
+    }
+
+    private func cancelText() {
+        textTask?.cancel(); textTask = nil
+        textRequest = UUID()
+    }
+
+    private func commitText(recipe requested: FilmLabTextRecipe? = nil) {
+        let recipe = requested ?? FilmLabTextRecipe(text: textWords, style: textStyle,
+                                                   postScriptName: textStyle == .hand ? textFace : nil)
+        cancelText()
+        guard !recipe.text.isEmpty, !session.exportHolds() else { return }
+        if recipe.style == .hand,
+           !FilmLabHandwriting.available(for: recipe.text).contains(where: { $0.id == recipe.postScriptName }) { return }
+        let target = current, frameID = frame.id, request = textRequest, seed = textSeed
+        textSeed = UUID()                   // Another click during the write must have a different file identity.
         textFocused = false
-        Task { @MainActor in
-            guard let mark = await FilmLabTextMark.mark(for: words, in: store) else {
+        textTask = Task { @MainActor in
+            let made = await FilmLabTextMark.mark(for: recipe, id: seed, in: store)
+            // A font click may finish after another click, a frame change or an export. Its asset can stay in the
+            // library, but it must never replace the new frame's watermark or overwrite a more recent choice.
+            guard !Task.isCancelled, request == textRequest, session.frame?.id == frameID,
+                  current?.id == target?.id, current?.mark == target?.mark, !session.exportHolds() else { return }
+            guard let mark = made else {
                 refusal = L("The text could not be made into a watermark.")
                 return
             }
             refusal = nil
-            typing = false
-            use(mark)
+            use(mark, replacingOnly: requested == nil)
+            textSeed = UUID()
         }
+    }
+
+    private func openSignature() {
+        guard !session.exportHolds() else { return }
+        cancelText(); textFocused = false
+        signatureTarget = current; signatureFrame = frame.id; signing = true
+    }
+
+    /// The check uses the same recipe writer, placement and signature action as the buttons above.
+    private func checkLaunch() async {
+        guard FilmLabPersonalizeCheck.mark != nil || FilmLabPersonalizeCheck.signaturePad,
+              await FilmLabPersonalizeCheck.settle(session, frameID: frame.id), session.takesWatermarks else { return }
+        if let recipe = FilmLabPersonalizeCheck.mark, FilmLabPersonalizeCheck.consume(.mark) {
+            commitText(recipe: recipe)
+            await textTask?.value
+            if !Task.isCancelled, session.frame?.id == frame.id, let mark = current?.mark,
+               FilmLabTextMark.recipe(of: mark) != nil { editText(mark, focus: false) }
+        }
+        guard FilmLabPersonalizeCheck.signaturePad,
+              await FilmLabPersonalizeCheck.settle(session, frameID: frame.id),
+              await FilmLabPersonalizeCheck.settle(session, frameID: frame.id),
+              FilmLabPersonalizeCheck.consume(.signature) else { return }
+        openSignature()
     }
 
     /// `mark` on the picture: in the current placement's place (its spot, size, turn and opacity kept), or a new
     /// placement bottom right. One step of Undo.
-    private func use(_ mark: WatermarkMark) {
+    private func use(_ mark: WatermarkMark, replacingOnly: Bool = false) {
         FilmLabTextMark.remember(mark.id)
         if let p = current {
             let owns = session.beginHistoryTransaction()
-            session.changeWatermark(p.id) { $0.mark = mark.id; $0.on = true }
+            session.changeWatermark(p.id) { $0.mark = mark.id; if !replacingOnly { $0.on = true } }
             if owns { session.endHistoryTransaction() }
             pickCurrent(selected: true)
             return
@@ -421,6 +554,53 @@ struct FilmLabMarkPad: View {
     }
 }
 
+/// Font samples are small images from the same outline/ink code as the baked mark. A sample task owns only one
+/// image; changing the draft cancels publication of its old result, rather than caching every keystroke or face.
+private struct FilmLabHandwritingTile: View {
+    let face: FilmLabHandwriting.Face
+    let words: String
+    let seed: UUID
+    let width: CGFloat
+    let selected: Bool
+    let action: () -> Void
+    @State private var sample: CGImage?
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Group {
+                    if let sample { Image(uiImage: UIImage(cgImage: sample)).interpolation(.high) }
+                    else { Color.clear.frame(width: 1, height: 1) }
+                }
+                .opacity(words.isEmpty ? 0.45 : 1)
+                .frame(maxWidth: .infinity).frame(height: 72)
+                .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                Text(face.label).font(Theme.Font.ui(11, selected ? .semibold : .medium))
+                    .foregroundStyle(Theme.secondaryText).fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 8).padding(.top, 4).padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(selected ? Theme.selectionFrame : Theme.rule, lineWidth: selected ? 2 : 0.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
+        .accessibilityLabel(face.label)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityIdentifier("filmlab.personalize.mark.face." + face.id)
+        .task(id: "\(face.id)|\(words)|\(seed)|\(width)") {
+            sample = nil
+            let face = face, seed = seed, text = words.isEmpty ? "xiaoxu" : words, available = max(24, width - 16)
+            let made = await Task.detached(priority: .userInitiated) {
+                FilmLabHandwriting.sample(text, face: face, seed: seed, width: available)
+            }.value
+            if !Task.isCancelled { sample = made }
+        }
+    }
+}
+
 /// A watermark made from typed text: the words drawn white on nothing, kept in the library as a PNG named by them, so
 /// everything a mark can do (its colour, its place, 底片) a line of text can. Which marks are text, and their words, is
 /// kept beside the app's settings (`filmlab.watermark.texts`): the library's own index is not touched.
@@ -428,6 +608,7 @@ struct FilmLabMarkPad: View {
 enum FilmLabTextMark {
     private static let textsKey = "filmlab.watermark.texts"
     private static let lastKey = "filmlab.watermark.last"
+    private static let recipesKey = "filmlab.watermark.textRecipes"
 
     private static var texts: [String: String] {
         get { UserDefaults.standard.dictionary(forKey: textsKey) as? [String: String] ?? [:] }
@@ -435,7 +616,23 @@ enum FilmLabTextMark {
     }
 
     /// The words `mark` was made from; nil for a PNG the person brought.
-    static func text(of mark: UUID) -> String? { texts[mark.uuidString] }
+    static func text(of mark: UUID) -> String? { recipe(of: mark)?.text ?? texts[mark.uuidString] }
+
+    /// Each optional recipe is its own Codable blob: a future/invalid entry cannot erase the other recipes. The old
+    /// text dictionary keeps its exact shape. Missing recipe means legacy Print, NEVER a request to re-bake its PNG.
+    private static var recipes: [String: Data] {
+        get { UserDefaults.standard.dictionary(forKey: recipesKey) as? [String: Data] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: recipesKey) }
+    }
+
+    static func recipe(of mark: UUID) -> FilmLabTextRecipe? {
+        if let data = recipes[mark.uuidString] { return try? JSONDecoder().decode(FilmLabTextRecipe.self, from: data) }
+        return texts[mark.uuidString].map { FilmLabTextRecipe(text: $0, style: .print, postScriptName: nil) }
+    }
+
+    static func existing(_ recipe: FilmLabTextRecipe, in store: WatermarkStore) -> WatermarkMark? {
+        store.marks.first { Self.recipe(of: $0.id) == recipe }
+    }
 
     static func remember(_ mark: UUID) { UserDefaults.standard.set(mark.uuidString, forKey: lastKey) }
 
@@ -446,11 +643,28 @@ enum FilmLabTextMark {
 
     /// The library's mark for `words`: the one made from them before, or a new PNG.
     static func mark(for words: String, in store: WatermarkStore) async -> WatermarkMark? {
-        if let kept = texts.first(where: { $0.value == words })?.key, let id = UUID(uuidString: kept), let mark = store.mark(id) {
-            return mark
+        await mark(for: FilmLabTextRecipe(text: words, style: .print, postScriptName: nil), id: UUID(), in: store)
+    }
+
+    static func mark(for recipe: FilmLabTextRecipe, id: UUID, in store: WatermarkStore) async -> WatermarkMark? {
+        if let mark = existing(recipe, in: store) { return mark }
+        let data: Data?
+        if recipe.style == .print {
+            data = png(recipe.text)          // The original renderer below is deliberately unchanged.
+        } else {
+            guard let face = FilmLabHandwriting.faces.first(where: { $0.id == recipe.postScriptName }),
+                  FilmLabHandwriting.font(face, text: recipe.text, points: 180) != nil else { return nil }
+            data = await Task.detached(priority: .userInitiated) {
+                FilmLabHandwriting.png(recipe.text, face: face, seed: id)
+            }.value
         }
-        guard let data = png(words), case .success(let added) = await store.add(data, name: words) else { return nil }
-        texts[added.mark.id.uuidString] = words
+        guard !Task.isCancelled, let data,
+              case .success(let added) = await store.add(data, name: recipe.text, id: id) else { return nil }
+        // SHA dedup may have returned an existing asset. Do not relabel someone else's PNG or text recipe.
+        if case .new = added {
+            texts[added.mark.id.uuidString] = recipe.text
+            if let encoded = try? JSONEncoder().encode(recipe) { recipes[added.mark.id.uuidString] = encoded }
+        }
         return added.mark
     }
 

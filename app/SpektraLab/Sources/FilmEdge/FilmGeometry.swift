@@ -106,6 +106,9 @@ struct FilmEdgeRequest: Equatable, Sendable {
     var date: DateRequest? = nil
     /// `overscan_perforation`: the keyholes on a 120 film edge (sent `none` on any other format).
     var perforation = FilmEdgePerforation.none
+    /// Low-level layout requests retain the engine's no-holder default. The app's resolver passes
+    /// the photo's effective scan explicitly (old photo settings mean Natural).
+    var scan = FilmEdgeScan.clean
 }
 
 /// One mark exposed onto the film, in film millimetres: `s` along the film,

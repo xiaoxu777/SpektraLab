@@ -2,8 +2,9 @@
 //  调整 · 曲线 · 颗粒·光晕 · 局部, a row of chips at the top of the grading column, each showing its part of the column.
 //
 //  调整 is Adjust's tools without the curve; 曲线 the curve alone, open; 颗粒·光晕 the film's effects (they moved here from
-//  导出 › 格式, `DevelopWorkspace.gradingHasEffects`); 局部 points at the 图层 panel over it, where a sky, a person, a
-//  subject, a brush or a gradient is added and picked — a picked mask layer's page takes the column, as before.
+//  导出 › 格式, `DevelopWorkspace.gradingHasEffects`), with 底片画幅 above the sliders; 局部 points at the 图层 panel over
+//  it, where a sky, a person, a subject, a brush or a gradient is added and picked — a picked mask layer's page takes
+//  the column, as before.
 //  The tab is kept across launches.
 
 import SwiftUI
@@ -50,7 +51,8 @@ final class FilmLabGradeState {
     }
 
     private init() {
-        tab = UserDefaults.standard.string(forKey: Self.key).flatMap(FilmLabGradeTab.init(rawValue:)) ?? .adjust
+        tab = FilmLabPersonalizeCheck.gradeTab
+            ?? UserDefaults.standard.string(forKey: Self.key).flatMap(FilmLabGradeTab.init(rawValue:)) ?? .adjust
     }
 }
 
@@ -80,6 +82,56 @@ struct FilmLabGradeTabs: View {
             .padding(.horizontal, 16)
             .frame(height: Self.height - 0.5)
             Rectangle().fill(Theme.rule).frame(height: 0.5)
+        }
+    }
+}
+
+/// The film's physical format belongs with its grain and halation, not the decorations in 个性化.
+/// The edge's camera owns the scale while on; keep that a reading, with no disabled cards to tap.
+struct FilmLabFilmFormatSection: View {
+    let session: OpenFrameSession
+    let frame: LibraryFrame
+    @Environment(AppSettings.self) private var settings
+    @AppStorage("filmlab.grade.filmFormat.collapsed") private var folded = true
+
+    private var isFolded: Bool { folded && !FilmLabPersonalizeCheck.gradeFormat }
+
+    var body: some View {
+        if !FeatureFlags.simpleWindow, frame.pair == nil, session.pair == nil {
+            VStack(spacing: 0) {
+                if session.edit.filmEdge.effective {
+                    Text(L("Follows the film edge: \(session.edit.filmEdge.format.everydayName)"))
+                        .font(Theme.Font.ui(12.5)).foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                } else {
+                    ColumnSectionHeader(title: L("Film format"), folded: isFolded, id: "film-format",
+                                        value: Self.cardName(FilmFrame.named(session.edit.params.filmFrame)),
+                                        toggleFold: { folded.toggle() })
+                    Text(L("Smaller film, coarser grain and wider halation."))
+                        .font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16).padding(.bottom, 8)
+                    if !isFolded {
+                        FilmSizeSection(session: session, frame: frame, controlsOnly: true, cardName: Self.cardName)
+                    }
+                }
+            }
+            .accessibilityIdentifier("filmlab.grade.film-format")
+            .task(id: frame.id) { await FilmLabPersonalizeCheck.applyEdge(session, frame: frame, body: settings.bodySeed) }
+        }
+    }
+
+    private static func cardName(_ frame: FilmFrame) -> String {
+        switch frame.id {
+        case "8mm": L("8mm movie")
+        case "110": L("110 pocket film")
+        case "135": L("35mm full frame")
+        case "120": L("120 medium format")
+        case "4x5": L("4×5 large format")
+        default: frame.title
         }
     }
 }

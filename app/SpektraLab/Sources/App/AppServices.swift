@@ -391,6 +391,7 @@ final class AppServices {
         }
         // `--settings`: Settings open on their first page.
         if arguments.contains("--settings") { model.router.show(.settings) }
+        FilmLabSettingsCheck.openIfAsked(router: model.router, arguments: arguments)
         // `--develop` opens the develop page on the library's frame; `--crop`
         // and `--film-edge` the Crop page and the Film Edge flow's Frame step
         // over it (a simulator driven from a Mac, to put a finger on them).
@@ -1540,6 +1541,7 @@ extension View {
 /// language is changed in Settings.
 private struct LanguageHost: ViewModifier {
     func body(content: Content) -> some View {
-        content.environment(\.locale, Language.shared.current.locale)
+        let locale = Language.shared.swiftUILocaleOverride
+        return content.transformEnvironment(\.self) { if let locale { $0.locale = locale } }
     }
 }

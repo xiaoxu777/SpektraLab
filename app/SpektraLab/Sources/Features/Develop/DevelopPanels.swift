@@ -446,6 +446,9 @@ struct FramePanel: View {
 struct FilmSizeSection: View {
     let session: OpenFrameSession
     let frame: LibraryFrame
+    /// FilmLab supplies its own folding title and explanation beside Grain and Halation.
+    var controlsOnly = false
+    var cardName: (FilmFrame) -> String = { $0.title }
     private var prefs: DevelopPanelPrefs { .shared }
     @ScaledMetric(relativeTo: .caption) private var labelSize: CGFloat = 11
     /// The card Custom's switch goes back to when it is turned off: the last one picked here, else 135.
@@ -463,13 +466,15 @@ struct FilmSizeSection: View {
         let held = edge.effective
         // The first of the column's sections: the tool row's rule is over it already.
         VStack(spacing: 0) {
-            ColumnSectionHeader(title: L("Size"), folded: prefs.filmSizeCollapsed, id: "film-size",
-                                toggleFold: { prefs.filmSizeCollapsed.toggle() }) {
-                Text(readout(held: held)).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.dim)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                    .accessibilityIdentifier("v5.develop.film-size.readout")
+            if !controlsOnly {
+                ColumnSectionHeader(title: L("Size"), folded: prefs.filmSizeCollapsed, id: "film-size",
+                                    toggleFold: { prefs.filmSizeCollapsed.toggle() }) {
+                    Text(readout(held: held)).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.dim)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .accessibilityIdentifier("v5.develop.film-size.readout")
+                }
             }
-            if !prefs.filmSizeCollapsed {
+            if controlsOnly || !prefs.filmSizeCollapsed {
                 VStack(spacing: 4) {
                     StripScroller(ids: cards.map(\.id), selected: isCustom ? nil : params.filmFrame,
                                   cardHeight: StripCard<EmptyView>.size(compact: true).height) { id in
@@ -480,11 +485,13 @@ struct FilmSizeSection: View {
                 // With a film edge on, the film's size is the film edge's own format — the engine takes the
                 // gate's millimetres, not these (`pipeline.cpp`, `overscan_gate_long_mm`).
                 .rowEnabled(!held)
-                Text(PanelNotes.filmSize(edge: held ? edge.format.label : nil).joined(separator: " "))
-                    .font(Theme.Font.ui(PanelNotes.size)).foregroundStyle(Theme.dim)
-                    .lineLimit(2).minimumScaleFactor(0.85)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
+                if !controlsOnly {
+                    Text(PanelNotes.filmSize(edge: held ? edge.format.label : nil).joined(separator: " "))
+                        .font(Theme.Font.ui(PanelNotes.size)).foregroundStyle(Theme.dim)
+                        .lineLimit(2).minimumScaleFactor(0.85)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
+                }
             }
         }
         .onChange(of: params.filmFrame, initial: true) { _, id in
@@ -506,7 +513,8 @@ struct FilmSizeSection: View {
                 // The name over this picture's size, both at the card's foot: side by side they ran into each
                 // other on a 96 pt card (APS, 4×5; the merged build's snapshot, 2026-11-11).
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(f.title).font(Theme.Font.ui(labelSize, .semibold)).foregroundStyle(.white).lineLimit(1)
+                    Text(cardName(f)).font(Theme.Font.ui(labelSize, .semibold)).foregroundStyle(.white)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     Text(dims).font(Theme.Font.ui(9.5, .medium)).monospacedDigit().foregroundStyle(.white.opacity(0.75))
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
@@ -514,8 +522,8 @@ struct FilmSizeSection: View {
             }
         }
         .buttonStyle(.plain)
-        .help(f.title + Fmt.dot + Self.mm(f.short) + " × " + Self.mm(f.long) + " mm")
-        .accessibilityLabel(f.title + ", " + dims)
+        .help(cardName(f) + Fmt.dot + Self.mm(f.short) + " × " + Self.mm(f.long) + " mm")
+        .accessibilityLabel(cardName(f) + ", " + dims)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("v5.develop.film-size." + f.id)
     }

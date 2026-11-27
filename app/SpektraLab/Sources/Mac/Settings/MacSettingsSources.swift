@@ -37,11 +37,11 @@ struct MacSettingsSources: View {
     private var store: any MacLibraryData { MacLibraryUI.store(model) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
+        VStack(alignment: .leading, spacing: MacMetric.pt(MacSettingsMetric.gap)) {
             if !store.move.candidates.isEmpty { moveGroup }
             sources
             if !library.linkedFolders.isEmpty { linked }
-            copiedIn
+            if copiedInCount > 0 { copiedIn }
         }
         .task { await store.start() }
         .fileImporter(isPresented: $picking, allowedContentTypes: Self.openable) { result in
@@ -67,15 +67,14 @@ struct MacSettingsSources: View {
 
     private var sources: some View {
         let all = store.sources
-        return MacSettingsGroup(title: L("Catalogs and folders"),
-                                footer: L("SpektraLab never changes or deletes anything in your folders or in a Capture One catalog. Edits live in the app.")) {
+        return MacSettingsGroup(title: L("Catalogs and folders")) {
             if all.isEmpty {
                 MacSettingsRow(label: L("Reading the library…"), last: true)
             }
             ForEach(Array(all.enumerated()), id: \.element.id) { i, s in
                 sourceRow(s, last: i == all.count - 1)
             }
-            if let line = store.activity.working ?? store.activity.problem ?? store.activity.lastSync {
+            if let line = store.activity.working ?? store.activity.problem {
                 MacSettingsCaption(L(shown: line))
                     .padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
                     .padding(.bottom, MacMetric.pt(6))
@@ -96,8 +95,7 @@ struct MacSettingsSources: View {
 
     /// The old app library's frames, until they are moved into a catalog (`MacLibraryMove`).
     private var moveGroup: some View {
-        MacSettingsGroup(title: L("SpektraLab Library"),
-                         footer: L("Your library is a SpektraLab catalog now. The pictures are read where they are; nothing is moved or copied.")) {
+        MacSettingsGroup(title: L("SpektraLab Library")) {
             MacSettingsValueRow(label: L("\(store.move.candidates.count) pictures are not in a catalog yet"), value: "", last: true)
         } accessory: {
             Button(L("Move into a Catalog…")) {
@@ -150,50 +148,18 @@ struct MacSettingsSources: View {
     }
 
     private func sourceRow(_ s: MacSource, last: Bool) -> some View {
-        let isShown = store.selectedSourceID == s.id
-        return VStack(alignment: .leading, spacing: MacMetric.pt(3)) {
-            HStack(alignment: .top, spacing: MacMetric.pt(8)) {
-                Image(systemName: MacWords.symbol(s.kind)).font(MacMetric.font(14)).foregroundStyle(Theme.secondaryText)
-                    .frame(width: MacMetric.pt(20), height: MacMetric.pt(18))
-                VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-                    HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
-                        Text(Self.name(s)).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if isShown {
-                            Text(L("In the Library")).font(MacMetric.font(10, .semibold)).foregroundStyle(Theme.onSelection)
-                                .padding(.horizontal, MacMetric.pt(5)).frame(minHeight: MacMetric.pt(15))
-                                .background(Theme.selection, in: Capsule())
-                                .fixedSize()
-                        }
-                    }
-                    let line = facts(s)
-                    if !line.isEmpty {
-                        Text(line).font(MacMetric.font(11)).monospacedDigit().foregroundStyle(Theme.dim)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    if let path = s.path {
-                        Text((path as NSString).abbreviatingWithTildeInPath).font(MacMetric.font(11)).foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .textSelection(.enabled)
-                    }
-                    if let c = s.copiedFrom { copiedLine(s, c) }
-                    if let status = Self.status(s) {
-                        Text(status.0).font(MacMetric.font(11, .medium)).foregroundStyle(status.1 ? Theme.danger : Theme.dim)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    // A catalog's or session's kept folders; a folder source's one is itself.
-                    if isShown, s.acceptsFolders, !store.watchedFolders.isEmpty { watched }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+        let selected = store.selectedSourceID == s.id
+        let hasWatched = selected && s.acceptsFolders && !store.watchedFolders.isEmpty
+        let details = [facts(s), s.path.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? ""]
+            .filter { !$0.isEmpty }.joined(separator: Fmt.dot)
+        return VStack(spacing: 0) {
+            MacSettingsRow(label: Self.name(s) + (selected ? Fmt.dot + L("In the Library") : ""), detail: details.isEmpty ? nil : details,
+                           caption: Self.status(s)?.0, last: last && s.copiedFrom == nil && !hasWatched) {
                 actions(s)
             }
+            if let c = s.copiedFrom { copiedLine(s, c) }
+            if hasWatched { watched }
         }
-        .padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
-        .padding(.vertical, MacMetric.pt(7))
-        .overlay(alignment: .bottom) {
-            if !last { MacSettingsHairline().padding(.leading, MacMetric.pt(MacSettingsMetric.inset + 28)) }
-        }
-        .contentShape(Rectangle())
         .contextMenu { menu(s) }
         .accessibilityIdentifier("mac.settings.source")
         .onAppear {
@@ -207,11 +173,8 @@ struct MacSettingsSources: View {
     private func copiedLine(_ s: MacSource, _ c: MacCopiedFrom) -> some View {
         let from = c.path.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? L("Capture One")
         let when = c.lastTaken.map { $0.formatted(date: .abbreviated, time: .shortened) }
-        return HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
-            Text(when.map { L("Copied from \(from) · updated \($0)") } ?? L("Copied from \(from)"))
-                .font(MacMetric.font(11)).foregroundStyle(Theme.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        return MacSettingsRow(label: L("Capture One"),
+                              detail: when.map { L("Copied from \(from) · updated \($0)") } ?? L("Copied from \(from)"), last: true) {
             Button(L("Update Now")) { run { await MacCatalogActions.update(store, s) } }
                 .buttonStyle(MacSettingsButtonStyle())
                 .disabled(store.activity.working != nil)
@@ -221,19 +184,12 @@ struct MacSettingsSources: View {
 
     /// The folders a SpektraLab catalog or session keeps in step, for the source the library shows.
     private var watched: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            Text(L("Folders kept in step")).font(MacMetric.font(11, .semibold)).foregroundStyle(Theme.dim)
-                .padding(.top, MacMetric.pt(3))
+        VStack(alignment: .leading, spacing: 0) {
+            MacSettingsCaption(L("Folders kept in step")).padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
             ForEach(store.watchedFolders) { f in
-                HStack(alignment: .firstTextBaseline, spacing: MacMetric.pt(6)) {
-                    Image(systemName: f.isOnline ? "folder" : "externaldrive.badge.xmark").font(MacMetric.font(11))
-                        .foregroundStyle(f.isOnline ? Theme.dim : Theme.danger)
-                    Text((f.url.path as NSString).abbreviatingWithTildeInPath).font(MacMetric.font(11)).foregroundStyle(Theme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: MacMetric.pt(6))
+                MacSettingsRow(label: f.url.lastPathComponent, detail: (f.url.path as NSString).abbreviatingWithTildeInPath, last: true) {
                     Text(f.isOnline ? L("\(Fmt.thousands(f.imageCount)) images") : L("Not connected"))
-                        .font(MacMetric.font(11)).monospacedDigit().foregroundStyle(f.isOnline ? Theme.dim : Theme.danger)
-                        .fixedSize()
+                        .font(MacMetric.font(13)).foregroundStyle(f.isOnline ? Theme.secondaryText : Theme.danger)
                 }
             }
         }
@@ -245,7 +201,7 @@ struct MacSettingsSources: View {
                 .buttonStyle(MacSettingsButtonStyle())
             Menu { menu(s) } label: {
                 Image(systemName: "ellipsis.circle").font(MacMetric.font(15)).foregroundStyle(Theme.secondaryText)
-                    .frame(width: MacMetric.pt(24), height: MacMetric.pt(22)).contentShape(Rectangle())
+                    .frame(width: MacMetric.pt(34), height: MacMetric.pt(34)).contentShape(Rectangle())
             }
             .menuIndicator(.hidden)
             .fixedSize()
@@ -292,9 +248,7 @@ struct MacSettingsSources: View {
     // MARK: folders linked the window's way
 
     private var linked: some View {
-        MacSettingsGroup(title: L("Folders linked as frames"),
-                         footer: L("Linked before the Mac library had sources of its own: every picture in them is a frame of the SpektraLab library. "
-                                   + "New folders are opened above instead.")) {
+        MacSettingsGroup(title: L("Folders linked as frames")) {
             ForEach(Array(library.linkedFolders.enumerated()), id: \.element.id) { i, folder in
                 linkedRow(folder, last: i == library.linkedFolders.count - 1)
             }
@@ -307,45 +261,23 @@ struct MacSettingsSources: View {
 
     private func linkedRow(_ folder: LinkedFolder, last: Bool) -> some View {
         let menu = LinkedFolderMenu(folder: folder, reconnect: { reconnecting = folder.id }, unlink: { unlinking = folder.id })
-        return VStack(alignment: .leading, spacing: MacMetric.pt(4)) {
-            HStack(alignment: .top, spacing: MacMetric.pt(8)) {
-                Image(systemName: folder.isConnected ? "folder" : "externaldrive.badge.xmark").font(MacMetric.font(14))
-                    .foregroundStyle(folder.isConnected ? Theme.secondaryText : Theme.danger)
-                    .frame(width: MacMetric.pt(20), height: MacMetric.pt(18))
-                VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-                    Text(folder.title).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if folder.place != folder.title {
-                        Text(folder.place).font(MacMetric.font(11)).foregroundStyle(Theme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Text(folder.statusLine).font(MacMetric.font(11, .medium)).foregroundStyle(folder.isConnected ? Theme.dim : Theme.danger)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if let hint = folder.statusHint { MacSettingsCaption(hint) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+        return MacSettingsRow(label: folder.title,
+                              detail: [folder.place, folder.statusLine].joined(separator: Fmt.dot),
+                              caption: folder.statusHint, last: last) {
+            HStack(spacing: MacMetric.pt(10)) {
                 if folder.kind == .disk {
-                    HStack(spacing: MacMetric.pt(4)) {
-                        Text(L("Keep a local copy")).font(MacMetric.font(12)).foregroundStyle(Theme.secondaryText).fixedSize()
-                        MacSettingsCheckbox(label: L("Keep a local copy"), on: Binding(
-                            get: { library.linkedFolders.first { $0.id == folder.id }?.keepsLocalCopy ?? false },
-                            set: { library.setKeepsLocalCopy(folder.id, $0) }))
-                    }
-                    .macSettingsItem("Keep a local copy")
+                    Text(L("Keep a local copy")).font(MacMetric.font(13)).foregroundStyle(Theme.secondaryText)
+                    MacSettingsCheckbox(label: L("Keep a local copy"), on: Binding(
+                        get: { library.linkedFolders.first { $0.id == folder.id }?.keepsLocalCopy ?? false },
+                        set: { library.setKeepsLocalCopy(folder.id, $0) }))
+                        .macSettingsItem("Keep a local copy")
                 }
                 Menu { menu } label: {
-                    Image(systemName: "ellipsis.circle").font(MacMetric.font(15)).foregroundStyle(Theme.secondaryText)
-                        .frame(width: MacMetric.pt(24), height: MacMetric.pt(22)).contentShape(Rectangle())
+                    Image(systemName: "ellipsis.circle").font(MacMetric.font(18))
+                        .frame(width: MacMetric.pt(34), height: MacMetric.pt(34)).contentShape(Rectangle())
                 }
-                .menuIndicator(.hidden)
-                .fixedSize()
                 .accessibilityLabel(L("Folder Actions"))
             }
-        }
-        .padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
-        .padding(.vertical, MacMetric.pt(7))
-        .overlay(alignment: .bottom) {
-            if !last { MacSettingsHairline().padding(.leading, MacMetric.pt(MacSettingsMetric.inset + 28)) }
         }
         .contextMenu { menu }
         .macSettingsItem("Linked folder actions")
@@ -353,11 +285,15 @@ struct MacSettingsSources: View {
 
     // MARK: copied in
 
+    private var copiedInCount: Int {
+        library.storage.copiedInFrames + library.frames.filter { $0.source == .copiedIn }.count
+    }
+
     private var copiedIn: some View {
-        let n = library.storage.copiedInFrames + library.frames.filter { $0.source == .copiedIn }.count
+        let n = copiedInCount
         return MacSettingsGroup(title: L("Copied into SpektraLab")) {
             MacSettingsValueRow(label: L("\(n) frames"), value: Fmt.gigabytes(library.storage.copiedInOriginals),
-                                caption: L("The only copy of shares and files copied in. Never cleared."), last: true)
+                                last: true)
         }
         .macSettingsItem("Copied into SpektraLab", "%@ frames")
     }

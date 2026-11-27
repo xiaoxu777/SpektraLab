@@ -95,8 +95,10 @@ enum MacLibraryGo {
         browser.lastOpened = image.id
         let chosen = browser.selection
         let ids = chosen.count > 1 && chosen.contains(image.id) ? store.images.filter { chosen.contains($0.id) }.map(\.id) : [image.id]
-        Task {
-            do { try await store.openInDevelop(ids, focus: image.id) } catch { MacLibraryActions.shared.refusal = error.localizedDescription }
+        FilmLabMotionFlight.open(image, model: model) {
+            Task {
+                do { try await store.openInDevelop(ids, focus: image.id) } catch { MacLibraryActions.shared.refusal = error.localizedDescription }
+            }
         }
     }
 
@@ -205,6 +207,7 @@ struct MainWindowLayout: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .filmLabFlightHost(develop: develop, model: model)
         }
         .background(Theme.background.ignoresSafeArea())
         // Under FilmLab's home page or welcome the shell is not there for VoiceOver either (it would be read, and
@@ -222,7 +225,7 @@ struct MainWindowLayout: View {
         .overlay(alignment: .top) {
             OwnReads { FilmLabDropNote() }.interfaceScaled(.macPoints).allowsHitTesting(false)
         }
-        .onAppear { FilmLabDrop.shared.model = model; FilmLabCheckArgs.showPage(model: model); FilmLabModeProbe.startIfAsked(model: model) }
+        .onAppear { FilmLabDrop.shared.model = model; FilmLabCheckArgs.showPage(model: model); FilmLabModeProbe.startIfAsked(model: model); FilmLabMotionPhotoProbe.startIfAsked(model: model) }
         // What a paste just did, over the picture while 冲洗/二级调色/导出 is in front (the library says it in its sidebar).
         .overlay(alignment: .bottom) {
             if develop != nil {
@@ -499,6 +502,7 @@ struct MainWindowLayout: View {
 
     private func topBar(_ store: any MacLibraryData, _ rows: [MacImage], inDevelop: Bool) -> some View {
         let dev = inDevelop ? bar.develop : nil
+        FilmLabMotionPhotoProbe.value("develop", "owner=\(dev.map { String(describing: $0.owner) } ?? "nil") photo=\(dev?.frameID.uuidString ?? "nil") mode=\(dev?.surface.rawValue ?? "nil") crop=\(dev?.inCrop ?? false) cropEnabled=\(dev?.cropEnabled ?? false) undo=\(dev?.canUndo ?? false) redo=\(dev?.canRedo ?? false) compareEnabled=\(dev?.compareEnabled ?? false) title=\(store.selectedSource?.name ?? "")")
         // 导出, at the bar's end (design A): to the 导出 mode, from 图库 or the develop page; none in 导出 itself.
         let exportGo: (() -> Void)? = {
             if let dev {
@@ -513,6 +517,7 @@ struct MainWindowLayout: View {
         // The bar's own change with the mode (导出's button comes and goes, the roll's name gives way in a narrow window)
         // moves with the switch's tab instead of jumping under it (2026-11-25, `FilmLabModeTransition.swift`).
         let mode: WorkspaceMode = inDevelop ? (dev?.surface ?? FilmLabModeMotion.wanted ?? .develop) : .library
+        FilmLabMotionPhotoProbe.value("mode-value", mode.rawValue)
         return WindowToolbar(browser: browser, export: exportGo, stripToggle: inDevelop,
                              hasCrop: dev != nil, hasClipboard: !(dev?.inCrop ?? false)) { compact, meter in
             rollName(store, compact: compact)
@@ -553,6 +558,7 @@ struct MainWindowLayout: View {
     @ViewBuilder private func rollName(_ store: any MacLibraryData, compact: Int) -> some View {
         if compact < 4, let name = store.selectedSource?.name, !name.isEmpty {
             rollTitle(name, cap: compact == 0 ? 160 : 60).help(name)
+                .filmLabBarProbe("title")
         }
     }
 
@@ -587,6 +593,7 @@ struct MainWindowLayout: View {
                   : held ? L("Paste settings (⌘V); choose where (⇧⌘V)") : L("Nothing is copied yet"))
         .accessibilityLabel(title)
         .accessibilityIdentifier(copy ? "filmlab.bar.copy" : "filmlab.bar.paste")
+        .filmLabBarProbe(copy ? "copy" : "paste")
         .onAppear { if copy { FilmLabCheckArgs.openPanel(); FilmLabResizeProbe.startIfAsked() } }
         .background {
             // Both label variants stay measurable at every level. There is only one button and one popover;
@@ -663,6 +670,7 @@ struct MainWindowLayout: View {
                                   crop: nil, cropping: dev.inCrop, cropEnabled: dev.cropEnabled, sort: false)
                     .fixedSize()
                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.sidebar, $0) }
+                    .filmLabBarProbe("sidebar")
                 Button(action: dev.crop) {
                     cropLabel(compact: compact, cropping: dev.inCrop)
                 }
@@ -673,6 +681,7 @@ struct MainWindowLayout: View {
                 .accessibilityLabel(L("Crop"))
                 .accessibilityAddTraits(dev.inCrop ? .isSelected : [])
                 .accessibilityIdentifier("mac.bar.crop")
+                .filmLabBarProbe("crop")
                 .background {
                     HStack(spacing: 0) {
                         cropLabel(compact: false, cropping: false).fixedSize()
@@ -694,6 +703,7 @@ struct MainWindowLayout: View {
                               crop: nil, cropEnabled: picture != nil, sort: false)
                 .fixedSize()
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.sidebar, $0) }
+                .filmLabBarProbe("sidebar")
         }
     }
 
@@ -854,7 +864,7 @@ private struct ShellContent: View, Equatable {
                 // 图库 ↔ an editing mode (2026-11-25, `FilmLabModeTransition.swift`): back in 图库 this page fades in; under
                 // a mode it is hidden at once (the develop page arrives through a veil of its own). Only the opacity is
                 // animated: the page's size (held, or the window's again) is never on the move.
-                .animation(develop == nil ? motion : nil) { $0.opacity(develop == nil ? 1 : 0) }
+                .filmLabFlightLibrary(inDevelop: develop != nil, motion: motion)
                 .allowsHitTesting(develop == nil)
                 .accessibilityHidden(develop != nil)
             }
@@ -864,7 +874,7 @@ private struct ShellContent: View, Equatable {
             }
             // The develop page arrives through a veil the colour of the window, which fades off it (`FilmLabModeVeil`);
             // the page that leaves is taken down in the frame the mode changes in, as it always was.
-            if develop != nil { FilmLabModeVeil() }
+            if develop != nil { FilmLabModeVeil().filmLabFlightVeil() }
         }
         .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in resized(to: size) }
         .transaction { $0.animation = nil }
@@ -922,7 +932,11 @@ struct MacDevelopActions: View {
     var body: some View {
         HStack(spacing: MacMetric.pt(6)) {
             FilmLabBarIcon(symbol: "arrow.uturn.backward", help: L("Undo"), enabled: bar.canUndo, action: bar.undo)
+                .animation(nil, value: bar.canUndo)
+                .filmLabBarProbe("undo")
             FilmLabBarIcon(symbol: "arrow.uturn.forward", help: L("Redo"), enabled: bar.canRedo, action: bar.redo)
+                .animation(nil, value: bar.canRedo)
+                .filmLabBarProbe("redo")
             Menu {
                 Button(L("Undo"), action: bar.undo).disabled(!bar.canUndo)
                     .keyboardShortcut("z", modifiers: .command)
@@ -957,11 +971,13 @@ struct MacDevelopActions: View {
                 .menuIndicator(.hidden)
                 .accessibilityLabel(L("Edit actions"))
                 .accessibilityIdentifier("v5.edit-actions")
+                .filmLabBarProbe("more")
             FilmLabBarIcon(symbol: "rectangle.lefthalf.filled", help: L("Compare"), selected: bar.compareOn,
                            enabled: bar.compareEnabled, action: bar.compare)
                 .contextMenu {
                     Button(bar.originalOn ? L("Process") : L("Original", as: "the picture"), action: bar.toggleOriginal)
                 }
+                .filmLabBarProbe("compare")
             // FilmLab: no Export here — the 导出 mode is where every export is set and begun.
         }
         .buttonStyle(.plain)

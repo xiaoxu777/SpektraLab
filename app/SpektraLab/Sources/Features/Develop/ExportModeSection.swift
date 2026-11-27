@@ -235,31 +235,34 @@ struct FilmLabExportFooter: View {
 
     private var ui: FilmLabExportUI { .shared }
     private var run: MacExportRun { .shared }
-    private var busy: Bool { run.isRunning || exporter.isExporting }
+    private var busy: Bool { run.isRunning || exporter.isExporting || FilmLabExportShow.shared.running }
 
     var body: some View {
         @Bindable var ui = ui
         let r = recipeNow
-        // While a batch runs — and until its last card has landed — the foot is the tray the pictures land in
-        // (`FilmLabExportTray`); when it has ended, what came of it (`FilmLabExportDone`); otherwise what will be made.
-        let trayShown = run.isRunning || (run.isFinished && !FilmLabExportShow.shared.cards.isEmpty)
+        let show = FilmLabExportShow.shared
         VStack(alignment: .leading, spacing: 10) {
             Group {
-                if trayShown {
+                if show.hasRun {
                     FilmLabExportTray()
-                } else if run.isFinished {
-                    FilmLabExportDone()
                 } else {
                     summary(r)
                 }
             }
+            .frame(height: 72, alignment: .leading)
             .transition(.opacity)
+            // Animate this content only. Animating the whole foot also interpolated the Stop/Export fill,
+            // briefly turning amber brown when the export finished.
+            .animation(FilmLabExportMotion.fade(0.2), value: show.hasRun)
             if let refused = ui.refused {
                 Text(refused).font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if busy {
-                button(L("Stop"), primary: false) { run.stop() }
+                button(L("Stop"), primary: false) {
+                    show.requestStop()
+                    if show.demo { FilmLabExportCheck.stop() } else { run.stop() }
+                }
                     .accessibilityIdentifier("filmlab.export.stop")
             } else {
                 button(frameIDs.count > 1 ? L("Export \(frameIDs.count) Pictures") : L("Export"),
@@ -274,8 +277,6 @@ struct FilmLabExportFooter: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.chrome)
         .overlay(alignment: .top) { Rectangle().fill(Theme.rule).frame(height: 1) }
-        .animation(.easeOut(duration: 0.22), value: trayShown)
-        .animation(.easeOut(duration: 0.22), value: run.isFinished)
         .fileImporter(isPresented: $ui.picking, allowedContentTypes: [.folder]) { result in
             let begins = ui.startsAfterPicking
             ui.startsAfterPicking = false
@@ -286,14 +287,11 @@ struct FilmLabExportFooter: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("filmlab.export.footer")
-        // A check's launch only (`--filmlab-export-go SECONDS`, with `--filmlab-export-folder`): the button pressed after
-        // that long, so the animation can be captured without a hand on the window.
         .task {
-            guard let wait = FilmLabCheckArgs.value("--filmlab-export-go").flatMap(Double.init),
-                  FilmLabCheckArgs.value("--filmlab-export-folder") != nil, !FilmLabCheckArgs.exportWent else { return }
-            FilmLabCheckArgs.exportWent = true
-            try? await Task.sleep(for: .seconds(wait))
-            if !busy, !frameIDs.isEmpty { start(recipeNow) }
+            FilmLabExportCheck.launch(model: model, current: frameIDs.first) { chosen in
+                guard !busy, let current = frameIDs.first else { return }
+                start(recipeNow, checkFrames: chosen ?? MacDevelopExport.ids(current: current, model: model))
+            }
         }
     }
 
@@ -310,13 +308,10 @@ struct FilmLabExportFooter: View {
         return FilmLabExportPurposeUI.cropped(frameIDs, by: p, model: model) != nil ? p : nil
     }
 
-    /// The summary's first line: "TIFF 16-bit · ProPhoto · Full", or in 普通版 "发朋友圈 · JPEG · 2560 px".
+    /// The summary's first line: "TIFF 16-bit · ProPhoto · Full", or in 普通版 "JPEG · 约 2.4 MB".
     private func headline(_ r: ExportRecipe) -> String {
         guard FeatureFlags.simpleWindow else { return FilmLabExportRecipe.specs(r) }
-        let p = FilmLabExportPurposeUI.shared.purpose
-        var parts = [p.footName, r.format.title, p.sizeWord]
-        if bordered != nil { parts.append(L("White border")) }
-        return parts.joined(separator: Fmt.dot)
+        return FilmLabExportPurposeUI.shared.purpose.specs(frameIDs: frameIDs, model: model)
     }
 
     /// "TIFF 16-bit · ProPhoto · Full" over "→ ericxu › Desktop", the count at the right.
@@ -361,9 +356,11 @@ struct FilmLabExportFooter: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
+        .transaction { $0.animation = nil }
     }
 
-    private func start(_ recipe: ExportRecipe, folder chosen: URL? = nil) {
+    private func start(_ recipe: ExportRecipe, folder chosen: URL? = nil, checkFrames: [LibraryFrame.ID]? = nil) {
+        let frameIDs = checkFrames ?? self.frameIDs
         ui.refused = nil
         let folder = chosen ?? ui.folder
         // Files with no folder yet (or one that has gone): Finder's panel first, then the batch.
@@ -376,6 +373,7 @@ struct FilmLabExportFooter: View {
         // 普通版's, whose recipe is its purpose's and not the kept one.
         if FilmLabCheckArgs.value("--filmlab-export-folder") == nil, !FeatureFlags.simpleWindow { settings.recipe = recipe }
         let border = bordered
+        FilmLabExportShow.shared.reset()
         if !run.start(frameIDs, recipe: recipe, folder: folder, exporter: exporter) {
             ui.refused = L("The export could not begin. Try again in a moment.")
         } else if let border, let fits = border.fits {

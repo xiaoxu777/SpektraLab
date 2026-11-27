@@ -1046,6 +1046,9 @@ struct FilmParams: Codable, Equatable, Sendable {
                                                        "leak_kind": .string("off"), "diffusion_filter_active": .bool(false),
                                                        "lens_aberrations_active": .bool(false), "overscan_falloff": .double(0),
                                                        "overscan_perforation": .string("none"),
+                                                       // FilmLab's scan fields leave the off-state wire entirely.
+                                                       // Reset a previously told session before reusing it without an edge.
+                                                       "overscan_carrier": .string("none"), "scanner_lens_blur": .double(0),
                                                        "date_imprint_data_placement": .string("gap"),
                                                        // API-SPEC §21.8: 随机's seed, sent only while non-zero.
                                                        "leak_seed": .double(0),

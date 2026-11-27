@@ -653,6 +653,7 @@ struct MacFileThumb: View {
             }
         }
         .frame(width: box.width, height: box.height)
+        .filmLabFlightBitmap(image)
         .animation(fades && arrived ? .easeOut(duration: 0.22) : nil, value: image != nil)
         .task(id: "\(url.path)@\(px)") {
             // The frame the camera cropped to (`CameraCrop`: a Leica Q3's digital zoom), as the frame made
@@ -953,6 +954,7 @@ struct MacBrowserCell: View {
         let dimmed = flag == .reject && FilmLabRollFilterState.shared.current != .rejected
         VStack(spacing: 0) {
             shown.frame(width: picture.width, height: picture.height)
+                .filmLabFlightSource(image, role: .cell, enabled: selected && (MacLibraryBrowser.shared.focus == image.id || MacLibraryBrowser.shared.selection.count == 1))
                 .opacity(dimmed ? 0.3 : 1)
                 .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
                 .overlay(alignment: .bottomLeading) { filmChip }

@@ -110,8 +110,7 @@ struct FilmPainter {
     var nudgeMM = CGSize.zero
 
     /// The developed rebate: unexposed film through the print — its black,
-    /// a little warm. Nothing on the canvas is anything else: a strip scan
-    /// ends at the film's long edges (the engine's `overscan_carrier` = `none`).
+    /// a little warm. A visible holder is drawn beyond the film's long edges.
     static let rebatePrint = Color(hex: 0x0E0B09)
     static let holeWhite = Color(hex: 0xF6F4F0)
     static let holeBlack = Color.black
@@ -165,9 +164,16 @@ struct FilmPainter {
         case .developed:
             var inside = c
             inside.clip(to: Path(canvasRect))
-            // Film from edge to edge: under the corners a tilted scan carries
-            // past the film's edge the engine draws the film on, so no black
-            // band and no wedge of anything that is not film.
+            // These instant cards/placeholders share the engine's canvas and holder geometry.
+            // The strip continues along its length: only its two long edges reveal the holder.
+            let carrier = g.request.mode == .strip ? g.request.scan.look.carrier : "none"
+            if carrier != "none" {
+                inside.fill(Path(canvasRect), with: .color(carrier == "open" ? .white : .black))
+                let reach = max(g.sHi - g.sLo, g.filmW) * 2
+                let strip = Path(CGRect(x: g.sLo - reach, y: 0,
+                                        width: g.sHi - g.sLo + 2 * reach, height: g.filmW)).applying(toCanvas)
+                inside.clip(to: strip)
+            }
             inside.fill(Path(canvasRect), with: .color(Self.rebatePrint))
             var gate = inside
             gate.clip(to: opening)

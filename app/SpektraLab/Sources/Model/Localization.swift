@@ -102,10 +102,27 @@ final class Language: @unchecked Sendable {
     /// Set on the main thread; read from anywhere a sentence is made. The lock is for the
     /// table, which a develop's status line can ask for off the main thread.
     private(set) var current: AppLanguage = .english
+    // A launch's bundle choice, not a fresh read after Settings writes AppleLanguages. A live change still needs
+    // an override until the next launch; it must not accidentally fall back to that launch's old cached table.
+    @ObservationIgnored private let bundleLanguage = AppLanguage.derived(from: Bundle.main.preferredLocalizations)
     @ObservationIgnored private let lock = NSLock()
     @ObservationIgnored private var tables: [AppLanguage: [String: String]] = [:]
     /// Where the choice is kept. Nil for a check's launch: nothing it shows is the user's choice.
     @ObservationIgnored private var defaults: UserDefaults?
+
+    /// Leave SwiftUI's default locale untouched when the bundle and formatting already speak our language. An
+    /// explicit locale takes Text down CFBundle's uncached ForLocalization path (sample-ownerlike-main.txt).
+    var swiftUILocaleOverride: Locale? {
+        Self.localeOverride(for: current, bundleLanguage: bundleLanguage, formattingLocale: .current)
+    }
+
+    static func localeOverride(for language: AppLanguage, bundleLanguage: AppLanguage, formattingLocale: Locale) -> Locale? {
+        let code = formattingLocale.language.languageCode?.identifier ?? ""
+        // derived() falls back to English for unsupported languages; a French formatting locale is not English.
+        let formatsOurLanguage = ["en", "zh", "ja", "yue", "wuu", "cmn"].contains(code)
+            && AppLanguage.derived(from: [formattingLocale.identifier]) == language
+        return language == bundleLanguage && formatsOurLanguage ? nil : language.locale
+    }
 
     /// The launch: which language this run is in.
     ///

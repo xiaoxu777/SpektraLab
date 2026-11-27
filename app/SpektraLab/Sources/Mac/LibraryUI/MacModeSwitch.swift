@@ -73,6 +73,7 @@ struct MacModeSwitch: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
                     segmentWidths[mode] = width
                 }
+                .filmLabBarProbe("mode.\(mode.rawValue)")
             }
         }
         .padding(.horizontal, 1)

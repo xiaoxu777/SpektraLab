@@ -8,7 +8,7 @@
 //  The column (`FilmLabPersonalizeColumn`) is three sections, each a name with a switch and, when on, its choices as
 //  pictures (the owner, of the old export presets: "用户不会去看这些小方块。视觉上就要对"):
 //  - **片边** (`FilmLabEdgeSection`): this photo drawn in each film format, three across; 专业版 adds the filter, the edge
-//    tools and 调整取景, and under the section the film's own 尺寸 (`FilmSizeSection`).
+//    tools and 调整取景. 底片画幅 belongs with 颗粒·光晕 in the grading column (`FilmLabGradeTabs`).
 //  - **日期后背**: the faces as cards, the corner, the size and the brightness (`DateStepPanel(flat:)`).
 //  - **水印** (`FilmLabMarkSection`): the library's marks as tiles, a mark made from typed text, where it sits, how big.
 //  Under them, when the export will take more than this picture, one row puts all three onto the others.
@@ -37,30 +37,36 @@ struct FilmLabPersonalizeColumn: View {
 
     @Environment(AppServices.self) private var model
     @State private var width: CGFloat = 378
+    @State private var checkScrollRoom: CGFloat = 0
 
     private var single: Bool { frame.pair == nil && session.pair == nil }
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView(.vertical) {
-                VStack(spacing: 0) {
-                    if let piece { piece }
-                    if single {
-                        if FeatureFlags.filmEdge { FilmLabEdgeSection(session: session, frame: frame, width: width) }
-                        // 专业版: the film's own size, which a film edge's format replaces while one is on (the section
-                        // greys itself then and says whose the size is).
-                        if !FeatureFlags.simpleWindow, session.double == nil {
-                            FilmSizeSection(session: session, frame: frame).rowEnabled(session.edit.appliesFilm)
-                            Rectangle().fill(Theme.rule).frame(height: 1)
+            ScrollViewReader { scroll in
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        if let piece { piece }
+                        if single {
+                            if FeatureFlags.filmEdge { FilmLabEdgeSection(session: session, frame: frame, width: width) }
+                            if FeatureFlags.dateBack { FilmLabDateSection(session: session, frame: frame, width: width) }
                         }
-                        if FeatureFlags.dateBack { FilmLabDateSection(session: session, frame: frame, width: width) }
+                        if session.takesWatermarks { FilmLabMarkSection(session: session, frame: frame, width: width) }
                     }
-                    if session.takesWatermarks { FilmLabMarkSection(session: session, frame: frame, width: width) }
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.bottom, FilmLabPersonalizeCheck.scrollTarget == nil ? 12 : max(12, checkScrollRoom))
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
-                .padding(.bottom, 12)
+                .scrollIndicators(.hidden)
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.height }) { if FilmLabPersonalizeCheck.scrollTarget != nil { checkScrollRoom = $0 } }
+                .task(id: frame.id) {
+                    guard let target = FilmLabPersonalizeCheck.scrollTarget,
+                          await FilmLabPersonalizeCheck.settle(session, frameID: frame.id) else { return }
+                    // Edge edits can change the heights above the requested section; let that layout finish too.
+                    guard await FilmLabPersonalizeCheck.settle(session, frameID: frame.id),
+                          FilmLabPersonalizeCheck.consume(.scroll) else { return }
+                    scroll.scrollTo(target, anchor: .top)
+                }
             }
-            .scrollIndicators(.hidden)
             FilmLabPersonalizeBatchRow(session: session, frame: frame, ids: ids)
         }
         // The cards are drawn to a width: the column's.
@@ -103,7 +109,7 @@ struct FilmLabPersonalizeSection<Content: View>: View {
             .padding(.horizontal, 16)
             .frame(height: 60)
             .contentShape(Rectangle())
-            if isOn {
+            if isOn || FilmLabPersonalizeCheck.expands(id) {
                 content()
                     .padding(.bottom, 14)
                     .transition(.opacity)
@@ -111,6 +117,7 @@ struct FilmLabPersonalizeSection<Content: View>: View {
             Rectangle().fill(Theme.rule).frame(height: 1)
         }
         .accessibilityElement(children: .contain)
+        .id(id)
     }
 }
 

@@ -96,6 +96,7 @@ final class WatermarkStore {
     nonisolated let caches: URL
     @ObservationIgnored nonisolated private let shelf = Shelf()
     @ObservationIgnored private var loading: Set<UUID> = []
+    @ObservationIgnored private var adding: Set<UUID> = []
 
     nonisolated static let folderName = "Watermarks"
     nonisolated static let indexName = "index.json"
@@ -235,9 +236,12 @@ final class WatermarkStore {
     /// Checks the bytes and keeps them as a new mark, newest first — or names the mark that already holds the same
     /// bytes. The check, the hash, the file and the thumbnail are made off the main actor. `name` nil: "Watermark N".
     @discardableResult
-    func add(_ data: Data, name: String?) async -> Result<WatermarkAdded, WatermarkRefusal> {
+    func add(_ data: Data, name: String?, id: UUID = UUID()) async -> Result<WatermarkAdded, WatermarkRefusal> {
         if let same = existing(Self.sha256(data)) { return .success(.existing(same)) }
-        let id = UUID(), file = fileURL(id), thumb = thumbnailURL(id), caches = caches
+        // Generated text chooses its identity before baking the UUID-seeded ink. Never overwrite an old PNG.
+        let file = fileURL(id), thumb = thumbnailURL(id), caches = caches
+        guard mark(id) == nil, !FileManager.default.fileExists(atPath: file.path), adding.insert(id).inserted else { return .failure(.couldNotKeep) }
+        defer { adding.remove(id) }
         let made = await Task.detached(priority: .userInitiated) {
             Self.keep(data, to: file, thumbnail: thumb, caches: caches)
         }.value

@@ -158,6 +158,7 @@ struct DevelopCanvas: View {
                 Theme.well
                 printCropped(size: size, pointSize: max(fit.width, fit.height) * min(decodeZoom, decodeCap(fit: fit)))
                     .frame(width: size.width, height: size.height)
+                    .filmLabFlightTarget(frame: frame, edit: edit, developed: developed, original: displaysOriginal, enabled: allowsOriginalHold, canvas: geo.frame(in: .named(FilmLabMotionFlight.space)))
                     .position(centre)
             }
             .frame(width: area.width, height: area.height)

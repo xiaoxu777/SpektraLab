@@ -1,16 +1,4 @@
-//  MacSettingsDiagnostics.swift — Settings › Diagnostics on the Mac: the log, what it holds, this build.
-//
-//  The window's Diagnostics group, its *What the log holds* page and its *This build* group as one section
-//  (`SettingsScreen`, `DiagnosticsPage`), on the same model (`Diagnostics`): the switch that shares the
-//  log where this build was given a server (`SPK_LOG_UPLOAD`), *Export Log Zip* (`makeZip`, then
-//  Finder's panel to put it somewhere: a Mac keeps a file, where the window hands it to the share sheet),
-//  *Show in Finder* on the log's folder, the privacy policy, then the page's paragraphs in full.
-//
-//  The window's sentences name the device, and `ThisDevice` takes a Mac for a reference device (it is not a window):
-//  on the Mac each such sentence is said of this Mac, and the camera's line and the Photos part of the
-//  library's are left out (the Mac has neither). The record kinds are the same code's
-//  (`LogRecords.swift`).
-
+// Log controls and build facts. The complete privacy inventory stays behind a closed disclosure.
 import SwiftUI
 
 struct MacSettingsDiagnostics: View {
@@ -20,11 +8,18 @@ struct MacSettingsDiagnostics: View {
     /// The log's zip, made and waiting for Finder's panel.
     @State private var logZip: URL?
     @State private var saved: String?
+    @State private var showingLogDetails = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
+        VStack(alignment: .leading, spacing: MacMetric.pt(MacSettingsMetric.gap)) {
             log
-            holds
+            MacSettingsGroup(title: nil) {
+                DisclosureGroup(isExpanded: $showingLogDetails) { holds } label: {
+                    Text(L("What the log holds")).font(MacMetric.font(14, .medium)).foregroundStyle(Theme.text)
+                }
+                .tint(Theme.accent).padding(MacMetric.pt(MacSettingsMetric.inset))
+                .macSettingsItem("What the log holds")
+            }
             thisBuild
         }
         .fileMover(isPresented: Binding(get: { logZip != nil }, set: { if !$0 { logZip = nil } }), file: logZip) { result in
@@ -36,7 +31,7 @@ struct MacSettingsDiagnostics: View {
     // MARK: the log
 
     private var log: some View {
-        MacSettingsGroup(title: L("Log"), footer: note) {
+        MacSettingsGroup(title: L("Log")) {
             #if SPK_LOG_UPLOAD
             if diagnostics.canSend {
                 MacSettingsRow(label: L("Share the log with SpektraLab")) {
@@ -47,7 +42,7 @@ struct MacSettingsDiagnostics: View {
             }
             #endif
             MacSettingsRow(label: L("Where"), detail: (ImportService.logs.path as NSString).abbreviatingWithTildeInPath,
-                           caption: saved) {
+                           caption: saved ?? note) {
                 HStack(spacing: MacMetric.pt(6)) {
                     Button(L("Show in Finder")) { UIApplication.shared.open(ImportService.logs) }
                         .buttonStyle(MacSettingsButtonStyle())
@@ -59,7 +54,7 @@ struct MacSettingsDiagnostics: View {
             }
             .macSettingsItem("Diagnostics", "Export Log Zip", "Making the Zip")
             MacSettingsRow(label: L("Privacy Policy"), last: true) {
-                Button("spektralab.app") { openPolicy() }
+                Button(L("Open")) { openPolicy() }
                     .buttonStyle(MacSettingsButtonStyle())
             }
             .macSettingsItem("Privacy Policy")
@@ -67,19 +62,17 @@ struct MacSettingsDiagnostics: View {
     }
 
     /// The group's footer: what happens to the log, as things stand.
-    private var note: String {
-        guard diagnostics.keepsLog else { return L("This library keeps no log: it is the drawings' own.") }
-        let kept = L("The log stays on this Mac for 7 days. Export Log Zip hands it to you to send.")
+    private var note: String? {
+        guard diagnostics.keepsLog else { return L("No log available.") }
         #if SPK_LOG_UPLOAD
-        guard diagnostics.canSend else { return kept }
-        guard diagnostics.consent == .shared else { return L("Nothing is sent. ") + kept }
-        if let trouble = diagnostics.trouble {
-            return L("SpektraLab's server could not be reached from here (\(Fmt.stamp(trouble.at))). Export Log Zip, and send it by hand.")
+        if diagnostics.canSend, diagnostics.consent == .shared {
+            if let trouble = diagnostics.trouble {
+                return L("SpektraLab's server could not be reached from here (\(Fmt.stamp(trouble.at))). Export Log Zip, and send it by hand.")
+            }
+            return diagnostics.lastSent.map { L(" Last sent \(Fmt.stamp($0)).") }
         }
-        return L("Sent when the app is opened and when you leave it.") + (diagnostics.lastSent.map { L(" Last sent \(Fmt.stamp($0)).") } ?? "")
-        #else
-        return kept
         #endif
+        return nil
     }
 
     private func exportLog() {
@@ -138,7 +131,7 @@ struct MacSettingsDiagnostics: View {
     }
 
     private var holds: some View {
-        MacSettingsGroup(title: L("What the log holds")) {
+        VStack(alignment: .leading, spacing: MacMetric.pt(12)) {
             paragraphs(Self.holdsLines)
                 .overlay(alignment: .bottom) { MacSettingsHairline() }
                 .macSettingsItem("What the log holds")
@@ -177,7 +170,7 @@ struct MacSettingsDiagnostics: View {
     // MARK: this build
 
     private var thisBuild: some View {
-        MacSettingsGroup(title: L("This build"), footer: model.buildNote) {
+        MacSettingsGroup(title: L("This build")) {
             MacSettingsValueRow(label: L("Version"), value: buildLine)
             MacSettingsValueRow(label: L("Engine"), value: model.engineText)
                 .macSettingsItem("This build", "Engine")
@@ -191,7 +184,7 @@ struct MacSettingsDiagnostics: View {
     /// "2.0 (1) · Debug · unpublished-revision" (`DiagnosticsPage.buildLine`).
     private var buildLine: String {
         let b = diagnostics.build
-        return "SpektraLab \(b.text)" + Fmt.dot + L(shown: b.configuration) + (b.commit.isEmpty ? "" : Fmt.dot + b.commit)
+        return Brand.name + " \(b.text)" + Fmt.dot + L(shown: b.configuration) + (b.commit.isEmpty ? "" : Fmt.dot + b.commit)
     }
 
     /// "1,445 MB · Mac headroom": the budget a job would be given now (`RenderQueue.budgetNow`), and

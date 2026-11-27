@@ -131,7 +131,6 @@ struct MacSettingsStorage: View {
         let title: String
         let bytes: Int64
         let budget: Budget?
-        let line: String
         let keys: [String]
     }
 
@@ -140,21 +139,16 @@ struct MacSettingsStorage: View {
         let budgets = Self.budgets(model)
         return [
             Part(title: L("Copied-in originals"), bytes: max(0, s.copiedInOriginals - full.inOriginals), budget: nil,
-                 line: L("The only copy of shares and files copied in. Never cleared."), keys: ["Copied-in originals"]),
+                 keys: ["Copied-in originals"]),
             Part(title: L("Working copies"), bytes: max(0, s.workingCopies - full.inWorkingCopies), budget: budgets[0],
-                 line: L("Originals copied here to develop at full size; oldest go first."),
                  keys: ["Working copies", "Working copies up to", " of %@ GB"]),
             Part(title: L("Preview copies"), bytes: max(0, s.previewCopies - full.inPreviews), budget: budgets[1],
-                 line: L("Pictures in no library: their previews. And Develop's film and paper cards, pairs' guides and Edit's copies. A library's previews are kept in it (below)."),
                  keys: ["Preview copies", "Preview copies up to"]),
             Part(title: L("Previews of folders and Capture One"), bytes: ownPreviews.bytes, budget: nil,
-                 line: L("Kept in SpektraLab's own library for each Finder folder and Capture One catalog or session, on this Mac. No budget: Delete Previews, below, takes a library's."),
                  keys: ["Own library previews"]),
             Part(title: L("Full-size renders"), bytes: full.bytes, budget: budgets[2],
-                 line: L("The full-size develop of the pictures looked at most recently, so a zoom or an export of them again does not wait. Past the budget, the one looked at longest ago goes."),
                  keys: ["Full-size renders"]),
-            Part(title: L("Thumbnails and cache"), bytes: max(0, s.cache - full.inCache), budget: nil, line: L("Rebuilt whenever needed."),
-                 keys: ["Thumbnails and cache"]),
+            Part(title: L("Thumbnails and cache"), bytes: max(0, s.cache - full.inCache), budget: nil, keys: ["Thumbnails and cache"]),
         ]
     }
 
@@ -166,10 +160,8 @@ struct MacSettingsStorage: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(18)) {
-            MacSettingsGroup(title: L("On this Mac"),
-                             footer: L("They come back when a frame needs them. Originals in your folders and catalogs are never moved or deleted. "
-                                       + "This Mac develops up to \(Int(DevicePolicy.current.developCapMegapixels)) MP.")) {
+        VStack(alignment: .leading, spacing: MacMetric.pt(MacSettingsMetric.gap)) {
+            MacSettingsGroup(title: L("On this Mac")) {
                 VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
                     Text(L("\(Fmt.gigabytes(total)) on this Mac")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.text)
                         .fixedSize(horizontal: false, vertical: true)
@@ -180,7 +172,7 @@ struct MacSettingsStorage: View {
                 .overlay(alignment: .bottom) { MacSettingsHairline() }
                 .macSettingsItem("Storage", "Limits", "%@ on this Mac")
                 ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
-                    partRow(part, shade: Self.shades[i], last: i == parts.count - 1)
+                    partRow(part, last: i == parts.count - 1)
                         .macSettingsItem(part.keys)
                 }
             } accessory: {
@@ -195,7 +187,7 @@ struct MacSettingsStorage: View {
             previewsGroup
             everyLibraryGroup
             MacSettingsGroup(title: L("Where")) {
-                MacSettingsRow(label: (ImportService.root.path as NSString).abbreviatingWithTildeInPath, last: true) {
+                MacSettingsRow(label: L("Where"), detail: (ImportService.root.path as NSString).abbreviatingWithTildeInPath, last: true) {
                     Button(L("Show in Finder")) { UIApplication.shared.open(ImportService.root) }
                         .buttonStyle(MacSettingsButtonStyle())
                 }
@@ -235,8 +227,7 @@ struct MacSettingsStorage: View {
     /// *Edit history: 4.1 MB* and *Clear All…* (PRD-F §4): one row, asked first. Every frame's history goes; each
     /// edit stays as it stands, its history's Original from then on (`AppServices.clearAllHistory`).
     private var historyGroup: some View {
-        MacSettingsGroup(title: L("Edit History"),
-                         footer: L("Up to 256 steps for each picture, kept on this Mac, so Undo reaches back after SpektraLab quits.")) {
+        MacSettingsGroup(title: L("Edit History")) {
             MacSettingsRow(label: L("Edit history: \(historyBytes.map { $0 > 0 ? Fmt.fileSize($0) : "0 KB" } ?? L("Counting"))"), last: true) {
                 Button(L("Clear All…")) { confirmingClearHistory = true }
                     .buttonStyle(MacSettingsButtonStyle(kind: .destructive))
@@ -299,11 +290,11 @@ struct MacSettingsStorage: View {
     @ViewBuilder private var previewsGroup: some View {
         let source = model.macLibrary.selectedSource
         let home = source?.previewHome
-        MacSettingsGroup(title: L("Previews"), footer: previewsFooter(source)) {
+        MacSettingsGroup(title: L("Previews")) {
             if let source, let home {
                 MacSettingsValueRow(label: source.name, value: previewsUsage(home))
                     .macSettingsItem("Library previews")
-                MacSettingsRow(label: (home.folder.path as NSString).abbreviatingWithTildeInPath, last: true) {
+                MacSettingsRow(label: L("Where"), detail: (home.folder.path as NSString).abbreviatingWithTildeInPath, last: true) {
                     // Finder opens the folder itself, inside the package: the package opened would be the
                     // catalog, opened by whichever SpektraLab Finder picks.
                     Button(L("Show in Finder")) { UIApplication.shared.open(home.folder) }
@@ -342,29 +333,13 @@ struct MacSettingsStorage: View {
     @ViewBuilder private var everyLibraryGroup: some View {
         let listed = model.macLibrary.sources.filter { $0.previewHome != nil }
         if !listed.isEmpty {
-            MacSettingsGroup(title: L("Every library"),
-                             footer: L("Measured every 30 seconds. A library removed from Sources keeps its previews inside it; for a folder or a Capture One library they stay on this Mac, counted above.")) {
+            MacSettingsGroup(title: L("Every library")) {
                 ForEach(Array(listed.enumerated()), id: \.element.id) { i, s in
                     MacSettingsValueRow(label: s.name, value: everyLibrary[s.id].map(Self.words) ?? L("Counting"),
                                         last: i == listed.count - 1)
                 }
             }
             .macSettingsItem("Every library's previews")
-        }
-    }
-
-    /// Where the previews are, said plainly for the kind of library selected.
-    private func previewsFooter(_ source: MacSource?) -> String {
-        let rule = L("A picture's preview is its develop at Develop's Preview size. It is kept with the catalog or session the picture was opened from, as Capture One keeps its previews: it moves, is copied and is deleted with it. Deleted, a preview is made again when its picture is next opened.")
-        switch source?.kind {
-        case .captureOneCatalog?:
-            return rule + " " + L("Capture One's catalog is never written: this one's previews are kept in SpektraLab's own library for it.")
-        case .captureOneSession?, .folder?:
-            return rule + " " + L("For a folder, they are kept in SpektraLab's own library for it, on this Mac.")
-        case .catalog?, .session?:
-            return rule
-        default:
-            return L("Each catalog and session keeps the previews of its pictures inside it. Pictures in no library keep theirs on this Mac, in Preview copies.")
         }
     }
 
@@ -388,30 +363,18 @@ struct MacSettingsStorage: View {
         .accessibilityHidden(true)
     }
 
-    private func partRow(_ part: Part, shade: Color, last: Bool) -> some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(3)) {
-            HStack(alignment: .center, spacing: MacMetric.pt(10)) {
-                Circle().fill(shade).frame(width: MacMetric.pt(9), height: MacMetric.pt(9))
-                Text(part.title).font(MacMetric.font(13)).foregroundStyle(Theme.text)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text(usage(part)).font(MacMetric.font(12)).monospacedDigit().foregroundStyle(Theme.secondaryText)
+    private func partRow(_ part: Part, last: Bool) -> some View {
+        MacSettingsRow(label: part.title, last: last) {
+            HStack(spacing: MacMetric.pt(12)) {
+                Text(usage(part)).font(MacMetric.font(13)).monospacedDigit().foregroundStyle(Theme.secondaryText)
                     .fixedSize()
                 if let budget = part.budget {
-                    MacSettingsPopUp(label: budget.title,
-                                     options: budget.choices.map { ($0, "\($0 >> 30) GB") },
+                    MacSettingsPopUp(label: budget.title, options: budget.choices.map { ($0, "\($0 >> 30) GB") },
                                      selection: Binding(get: { budget.held() }, set: { budget.set($0) }),
                                      other: "\(budget.held() >> 30) GB")
                         .accessibilityIdentifier("mac.settings.budget.\(budget.id)")
                 }
             }
-            MacSettingsCaption(part.line).padding(.leading, MacMetric.pt(19))
-        }
-        .padding(.horizontal, MacMetric.pt(MacSettingsMetric.inset))
-        .padding(.vertical, MacMetric.pt(6))
-        .frame(minHeight: MacMetric.pt(MacSettingsMetric.row))
-        .overlay(alignment: .bottom) {
-            if !last { MacSettingsHairline().padding(.leading, MacMetric.pt(MacSettingsMetric.inset + 19)) }
         }
     }
 

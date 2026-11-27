@@ -158,13 +158,11 @@ enum FilmLayout {
                 let a = rc.uni(1.3, 2.1)
                 marginAlong = a + rf.uni(-0.25, 0.25)
             }
-            // A strip scan ends at the film's long edges: the engine's `reach`
-            // under `overscan_carrier` = `none`, its default and the only
-            // carrier the host has (it does not send the field). The canvas
-            // is the film's width, and where the scan's tilt carries a corner
-            // past the film's edge the film is drawn on.
-            L.tLo = 0.0
-            L.tHi = L.filmW
+            // The engine's kCarrierMM: a holder/open scan adds 0.4 mm outside each
+            // long edge. No random draw changes: the gate, holes and scan tilt stay put.
+            let reach = r.scan.look.carrier == "none" ? 0.0 : 0.4
+            L.tLo = -reach
+            L.tHi = L.filmW + reach
         } else {
             marginAlong = 0.9 + rf.uni(-0.1, 0.1)
             L.tLo = L.gateT0 - 1.1

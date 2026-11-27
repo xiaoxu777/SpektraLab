@@ -237,7 +237,7 @@ enum FilmEdgeResolver {
                                       frame: cut, stockID: edit.params.filmStock, edgeText: stock?.edgeText(gauge: edge.format.gauge) ?? "",
                                       fNumber: ShootingLine.fNumber(frame.exposure),
                                       date: dateRequest(edit.dateBack, edge: active, frame: frame),
-                                      perforation: edge.perforation.on(edge.format))
+                                      perforation: edge.perforation.on(edge.format), scan: edge.scanLook)
         guard var geometry = source.geometry(request) else { return nil }
         // The budget scales the picture, never the film alone.
         if geometry.out.megapixels > budgetMP {

@@ -55,7 +55,11 @@ struct StockGrid: View {
     @State private var shown: StockGridLayout.Shown?
     /// Where the strip is asked to scroll to (`StripScrolling`): the strip's open and a newly chosen card's reveal.
     @State private var ask: StripScrollAsk?
+    @State private var memo = GridMemo()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var panelActivity: FilmLabStockPanelActivity? = nil
+    var panelVisit = 0
+    private var panelHidden: Bool { panelActivity?.hidden ?? false }
 
     /// A line of the grid: a maker's name, or a row of its cards (the row's place among the layout's rows).
     private enum Line: Identifiable {
@@ -66,6 +70,26 @@ struct StockGrid: View {
             case .brand(let name): "brand:" + name
             case .row(let at): "row:\(at)"
             }
+        }
+    }
+
+    private struct Plan {
+        let named: [StockBrandGroup]
+        let across: Int
+        let cell: CGFloat
+        let layout: StockGridLayout
+        let lines: [Line]
+    }
+    /// One last layout per mounted grid, keyed by the cards (film/shelf/favourites) and its real width.
+    private final class GridMemo {
+        var cards: [StockPreviewCard] = []
+        var width: CGFloat?
+        var plan: Plan?
+        func value(cards: [StockPreviewCard], width: CGFloat, make: () -> Plan) -> Plan {
+            if self.cards == cards, self.width == width, let plan { return plan }
+            let made = make()
+            self.cards = cards; self.width = width; plan = made
+            return made
         }
     }
 
@@ -80,17 +104,21 @@ struct StockGrid: View {
     }
 
     var body: some View {
-        let groups = StockPreviewRules.groups(cards)
+        let plan = memo.value(cards: cards, width: width) {
+            let groups = StockPanelMemo.shared.groups(cards)
+            let across = StockGridRule.columns(width: Double(width))
+            return Plan(named: groups.filter { !$0.brand.isEmpty }, across: across,
+                        cell: CGFloat(StockGridRule.cell(width: Double(width))),
+                        layout: StockGridLayout(groups: groups.map { (headed: !$0.brand.isEmpty, count: $0.cards.count) }, width: Double(width)),
+                        lines: lines(groups, across: across))
+        }
         // The strip's papers once a grid, not once a card's question (`StockPreviewRow`: `paperCards` filters the
         // catalogue each time it is read).
-        let papers = strip.paperCards
+        let papers = StockPanelMemo.shared.livePapers(under: strip.edit.params.filmStock)
         let live: (StockPreviewCard) -> Bool = { [active, serves] card in
             active && (card.strip == .film || papers.contains(card)) && serves(card)
         }
-        let across = StockGridRule.columns(width: Double(width))
-        let cell = CGFloat(StockGridRule.cell(width: Double(width)))
-        let layout = StockGridLayout(groups: groups.map { (headed: !$0.brand.isEmpty, count: $0.cards.count) }, width: Double(width))
-        let named = groups.filter { !$0.brand.isEmpty }
+        let across = plan.across, cell = plan.cell, layout = plan.layout, named = plan.named
         return GeometryReader { viewport in
             let window = Double(viewport.size.height)
             let now = shown ?? layout.shown(at: 0, window: window)
@@ -98,7 +126,7 @@ struct StockGrid: View {
                 // Every card is laid, not only those on screen: forty at the most, so the strip is exactly as tall
                 // inside as the rule says (what a grip's drag is held to), and only the pictures are lazy.
                 VStack(alignment: .leading, spacing: CGFloat(StockGridRule.gap)) {
-                    ForEach(lines(groups, across: across)) { line in
+                    ForEach(plan.lines) { line in
                         switch line {
                         case .brand(let brand): StockBrandHeader(name: brand)
                         case .row(let at):
@@ -133,8 +161,15 @@ struct StockGrid: View {
                                      shownAt: { offset, tall in layout.shown(at: offset, window: tall) },
                                      shown: { next in show(next, layout: layout) }))
             .onAppear {
+                guard !panelHidden else { return }
                 scrolled.window = window
                 rest(on: selected, layout: layout, window: window)
+            }
+            .onChange(of: panelVisit) { _, _ in
+                if !panelHidden { rest(on: selected, layout: layout, window: window) }
+            }
+            .onChange(of: ObjectIdentifier(strip)) { _, _ in
+                if !panelHidden { rest(on: selected, layout: layout, window: window) }
             }
             // The cards are others (another shelf's, another film's papers), or laid in other rows.
             .onChange(of: layout) { _, next in
@@ -146,10 +181,12 @@ struct StockGrid: View {
             // Decided after the update's layout, so a paper grid just laid out for a new film is where it now is
             // (`StripScroller`).
             .onChange(of: selected) { _, id in
+                guard !panelHidden else { return }
                 DispatchQueue.main.async { reveal(id, layout: layout, window: window) }
             }
             // More or fewer cards across: the rows are others, and the chosen card may have left the window.
             .onChange(of: across) { _, _ in
+                guard !panelHidden else { return }
                 DispatchQueue.main.async { reveal(selected, layout: layout, window: window) }
             }
             // The maker's name held at the top while its cards scroll under it, pushed out by the next one. Its
@@ -174,6 +211,7 @@ struct StockGrid: View {
 
     /// What the strip shows where it now is: drawn (the held name, the rows gone under it), and its cards asked for.
     private func show(_ next: StockGridLayout.Shown, layout: StockGridLayout) {
+        guard !panelHidden else { return }
         if shown != next { shown = next }
         let asked = Set(next.rows.flatMap { layout.rows[$0].cards }.filter { $0 < cards.count }.map { cards[$0].slot })
         let mine = Set(cards.map(\.slot))
@@ -188,8 +226,9 @@ struct StockGrid: View {
     /// The strip as it opens: the chosen card's row at rest, straight under its maker's name.
     private func rest(on id: String, layout: StockGridLayout, window: Double) {
         let to = row(of: id, in: layout).map { min(layout.rest($0), layout.foot(window: window)) } ?? 0
+        let moves = ask == nil || abs(to - scrolled.offset) > 0.5
         scrolled.offset = to
-        ask = StripScrollAsk(y: to, animated: false, serial: (ask?.serial ?? 0) + 1)
+        if moves { ask = StripScrollAsk(y: to, animated: false, serial: (ask?.serial ?? 0) + 1) }
         show(layout.shown(at: to, window: window), layout: layout)
     }
 
@@ -218,7 +257,7 @@ struct StockGrid: View {
     private func cell(_ card: StockPreviewCard, live: Bool) -> some View {
         let scrolled = scrolled
         return StockGridCell(session: session, strip: strip, card: card, chosen: card.stock == selected, live: live,
-                             width: width, tapped: { scrolled.tapped = card.stock })
+                             width: width, panelActivity: panelActivity, panelVisit: panelVisit, tapped: { scrolled.tapped = card.stock })
             .equatable()
     }
 }
@@ -235,18 +274,21 @@ private struct StockGridCell: View, Equatable {
     let chosen: Bool
     let live: Bool
     let width: CGFloat
+    let panelActivity: FilmLabStockPanelActivity?
+    let panelVisit: Int
     let tapped: () -> Void
 
     nonisolated static func == (a: Self, b: Self) -> Bool {
         a.session === b.session && a.strip === b.strip && a.card == b.card
             && a.chosen == b.chosen && a.live == b.live && a.width == b.width
+            && a.panelActivity === b.panelActivity && a.panelVisit == b.panelVisit
     }
 
     var body: some View {
-        StockCardButton(session: session, strip: strip, card: card, selected: chosen, live: live, tapped: tapped) { state, starred in
+        StockCardButton(session: session, strip: strip, card: card, selected: chosen, live: live, tapped: tapped, face: { state, starred in
             StockGridCard(card: card, state: state, starred: starred, selected: chosen, live: live,
                           imageHeight: CGFloat(StockGridRule.imageHeight(width: Double(width))))
-        }
+        }, panelActivity: panelActivity)
     }
 }
 
@@ -292,15 +334,15 @@ struct StockGridCard: View {
         .contentShape(Rectangle())
     }
 
-    private var catalog: StockCatalog { .shared }
+    private var display: StockPanelMemo.Display { StockPanelMemo.shared.display(card) }
 
     private var picture: some View {
-        Rectangle().fill(catalog.stock(card.stock)?.color ?? Theme.card)
+        Rectangle().fill(display.colour)
             .frame(maxWidth: .infinity).frame(height: imageHeight)
             .overlay { if let image = state?.image { Image(uiImage: image).resizable().scaledToFill() } }
             .overlay { if state?.isRendering == true { ProgressView().tint(.white).scaleEffect(0.6) } }
             .overlay(alignment: .topLeading) {
-                if StockPreviewRules.wearsCinePill(card) {
+                if display.cine {
                     CinePill().background(Capsule().fill(Color.black.opacity(0.5))).padding(4)
                 }
             }
@@ -321,11 +363,11 @@ struct StockGridCard: View {
     /// The name, two lines at the most, and before it the film's dot on the paper the film recommends.
     private var caption: some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
-            if card.strip == .paper, catalog.isRecommendedPairing(film: card.film, paper: card.stock) {
-                Circle().fill(catalog.stock(card.film)?.color ?? .white).frame(width: 5, height: 5)
+            if display.recommended {
+                Circle().fill(display.filmColour).frame(width: 5, height: 5)
                     .alignmentGuide(.firstTextBaseline) { $0[.bottom] + 2 }
             }
-            Text(card.shownName)
+            Text(verbatim: display.name)
                 .font(Theme.Font.ui(10, selected ? .semibold : .medium))
                 .foregroundStyle(selected ? Theme.text : Theme.secondaryText)
                 .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)

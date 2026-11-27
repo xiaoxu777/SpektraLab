@@ -139,6 +139,7 @@ struct DevelopPane: View {
     private func take(_ id: LibraryFrame.ID) {
         stockStrip = model.stockPreviews.strip(for: id)
         session = model.session(for: id)
+        if let session { DevelopWorkspace.prepareOpening(session, opening: opening) }
         session?.enter()
         // A snapshot's own: the pair's darkroom on the layer its drawing shows.
         if let layer = opening.layer { session?.pick(layer) }

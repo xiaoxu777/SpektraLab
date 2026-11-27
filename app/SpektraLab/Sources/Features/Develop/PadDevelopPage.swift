@@ -89,6 +89,7 @@ extension DevelopWorkspace {
                     }
                 }
                 .background(Theme.background)
+                .filmLabFlightColumn()
                 .padPart(.controls)
             }
             if let cropping {
@@ -318,6 +319,7 @@ extension DevelopWorkspace {
         var columnShown: Bool
         var cropEnabled: Bool
         var canUndo: Bool, canRedo: Bool
+        var historyLoading: Bool
         var resetTitle: String?, resetEnabled: Bool
         var paste: String?
         var compare: Bool, compareEnabled: Bool, original: Bool
@@ -330,6 +332,7 @@ extension DevelopWorkspace {
                         inCrop: inlineCrop != nil || LayersStage.shared.arranging(frame.id) != nil,
                         columnShown: columnShown, cropEnabled: cropAction != nil,
                         canUndo: session.canUndo, canRedo: session.canRedo,
+                        historyLoading: session.historyLoading,
                         resetTitle: resetTitle, resetEnabled: resetTitle != nil && resetChangesAnything,
                         paste: model.library.clipboard?.summary, compare: comparing, compareEnabled: hasOriginal,
                         original: original)
@@ -344,6 +347,12 @@ extension DevelopWorkspace {
         #endif
         let s = macBarSignature
         let session = session, router = router, frame = frame
+        // A new session's false flags mean unknown until attachHistory's read lands. Keep the last displayed
+        // answer meanwhile, then publish this frame's actual answer once (including a genuinely empty history).
+        // Actions below already target the new session: undo/redo queue there while its history is loading.
+        let previous = MacShellBar.shared.develop
+        let canUndo = s.historyLoading ? (previous?.canUndo ?? false) : s.canUndo
+        let canRedo = s.historyLoading ? (previous?.canRedo ?? false) : s.canRedo
         MacShellBar.shared.develop = MacDevelopBar(
             owner: ObjectIdentifier(session), frameID: frame.id,
             surface: s.edit ? .edit : s.personalize ? .personalize : s.export ? .export : .develop,
@@ -355,11 +364,15 @@ extension DevelopWorkspace {
             },
             cropEnabled: s.cropEnabled,
             chooseSurface: { mode in
+                guard mode != filmLabMode else { return }
+                MacKeyFocus.commitEditing?.finish()
                 original = false
                 withAnimation(motion) {
                     session.show(mode == .edit ? .edit : .develop)
                     // FilmLab: 冲洗 is Film & Paper; 个性化 and 导出 are Format, told apart by `FilmLabFinish`.
-                    if mode == .develop { session.pageNavigation.select(DevelopStep.filmAndPaper) }
+                    if mode == .develop, session.pageNavigation.step != .filmAndPaper {
+                        session.pageNavigation.select(DevelopStep.filmAndPaper)
+                    }
                     if mode == .export || mode == .personalize {
                         FilmLabFinish.shared.page = mode == .export ? .export : .personalize
                         // `select` folds the panel when the step is picked again: only from another step.
@@ -367,7 +380,7 @@ extension DevelopWorkspace {
                     }
                 }
             },
-            canUndo: s.canUndo, canRedo: s.canRedo,
+            canUndo: canUndo, canRedo: canRedo,
             undo: { session.undo() }, redo: { session.redo() },
             resetTitle: s.resetTitle, resetEnabled: s.resetEnabled, reset: { asksReset = true },
             copySettings: { router.present(.copySettings(frame.id)) }, presets: { presets = true },
@@ -432,13 +445,21 @@ extension DevelopWorkspace {
         return VStack(spacing: 0) {
             // The frame's: it holds its session's histogram while it is shown (`HistogramPanel.holder`), so it is made
             // again with the next frame's session (2.4.0 A2b).
-            if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id).filmLabModePart() }
+            Group {
+                if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id).filmLabModePart() }
+            }
+            .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
             // 普通版 (FilmLab): a single photograph has no 图层 row (its mask layers are 专业版's); a double or a pair keeps
             // it, the way to its pictures.
-            if !export, !(FeatureFlags.simpleWindow && piece.isSingle) {
-                LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top).filmLabModePart()
+            Group {
+                if !export, !(FeatureFlags.simpleWindow && piece.isSingle) {
+                    LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
+                        .animation(.easeOut(duration: 0.18), value: layersHeight).filmLabModePart()
+                }
             }
-            if band { navigationBand.frame(height: tabs).filmLabModePart() }
+            .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
+            Group { if band { navigationBand.frame(height: tabs).filmLabModePart() } }
+                .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
             Group {
                 if let arranging {
                     ArrangeColumn(session: session, frame: frame, pick: arranging)
@@ -454,7 +475,6 @@ extension DevelopWorkspace {
         }
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
         .filmLabModeColumn(filmLabMode)
-        .animation(.easeOut(duration: 0.18), value: layersHeight)
         .layerSheets(session: session, frame: frame)
         // 摆放 is of this picture and this mode: another frame, or Edit, closes it (Done).
         .onChange(of: frame.id) { _, _ in LayersStage.shared.arranging = nil }
@@ -508,7 +528,45 @@ extension DevelopWorkspace {
     /// its own).
     private var exportColumnShown: Bool { finishing && !Self.edgeEverywhere }
 
-    @ViewBuilder private var columnPanel: some View {
+    private var stockPanelShown: Bool {
+        !exportColumnShown && watermarkPage == nil && maskPage == nil && !session.layerPick.isPicture
+            && navigation.surface == .develop && navigation.step == .filmAndPaper && stockStrip != nil
+    }
+
+    private var columnPanel: some View {
+        // Neither overlay sizes the column: its parent already offers the remaining height. The kept stock panel
+        // receives that room only while visible, and never a zero-width proposal on leaving a mode.
+        Color.clear
+            .overlay(alignment: .topLeading) {
+                FilmLabKeptStockPanel(shown: stockPanelShown) { activity, visit in
+                    if let stockStrip { stockColumn(stockStrip, activity: activity, visit: visit) }
+                }
+                .equatable()
+            }
+            .overlay(alignment: .topLeading) {
+                Group { if !stockPanelShown { modeColumnPanel } }
+                    .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
+            }
+    }
+
+    private func stockColumn(_ stockStrip: StockStrip, activity: FilmLabStockPanelActivity, visit: Int) -> some View {
+        VStack(spacing: 0) {
+            GeometryReader { room in
+                ScrollView(.vertical) {
+                    StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
+                                      decode: decodeSection, status: nil, foldable: true,
+                                      room: room.size.height, width: room.size.width, panelActivity: activity, panelVisit: visit)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .scrollIndicators(.hidden)
+            }
+            // 普通版: 颗粒 is pinned at the column's foot, on show whatever Decode's fold or the scroll (`FilmLabSimpleGrain`).
+            if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session) }
+        }
+        .filmLabModeHeavyPart()
+    }
+
+    @ViewBuilder private var modeColumnPanel: some View {
         if exportColumnShown, personalizing {
             // 片边, 日期后背 and 水印, each a switch with its choices as pictures (`FilmLabPersonalizeColumn`).
             FilmLabPersonalizeColumn(session: session, frame: frame, ids: exportIDs, piece: personalizePiece)
@@ -543,28 +601,6 @@ extension DevelopWorkspace {
                     columnAdjust.rowEnabled(false)
                 }
             }
-        } else if navigation.surface == .develop, navigation.step == .filmAndPaper, let stockStrip {
-            // The desktop's Film & Paper (the owner, 2026-11-16): the film's grid and the paper's, each as tall as
-            // its grip was dragged and scrolling its own cards up and down, then Decode (`StockPreviewPanel(room:)`,
-            // `StripSplit`). The column scrolls the panel as one, as before: a strip nobody dragged fits the room,
-            // so at rest both strips and Decode's shortest part are on screen where the room holds them.
-            // The room and the width are measured here, the one place that needs them as numbers: a resize re-makes
-            // this panel where its room changed, and nothing else of the column (2026-11-22).
-            VStack(spacing: 0) {
-                GeometryReader { room in
-                    ScrollView(.vertical) {
-                        StockPreviewPanel(session: session, strip: stockStrip, compact: compact, crop: nil,
-                                          decode: decodeSection, status: nil, foldable: true,
-                                          room: room.size.height, width: room.size.width)
-                            .frame(maxWidth: .infinity, alignment: .top)
-                    }
-                    .scrollIndicators(.hidden)
-                }
-                // 普通版: 颗粒 is pinned at the column's foot, on show whatever Decode's fold or the scroll (`FilmLabSimpleGrain`).
-                if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session) }
-            }
-            // The film and paper grids take no part in the mode's transition: too heavy to move (`filmLabModeHeavyPart`).
-            .filmLabModeHeavyPart()
         } else if navigation.surface == .develop {
             ScrollView(.vertical) {
                 VStack(spacing: 0) {
@@ -594,7 +630,10 @@ extension DevelopWorkspace {
             } else {
                 AdjustColumn(session: session, state: $adjustState, tools: { tab.shows($0) },
                              tail: tab == .effects && Self.gradingHasEffects
-                                ? AnyView(wideFormatTail.rowEnabled(session.edit.appliesFilm)) : nil)
+                                ? AnyView(VStack(spacing: 0) {
+                                    FilmLabFilmFormatSection(session: session, frame: frame)
+                                    wideFormatTail
+                                }.rowEnabled(session.edit.appliesFilm)) : nil)
             }
         }
     }

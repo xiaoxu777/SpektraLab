@@ -21,6 +21,7 @@
 
 import SwiftUI
 import UIKit
+import Darwin
 
 @MainActor
 enum FilmLabModeMotion {
@@ -124,22 +125,18 @@ private struct FilmLabModeSlideEffect: ViewModifier, Animatable {
     }
 }
 
-/// The develop column's own motion for a change of mode: says which way the switch went, animates what changes in the
-/// column with that change and with nothing else, and keeps the parts on the move inside the column.
+/// The column's layout takes its final size at once; only the inserted/removed parts' drawing transitions animate.
 private struct FilmLabModeColumn: ViewModifier {
     let mode: WorkspaceMode
     @Environment(\.accessibilityReduceMotion) private var reduce
     /// The mode last drawn, in a box nothing observes (written in the body).
     @State private var seen = Seen()
-    private final class Seen { var mode: WorkspaceMode?; let born = Date() }
+    private final class Seen { var mode: WorkspaceMode? }
 
     func body(content: Content) -> some View {
         let _ = note()
-        // A page opened from 图库 on 导出 or 个性化 is made on 冲洗 and told its mode a moment later (`applyOpening`): that
-        // first change is the page arriving, not a switch, and is not animated (it is under the veil as it is).
-        let arriving = seen.born.timeIntervalSinceNow > -0.5
         content
-            .animation(arriving ? nil : FilmLabModeMotion.animation(reduce: reduce), value: mode)
+            .transaction { $0.animation = nil }
             .clipped()
     }
 
@@ -165,7 +162,9 @@ extension View {
     /// after the press, against ~160 ms). Faded in, it halved the frames drawn in the half second after the press
     /// (二级调色 → 冲洗: 13 against 27). So the switch to and from 冲洗 costs what it did, and what shows the way is the
     /// tab, the histogram and 图层 where they come or go, and the other mode's panel.
-    func filmLabModeHeavyPart() -> some View { transition(.identity) }
+    func filmLabModeHeavyPart() -> some View {
+        transition(.identity).transaction { $0.animation = nil; $0.disablesAnimations = true }
+    }
 }
 
 extension DevelopWorkspace {
@@ -218,7 +217,8 @@ struct FilmLabModeVeil: View {
 
 /// `--filmlab-mode-probe WAIT [--filmlab-mode-walk a,b,c] [--filmlab-mode-gap S]`: after WAIT seconds the modes are
 /// walked by the bar's own paths (the develop page's `chooseSurface`, `router.toLibrary`, `MacLibraryGo.choose`), one
-/// every S seconds (1.2), and for each switch the gaps between display frames in the 0.6 s after it are written to
+/// every S seconds (1.2), and for each switch the gaps between display callbacks in `--filmlab-mode-window S`
+/// seconds (0.6, capped at the step gap) are written to
 /// `~/Library/Logs/FilmLab-mode.txt`: the longest (the main thread busy with the switch), when the last late frame
 /// ended ("busy until"), and how many frames came. The walk's names are the modes' (`library`, `develop`, `edit`,
 /// `personalize`, `export`); the default goes through every neighbour and a few jumps. Nothing in the library or the
@@ -231,15 +231,20 @@ final class FilmLabModeProbe: NSObject {
         guard running == nil, let wait = FilmLabCheckArgs.value("--filmlab-mode-probe").flatMap(Double.init) else { return }
         let probe = FilmLabModeProbe(model: model)
         running = probe
-        DispatchQueue.main.asyncAfter(deadline: .now() + wait) { probe.start() }
+        probe.start(wait: wait)
     }
 
     private let model: AppServices
-    private var steps: [WorkspaceMode]
+    private let steps: [WorkspaceMode]
+    private let repeats: Int
     private let gap: Double
+    private let window: Double
+    private var step = 0
+    private let cpu = MainThreadCPU()
     private var link: CADisplayLink?
     private var last: CFTimeInterval = 0
     private var began: CFTimeInterval = 0
+    private var ends: CFTimeInterval = 0
     private var gaps: [(at: Double, gap: Double)] = []
     private var from = "?"
     private var lines: [String] = []
@@ -250,34 +255,54 @@ final class FilmLabModeProbe: NSObject {
             ?? ["develop", "edit", "personalize", "export", "personalize", "edit", "develop", "export", "develop",
                 "library", "develop", "library", "export", "library"]
         steps = names.compactMap { WorkspaceMode(rawValue: $0) }.filter { WorkspaceMode.shown.contains($0) }
-        gap = FilmLabCheckArgs.value("--filmlab-mode-gap").flatMap(Double.init) ?? 1.2
+        repeats = max(1, FilmLabCheckArgs.value("--filmlab-mode-repeat").flatMap(Int.init) ?? 1)
+        let askedGap = FilmLabCheckArgs.value("--filmlab-mode-gap").flatMap(Double.init) ?? 1.2
+        let resolvedGap = askedGap.isFinite ? max(0.05, askedGap) : 1.2
+        gap = resolvedGap
+        let askedWindow = FilmLabCheckArgs.value("--filmlab-mode-window").flatMap(Double.init) ?? 0.6
+        window = askedWindow.isFinite ? min(max(0.05, askedWindow), resolvedGap) : min(0.6, resolvedGap)
     }
 
     private var current: WorkspaceMode {
         MacShellPath.develop(model.router.path) == nil ? .library : (MacShellBar.shared.develop?.surface ?? .develop)
     }
 
-    private func start() {
+    private func start(wait: Double) {
         let l = CADisplayLink(target: self, selector: #selector(tick(_:)))
         l.add(to: .main, forMode: .common)
         link = l
         last = CACurrentMediaTime()
-        next()
+        // Warm the link before the first (possibly same-mode) press, rather than charging its startup to that press.
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(wait.isFinite ? wait : 0, 0.2)) { [self] in next() }
     }
 
     private func next() {
-        guard !steps.isEmpty else { finish(); return }
-        let mode = steps.removeFirst()
+        guard !steps.isEmpty, step / steps.count < repeats else { finish(); return }
+        let mode = steps[step % steps.count]
+        let round = step / steps.count + 1
+        step += 1
         from = current.rawValue + "→" + mode.rawValue
         gaps = []
         began = CACurrentMediaTime()
+        ends = began + window
+        let nextAt = began + gap
+        let end = ends
+        let startCPU = cpu.milliseconds()
+        let meter = cpu
+        // Both deadlines originate before go(). Read the main thread's CPU counter off-main: a blocked main queue
+        // must not extend the CPU window just because record() itself could not run at its deadline.
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + max(0, end - CACurrentMediaTime())) {
+            let endCPU = meter.milliseconds()
+            let sampledAt = CACurrentMediaTime()
+            DispatchQueue.main.async { [self] in
+                record(round: round, cpuMS: startCPU.flatMap { start in endCPU.map { max(0, $0 - start) } },
+                       cpuEndLate: max(0, sampledAt - end) * 1000)
+                began = 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + max(0, nextAt - CACurrentMediaTime())) { [self] in next() }
+            }
+        }
         Self.go(mode, model: model)
         NSLog("[filmlab-mode] %@", from)
-        // A gap under 0.6 s is a hand pressing fast: the next switch lands inside this one's transition.
-        DispatchQueue.main.asyncAfter(deadline: .now() + min(gap, 0.6)) { [self] in
-            record()
-            DispatchQueue.main.asyncAfter(deadline: .now() + max(gap - 0.6, 0)) { [self] in next() }
-        }
     }
 
     /// A mode, as the bar's switch and ⌘1–⌘5 ask for it (`MainWindowLayout.modeSwitch`).
@@ -293,18 +318,46 @@ final class FilmLabModeProbe: NSObject {
 
     @objc private func tick(_ l: CADisplayLink) {
         let now = CACurrentMediaTime()
-        gaps.append((at: (now - began) * 1000, gap: (now - last) * 1000))
+        if began > 0, now <= ends {
+            gaps.append((at: (now - began) * 1000, gap: (now - max(last, began)) * 1000))
+        }
         last = now
     }
 
-    private func record() {
-        // The first tick's gap began before the switch: it is counted from the switch.
-        let seen = gaps.filter { $0.at > 0 }.map { (at: $0.at, gap: min($0.gap, $0.at)) }
-        let longest = seen.map(\.gap).max() ?? 0
-        let busyUntil = seen.last(where: { $0.gap > 25 })?.at ?? seen.first?.at ?? 0
+    private func record(round: Int, cpuMS: Double?, cpuEndLate: Double) {
+        let seen = gaps
+        let duration = (ends - began) * 1000
+        // Include the unfinished interval, even if the main queue never delivered a single callback in the window.
+        let tail = max(0, duration - (seen.last?.at ?? 0))
+        let intervals = seen + [(at: duration, gap: tail)]
+        let longest = intervals.map(\.gap).max() ?? duration
+        let busyUntil = intervals.last(where: { $0.gap > 25 })?.at ?? seen.first?.at ?? 0
         lines.append(String(format: "  %@  frames %d  first %.0f ms  longest gap %.0f ms  busy until %.0f ms  late(>25ms) %d",
                             from.padding(toLength: 22, withPad: " ", startingAt: 0), seen.count, seen.first?.at ?? 0, longest,
-                            busyUntil, seen.filter { $0.gap > 25 }.count))
+                            busyUntil, intervals.filter { $0.gap > 25 }.count)
+                     + String(format: "  round %d/%d  window %.0f ms  gaps(>33ms) %d  open gap >=%.0f ms  main CPU %@ ms  CPU end late %.1f ms",
+                              round, repeats, duration, intervals.filter { $0.gap > 33 }.count, tail,
+                              cpuMS.map { String(format: "%.1f", $0) } ?? "n/a", cpuEndLate)
+                     + (seen.isEmpty ? String(format: "  NO FRAME >=%.0f ms", duration) : ""))
+    }
+
+    /// A sendable handle to this main thread, retained until the probe finishes. No process-wide CPU attribution.
+    private final class MainThreadCPU: @unchecked Sendable {
+        private let thread = mach_thread_self()
+        deinit { mach_port_deallocate(mach_task_self_, thread) }
+
+        func milliseconds() -> Double? {
+            var info = thread_basic_info_data_t()
+            var count = mach_msg_type_number_t(MemoryLayout<thread_basic_info_data_t>.size / MemoryLayout<integer_t>.size)
+            let result = withUnsafeMutablePointer(to: &info) {
+                $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                    thread_info(thread, thread_flavor_t(THREAD_BASIC_INFO), $0, &count)
+                }
+            }
+            guard result == KERN_SUCCESS else { return nil }
+            return (Double(info.user_time.seconds) + Double(info.system_time.seconds)) * 1000
+                + (Double(info.user_time.microseconds) + Double(info.system_time.microseconds)) / 1000
+        }
     }
 
     private func finish() {

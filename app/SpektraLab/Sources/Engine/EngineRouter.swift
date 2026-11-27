@@ -202,6 +202,17 @@ final class EngineRouter {
     /// settings — and the commit its sources were built at.
     var identity: String { engine.effectVersions + "|" + commit }
 
+    /// Host finishing belongs in a picture's cache key too: it is not a new engine parameter.
+    /// Leave edge-less stamps alone, while an old edge/full-view cache cannot bypass this finish.
+    private func scanIdentity(_ edit: FrameEdit, wire: [String: ParamValue]) -> String {
+        guard wire["overscan_active"] == .bool(true) else { return identity }
+        return identity + "|" + edit.filmEdge.scanLook.finishKey
+    }
+
+    private func scanFinish(_ edit: FrameEdit, wire: [String: ParamValue]) -> FilmEdgeScan? {
+        wire["overscan_active"] == .bool(true) ? edit.filmEdge.scanLook : nil
+    }
+
     /// The frame shows no develop of its own, or one its edit no longer makes: its preview is owed
     /// (2026-11-05: one test for Export's cells, the Light Table's films and a paste's tiles). Whether
     /// the original can be read now is not asked: a frame pasted onto while its disk is away is owed
@@ -219,9 +230,10 @@ final class EngineRouter {
         if let double = frame.double { return stamp(double, item: frame, look: edit, longEdge: longEdge) }
         if let pair = frame.pair { return stamp(pair, frames: held(by: pair), look: edit, longEdge: longEdge) }
         guard makesPictures, !frame.isDemo, evenAway || frame.developSource != nil else { return nil }
-        return DevelopStamp.of(wire: wire(frame, edit: edit, longEdge: longEdge), cut: edit.hostCut(source: frame.originalSize),
+        let wire = wire(frame, edit: edit, longEdge: longEdge)
+        return DevelopStamp.of(wire: wire, cut: edit.hostCut(source: frame.originalSize),
                                turns: edit.hostTurns(source: frame.originalSize),
-                               decode: edit.decode, isRAW: frame.developsFromRAW, longEdge: longEdge, engine: identity,
+                               decode: edit.decode, isRAW: frame.developsFromRAW, longEdge: longEdge, engine: scanIdentity(edit, wire: wire),
                                origin: frame.stampOrigin,
                                lens: LensCorrection.word(source: frame.developSource, fileName: frame.fileName, decode: edit.decode,
                                                          isRAW: frame.developsFromRAW),
@@ -461,12 +473,13 @@ final class EngineRouter {
         // 水印's 底片 marks, laid into this job's source (`EngineHost.decode`); their word in the stamp.
         let base = WatermarkComposite.Base(edit, isComposite: false)
         let stamp = DevelopStamp.of(wire: wire, cut: cut, turns: turns, decode: edit.decode, isRAW: frame.developsFromRAW,
-                                    longEdge: longEdge ?? frame.originalSize.longEdge, engine: identity,
+                                    longEdge: longEdge ?? frame.originalSize.longEdge, engine: scanIdentity(edit, wire: wire),
                                     origin: frame.stampOrigin, lens: lens?.word ?? "", base: base?.key ?? "")
         var request = EngineHost.Request(frameID: frame.id, source: source, isRAW: frame.developsFromRAW,
                                          decode: edit.decode, longEdge: longEdge, cut: cut, wire: wire, turnsAfter: turns,
                                          stamp: stamp, purpose: purpose == .canvas ? .canvas : .keep, proxy: proxy)
         request.lens = lens
+        request.scanFinish = scanFinish(edit, wire: wire)
         request.base = base
         request.keepsBaseSource = purpose == .canvas && keepsBaseSource
         // The 场景 layers the wire names, captured with the rest (`wire` put their stamp in it).
@@ -592,8 +605,9 @@ final class EngineRouter {
         let pair = pair.mirrored(frames)
         let piece = pair.piece(frames, look: look, longEdge: longEdge)
         guard !piece.pictures.isEmpty else { return nil }
-        return DevelopStamp.of(wire: wire(pair, frames: frames, look: look, longEdge: longEdge), decode: DecodeSettings(),
-                               isRAW: false, longEdge: longEdge, engine: identity, piece: piece.key,
+        let wire = wire(pair, frames: frames, look: look, longEdge: longEdge)
+        return DevelopStamp.of(wire: wire, decode: DecodeSettings(),
+                               isRAW: false, longEdge: longEdge, engine: scanIdentity(look, wire: wire), piece: piece.key,
                                prints: layers(pair, piece: piece, look: look).map(\.key))
     }
 
@@ -636,10 +650,11 @@ final class EngineRouter {
         let wire = wire(pair, frames: frames, look: look, longEdge: longEdge)
         let own = layers(pair, piece: piece, look: look)
         let stamp = DevelopStamp.of(wire: wire, decode: DecodeSettings(), isRAW: false, longEdge: longEdge ?? piece.size.longEdge,
-                                    engine: identity, piece: piece.key, prints: own.map(\.key))
+                                    engine: scanIdentity(look, wire: wire), piece: piece.key, prints: own.map(\.key))
         var request = EngineHost.Request(frameID: job.frameID, source: first.url, isRAW: false, decode: DecodeSettings(),
                                          longEdge: longEdge, cut: nil, wire: wire, turnsAfter: 0, stamp: stamp,
-                                         purpose: purpose == .canvas ? .canvas : .keep, piece: piece, layers: own,
+                                         purpose: purpose == .canvas ? .canvas : .keep,
+                                         scanFinish: scanFinish(look, wire: wire), piece: piece, layers: own,
                                          stripPixels: pair.piece(frames, look: look, longEdge: StockPreviewSize.openLongEdge).key)
         // A pair's page has Enable HDR as a photograph's has (a pair is a frame to develop like any other).
         if purpose == .canvas, Self.curveWithDevelop(look) { request.hdrCurve = HDRSessionCurve.request(for: look) }
@@ -675,8 +690,9 @@ final class EngineRouter {
         let made = double.mirrored(frames)
         let piece = made.piece(frames, look: look, longEdge: longEdge)
         guard !piece.pictures.isEmpty, let shape = made.pieceFrame(made.framed(frames), look: look, longEdge: longEdge) else { return nil }
-        return DevelopStamp.of(wire: wire(made, item: item, frames: frames, look: look, longEdge: longEdge), turns: shape.turnsAfter,
-                               decode: DecodeSettings(), isRAW: false, longEdge: longEdge, engine: identity, piece: piece.key)
+        let wire = wire(made, item: item, frames: frames, look: look, longEdge: longEdge)
+        return DevelopStamp.of(wire: wire, turns: shape.turnsAfter,
+                               decode: DecodeSettings(), isRAW: false, longEdge: longEdge, engine: scanIdentity(look, wire: wire), piece: piece.key)
     }
 
     /// What the pixels a develop of a double exposure's piece starts from are
@@ -719,13 +735,14 @@ final class EngineRouter {
         }
         let wire = wire(made, item: item, frames: frames, look: look, longEdge: longEdge)
         let stamp = DevelopStamp.of(wire: wire, turns: shape.turnsAfter, decode: DecodeSettings(), isRAW: false,
-                                    longEdge: longEdge ?? piece.size.longEdge, engine: identity, piece: piece.key)
+                                    longEdge: longEdge ?? piece.size.longEdge, engine: scanIdentity(look, wire: wire), piece: piece.key)
         // The strip's cards compose the same piece without the film edge and the date (`doubleCardPlan`):
         // only where that is these pixels — no film edge, or one that cuts and turns nothing — is the
         // page's own decode made the strip's (`DoubleExposure.stripPixels`, `EngineHost.feedStrip`).
         guard hand(host, job, EngineHost.Request(frameID: job.frameID, source: first.url, isRAW: false, decode: DecodeSettings(),
                                                  longEdge: longEdge, cut: nil, wire: wire, turnsAfter: shape.turnsAfter, stamp: stamp,
-                                                 purpose: purpose == .canvas ? .canvas : .keep, piece: piece,
+                                                 purpose: purpose == .canvas ? .canvas : .keep,
+                                                 scanFinish: scanFinish(look, wire: wire), piece: piece,
                                                  stripPixels: made.stripPixels(frames, look: look))) else { return false }
         note(job, piece: piece, frames: frames)
         return true
@@ -760,10 +777,10 @@ final class EngineRouter {
         }
         let wire = wire(made, item: item, frames: frames, look: look, longEdge: longEdge)
         let stamp = DevelopStamp.of(wire: wire, turns: shape.turnsAfter, decode: DecodeSettings(), isRAW: false,
-                                    longEdge: longEdge ?? piece.size.longEdge, engine: identity, piece: piece.key)
+                                    longEdge: longEdge ?? piece.size.longEdge, engine: scanIdentity(look, wire: wire), piece: piece.key)
         guard hand(host, job, EngineHost.Request(frameID: job.frameID, source: first.url, isRAW: false, decode: DecodeSettings(),
                                                  longEdge: longEdge, cut: nil, wire: wire, turnsAfter: shape.turnsAfter, stamp: stamp,
-                                                 purpose: .alone, piece: piece)) else { return false }
+                                                 purpose: .alone, scanFinish: scanFinish(look, wire: wire), piece: piece)) else { return false }
         note(job, piece: piece, frames: frames)
         return true
         #else
@@ -778,8 +795,9 @@ final class EngineRouter {
         let made = double.mirrored(frames)
         let piece = made.alone(position, frames: frames, look: look, longEdge: longEdge)
         guard !piece.pictures.isEmpty, let shape = made.pieceFrame(made.framed(frames), look: look, longEdge: longEdge) else { return nil }
-        return DevelopStamp.of(wire: wire(made, item: item, frames: frames, look: look, longEdge: longEdge), turns: shape.turnsAfter,
-                               decode: DecodeSettings(), isRAW: false, longEdge: longEdge, engine: identity, piece: piece.key)
+        let wire = wire(made, item: item, frames: frames, look: look, longEdge: longEdge)
+        return DevelopStamp.of(wire: wire, turns: shape.turnsAfter,
+                               decode: DecodeSettings(), isRAW: false, longEdge: longEdge, engine: scanIdentity(look, wire: wire), piece: piece.key)
     }
 
     /// The engine session an exposure's alone render is developed in: one of
@@ -1071,7 +1089,8 @@ final class EngineRouter {
             let wire = wire(double, item: frame, frames: frames, look: edit, longEdge: job.tier == .full ? nil : plan.decodeLongEdge)
             guard hand(host, job, EngineHost.Request(frameID: frame.id, source: source, isRAW: false, decode: DecodeSettings(),
                                                      longEdge: plan.decodeLongEdge, cut: nil, wire: wire, turnsAfter: shape.turnsAfter,
-                                                     stamp: "", purpose: .export(order), piece: piece)) else { return false }
+                                                     stamp: "", purpose: .export(order),
+                                                     scanFinish: scanFinish(edit, wire: wire), piece: piece)) else { return false }
             note(job, piece: piece, frames: frames)
             return true
         }
@@ -1085,7 +1104,7 @@ final class EngineRouter {
             let wire = wire(pair, frames: frames, look: edit, longEdge: job.tier == .full ? nil : plan.decodeLongEdge)
             var request = EngineHost.Request(frameID: frame.id, source: source, isRAW: false, decode: DecodeSettings(),
                                              longEdge: plan.decodeLongEdge, cut: nil, wire: wire, turnsAfter: 0,
-                                             stamp: "", purpose: .export(order), piece: piece,
+                                             stamp: "", purpose: .export(order), scanFinish: scanFinish(edit, wire: wire), piece: piece,
                                              layers: layers(pair, piece: piece, look: edit))
             // Enable HDR: the map's curve is the session's that prints the pair (never rendered twice: no slide rendition).
             if order.gainMap { request.hdrCurve = HDRSessionCurve.request(for: edit) }
@@ -1097,6 +1116,7 @@ final class EngineRouter {
                                          longEdge: plan.decodeLongEdge, cut: plan.cut, wire: wire,
                                          turnsAfter: plan.turnsAfter, stamp: "", purpose: .export(order))
         request.lens = isRAW ? LensResolver.current(source, fileName: frame.fileName, decode: edit.decode) : nil
+        request.scanFinish = scanFinish(edit, wire: wire)
         request.sceneLayers = sceneAsk(frame, edit: edit, longEdge: plan.decodeLongEdge, cut: plan.cut)
         // Enable HDR (the export round, D8): the file's map is of the curve this render's own session gives
         // (`HDRSessionCurve`, asked after the render as the canvas asks), and a slide's of its second rendition.
@@ -1157,7 +1177,7 @@ final class EngineRouter {
         // The answer the kept render is decoded with (`prepareFullView` hands it on): the stamp names it.
         let lens = given ?? (isRAW ? LensResolver.current(source, fileName: frame.fileName, decode: frame.edit.decode) : nil)
         let stamp = DevelopStamp.of(wire: wire, cut: plan.cut, turns: plan.turnsAfter, decode: frame.edit.decode, isRAW: isRAW,
-                                    longEdge: plan.decodeLongEdge ?? 0, engine: identity, origin: frame.stampOrigin,
+                                    longEdge: plan.decodeLongEdge ?? 0, engine: scanIdentity(frame.edit, wire: wire), origin: frame.stampOrigin,
                                     lens: lens?.word ?? "", base: WatermarkComposite.Base.word(frame.edit, isComposite: frame.isComposite))
             + "|\(plan.engineCanvas.width)x\(plan.engineCanvas.height)|\(source.lastPathComponent)"
         return FullRender.Ask(url: folder.appendingPathComponent(FullRender.fileName(frame: frame.id, stamp: stamp)), stamp: stamp, lens: lens)
@@ -1175,6 +1195,7 @@ final class EngineRouter {
                                          wire: exportWire(frame, plan: plan, full: true),
                                          turnsAfter: plan.turnsAfter, stamp: ask.stamp, purpose: .fullView(ask))
         request.lens = ask.lens
+        request.scanFinish = scanFinish(frame.edit, wire: request.wire)
         // The 场景 layers the wire names (`exportWire` put their stamp in it), as an export at Full carries them: without
         // them the engine refused every full render of a frame with a 场景 layer (2026-11-16, "Full size unavailable"),
         // and Apple's decode made it with none.

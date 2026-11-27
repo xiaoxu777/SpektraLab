@@ -124,31 +124,38 @@ struct DevelopWorkspace: View {
 
     /// The page's state for the frame it opens on: the step, the tool, the open tile, the darkroom page, the surface
     /// the last frame's page carried (`DevelopOpening`), or a snapshot's drawing asked.
+    static func prepareOpening(_ session: OpenFrameSession, opening: DevelopOpening) {
+        // Called by take(), before enter/open and the first workspace body. Keep the wanted mode armed until
+        // applyOpening acknowledges it; the later onAppear then sees an equal navigation and invalidates nothing.
+        var next = session.pageNavigation
+        next.surface = MacDevelopWanted.surface ?? opening.surface
+        next.step = MacDevelopWanted.step ?? opening.step
+        next.tool = .adjust // keepEditOnAdjust's final tool
+        next.adjust = opening.adjustTool
+        next.darkroom = opening.darkroom
+        next.decodeTool = opening.decodeTool
+        next.panelFolded = MacDevelopWanted.step == nil ? opening.panelFolded : false
+        session.show(next.surface)
+        if session.pageNavigation != next { session.pageNavigation = next }
+        if !edgeEverywhere {
+            let edge = next.surface == .develop && next.step == .format
+            OpenFrameSession.edgeWanted = edge
+            if session.showsFilmEdge != edge { session.showsFilmEdge = edge }
+        }
+    }
+
     private func applyOpening() {
-        session.pageNavigation.step = opening.step
-        session.pageNavigation.tool = DevelopPageNavigation.isAvailable(opening.editTool) ? opening.editTool : .darkroom
-        keepEditOnAdjust()
-        session.pageNavigation.adjust = opening.adjustTool
-        if let state = opening.adjustState { adjustState = state }
-        session.pageNavigation.darkroom = opening.darkroom
-        enlargerTool = opening.enlargerTool
-        session.pageNavigation.decodeTool = opening.decodeTool
-        if EffectsPage.darkroom.contains(opening.effectsPage) { effectsPage = opening.effectsPage }
-        session.pageNavigation.panelFolded = opening.panelFolded
-        session.show(opening.surface)
-        // The library's mode row opened this page as 编辑 (`MacModeSwitch`), or 冲洗: the row's mode is
-        // the page's, whatever this session last kept.
-        if let wanted = MacDevelopWanted.surface {
-            MacDevelopWanted.surface = nil
-            session.show(wanted)
-        }
-        if let step = MacDevelopWanted.step {
-            MacDevelopWanted.step = nil
-            session.pageNavigation.select(step)
-        }
-        comparing = opening.compare
+        Self.prepareOpening(session, opening: opening)
+        MacDevelopWanted.surface = nil
+        MacDevelopWanted.step = nil
+        if let state = opening.adjustState, adjustState != state { adjustState = state }
+        if enlargerTool != opening.enlargerTool { enlargerTool = opening.enlargerTool }
+        if EffectsPage.darkroom.contains(opening.effectsPage), effectsPage != opening.effectsPage { effectsPage = opening.effectsPage }
+        if comparing != opening.compare { comparing = opening.compare }
         let decode = session.edit.decode
-        if decode.isAsShot { cameraWhiteBalance = (decode.temperature, decode.tint) }
+        if decode.isAsShot, cameraWhiteBalance?.temperature != decode.temperature || cameraWhiteBalance?.tint != decode.tint {
+            cameraWhiteBalance = (decode.temperature, decode.tint)
+        }
     }
 
     /// Another frame on the kept page: each of the page's own states as a page made for the frame would start it —

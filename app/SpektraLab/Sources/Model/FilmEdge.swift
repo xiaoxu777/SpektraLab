@@ -457,13 +457,57 @@ enum FilmEdgePerforation: String, CaseIterable, Codable, Identifiable, Sendable 
     static var filmName: String { FilmFrame.cine65Name }
 }
 
+/// An explicit direction of the strip, independent of the photograph's shape. `turn` still keeps
+/// the four-way placement; choosing the same direction leaves an existing upside-down strip alone.
+enum FilmEdgeOrientation: String, CaseIterable, Codable, Sendable {
+    case across, upright
+
+    func turn(keeping current: Int) -> Int {
+        switch self {
+        case .across: current == 2 ? 2 : 0
+        case .upright: current == 3 ? 3 : 1
+        }
+    }
+}
+
+/// FilmLab's scan, after development. Starting values for the owner's screenshot tuning, kept in
+/// one table: blur is sigma at a 2,000-pixel render (reserved until the wire knows the actual output
+/// size); softness is the actual canvas long edge divided by softnessDivisor (0 bypasses it).
+/// Noise is peak-to-peak monochrome amplitude; the finish modulates lift by ±30% at longEdge / 6.
+enum FilmEdgeScan: String, CaseIterable, Codable, Identifiable, Sendable {
+    case clean, natural, strong
+    var id: String { rawValue }
+    var title: String {
+        switch self { case .clean: L("Clean"); case .natural: L("Natural"); case .strong: L("Strong") }
+    }
+    struct Look: Sendable {
+        let fog: Double
+        let leaks: Double
+        let carrier: String
+        let blur: Double
+        let lift: Double
+        let noise: Double
+        let glow: Double
+        let softnessDivisor: Double
+    }
+    private static let looks: [FilmEdgeScan: Look] = [
+        .clean:   Look(fog: 0.3, leaks: 0,    carrier: "none",  blur: 0,    lift: 0,    noise: 0,     glow: 0,    softnessDivisor: 0),
+        .natural: Look(fog: 1.2, leaks: 0,    carrier: "black", blur: 0.45, lift: 0.04, noise: 0.025, glow: 0.55, softnessDivisor: 2600),
+        .strong:  Look(fog: 2.0, leaks: 0.35, carrier: "open",  blur: 0.9,  lift: 0.07, noise: 0.04,  glow: 0.85, softnessDivisor: 1600),
+    ]
+    var look: Look { Self.looks[self]! }
+    /// Also names the host's finishing algorithm: a stored full render must never receive it twice,
+    /// or stand in for a render made with another table/algorithm revision.
+    var finishKey: String { "scan-v2-\(rawValue)-\(look.lift)-\(look.noise)-\(look.glow)-\(look.softnessDivisor)" }
+}
+
 /// **Film Edge** (overscan): the film outside the frame.
 struct FilmEdgeSettings: Codable, Equatable, Sendable {
     /// The keys as they are written: renaming a property must not move its key.
     enum CodingKeys: String, CodingKey {
         case active = "active", format = "format", mode = "mode", gate = "gate", holes = "holes", fog = "fog",
             leaks = "leaks", turn = "turn", cameraSeed = "cameraSeed", frameNumber = "frameNumber", framing = "framing",
-            edgeBrightness = "edgeBrightness", perforation = "perforation"
+            edgeBrightness = "edgeBrightness", perforation = "perforation", orientation = "orientation", scan = "scan"
     }
     var active = false
     var format = FilmEdgeFormat.f135
@@ -472,12 +516,26 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
     var mode = FilmEdgeView.strip
     var gate = FilmEdgeGate.auto
     var holes = FilmEdgeHoles.white
-    var fog = 1.0                  // 0…4
-    var leaks = 0.0                // 0…4
+    var fog = FilmEdgeScan.natural.look.fog       // 0…4; saved professional values still win on decode
+    var leaks = FilmEdgeScan.natural.look.leaks   // 0…4
     /// Quarter turns of the film around the picture, clockwise (the Frame
     /// step's ↻): 0 across with the name on top, 1 down with it on the right,
     /// 2 across with it below, 3 down with it on the left.
     var turn = 0
+    /// Nil keeps the existing automatic direction on first use and when another format is chosen.
+    /// Only a hand-picked direction is written, so old edits keep the same JSON until it is chosen.
+    var orientation: FilmEdgeOrientation? = nil
+    /// Missing in older edits means Natural, by the owner's decision: existing edges gain the scan
+    /// finish without rewriting their files. The saved fog/leaks remain the professional tools' values.
+    var scan: FilmEdgeScan? = nil
+    var scanLook: FilmEdgeScan { scan ?? .natural }
+    var scanCarrier: String { view == .strip ? scanLook.look.carrier : "none" }
+
+    mutating func chooseScan(_ choice: FilmEdgeScan) {
+        scan = choice
+        fog = choice.look.fog
+        leaks = choice.look.leaks
+    }
     /// **The body**: gate, margins, where the frame sits on the perforations.
     /// 0 until this frame is given one — the host's own (`AppSettings.bodySeed`)
     /// the first time a film edge is put on it — and then kept with the edit,
@@ -521,6 +579,8 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
         fog = try c.decodeIfPresent(Double.self, forKey: .fog) ?? d.fog
         leaks = try c.decodeIfPresent(Double.self, forKey: .leaks) ?? d.leaks
         turn = try c.decodeIfPresent(Int.self, forKey: .turn) ?? d.turn
+        orientation = try? c.decodeIfPresent(FilmEdgeOrientation.self, forKey: .orientation)
+        scan = try? c.decodeIfPresent(FilmEdgeScan.self, forKey: .scan)
         cameraSeed = try c.decodeIfPresent(Int.self, forKey: .cameraSeed) ?? d.cameraSeed
         frameNumber = try c.decodeIfPresent(Int.self, forKey: .frameNumber) ?? d.frameNumber
         framing = try? c.decodeIfPresent(Geometry.self, forKey: .framing)
@@ -539,6 +599,8 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
         try c.encode(fog, forKey: .fog)
         try c.encode(leaks, forKey: .leaks)
         try c.encode(turn, forKey: .turn)
+        try c.encodeIfPresent(orientation, forKey: .orientation)
+        try c.encodeIfPresent(scan, forKey: .scan)
         try c.encode(cameraSeed, forKey: .cameraSeed)
         try c.encode(frameNumber, forKey: .frameNumber)
         try c.encodeIfPresent(framing, forKey: .framing)
@@ -579,14 +641,13 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
 
     /// About how large the film around a picture of this size is, without
     /// laying it out: the widest margins a body draws and the film's width,
-    /// with nothing past it — a strip scan ends at the film's long edges (the
-    /// engine's `overscan_carrier` = `none` since the desktop's 1.3.1). For
+    /// including 0.4 mm past each long edge when the scan shows a holder. For
     /// pricing a develop before it runs (the desktop's `FilmCanvasEstimate`);
     /// the layout itself says the exact size. Held against `FilmLayout` on
     /// 2026-10-05 over 36,000 layouts (every format, both views, both ways
     /// up, 60 bodies, 5 frames, 3 sizes): never smaller than the layout's
     /// canvas on either side, and at most 6.1 % more pixels (645 as a strip;
-    /// 1.1 % on 135).
+    /// 1.1 % on 135). That measurement was without a holder; its width is added explicitly below.
     func canvasEstimate(picture: PixelSize) -> PixelSize {
         let w = Double(max(picture.width, 1)), h = Double(max(picture.height, 1))
         let px = max(format.alongMM, format.acrossMM) / max(w, h)             // mm per pixel
@@ -601,15 +662,17 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
                 : (format.acrossMM > format.alongMM ? format.filmWidthMM * b / a : format.filmWidthMM * a / b)
             let margin = max(0, 0.5 * (canvasAlong - gateAlong))
             let along = Int(alongPx) + 2 * Int((margin / px).rounded(.up))
-            let across = max(Int((format.filmWidthMM / px).rounded(.up)), vertical ? picture.width : picture.height)
+            let reach = scanCarrier == "none" ? 0.0 : 0.8
+            let across = max(Int(((format.filmWidthMM + reach) / px).rounded(.up)), vertical ? picture.width : picture.height)
             return vertical ? PixelSize(width: across, height: along) : PixelSize(width: along, height: across)
         }
         let marginMM: Double, acrossMM: Double
         switch view {
         case .strip:
             marginMM = format == .half ? 0.5 : (format.isPerforated ? 0.95 : 2.35)
-            // The film's width (120's is cut to ±0.15) and nothing past it.
-            acrossMM = format.filmWidthMM + (format.isPerforated ? 0 : 0.15)
+            // The film's width (120's is cut to ±0.15), plus the engine's 0.4 mm
+            // past each long edge when this scan shows its holder.
+            acrossMM = format.filmWidthMM + (format.isPerforated ? 0 : 0.15) + (scanCarrier == "none" ? 0 : 0.8)
         case .filed:
             marginMM = 1.0
             acrossMM = (vertical ? w : h) * px + 2.2

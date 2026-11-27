@@ -110,8 +110,15 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
     static var centreFrom: CGFloat { 1200 }
 
     private func reportWidth(_ part: WindowBarPiece, _ width: CGFloat) {
-        guard widths.pieces[part] != width else { return }
-        widths.pieces[part] = width
+        guard width.isFinite, width >= 0 else { return }
+        let rounded = width.rounded(.up)
+        // Pixel alignment changes an intrinsic measurement with its x position (home: 34.2 ↔ 33.75).
+        // Ceil alone still crosses an integer there. Keep the conservative upper point for a one-point
+        // drop; a real shrink of more than a point, or removal (zero), still releases its room.
+        if let previous = widths.pieces[part], rounded > 0, rounded < previous, previous - rounded <= 1 { return }
+        guard widths.pieces[part] != rounded else { return }
+        widths.pieces[part] = rounded
+        FilmLabMotionPhotoProbe.value("width.\(part)", "\(rounded)")
         updateLayout()
     }
 
@@ -134,7 +141,9 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
         }
         if next != compact { compact = next }
         if let budget = widths.budget(level: next) {
-            let now = inputs.centreAllowed && budget.centreClearance >= 0
+            // Enter with spare room; retain the centre until that room is exhausted, never into overlap.
+            let now = inputs.centreAllowed && budget.centreClearance >= (centred ? 0 : MacMetric.pt(4))
+            FilmLabMotionPhotoProbe.value("layout-decision", "compact=\(next) centred=\(now)")
             if now != centred { centred = now }
         }
     }
@@ -146,10 +155,11 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
         let scale = InterfaceScale(rawValue: scaleChoice) ?? .standard
         let choice = CGFloat(scale.rawValue) / 100
         let windowWidth = width * factor / scale.factor(.padPoints)
-        return windowWidth * MacMetric.scale >= Self.centreFrom * choice
+        return windowWidth * MacMetric.scale >= Self.centreFrom * choice + (centred ? 0 : 4)
     }
 
     var body: some View {
+        let _ = FilmLabMotionPhotoProbe.bodyEvaluated(compact: compact, centred: centred)
         // Passing a reporter does not read the reference box's contents in body.
         let meter = WindowBarMeter(report: reportWidth)
         let gap = MacMetric.pt(compact == 4 ? 4 : 10)
@@ -161,27 +171,35 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
                     FilmLabHomeButton().fixedSize()
                         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.home, $0) }
                         .filmLabArrive(0)
+                        .filmLabBarProbe("home")
                     HStack(spacing: gap) { controls(compact, meter) }.fixedSize().filmLabArrive(1)
+                        .filmLabBarProbe("controls")
                 }
+                .filmLabBarProbe("left")
                 // MacModeSwitch keeps its labels' intrinsic widths at every compact level.
                 if !centred { measuredMode(meter).filmLabArrive(3) }
                 Spacer(minLength: MacMetric.pt(8))
                 HStack(spacing: gap) {
                     HStack(spacing: gap) { actions(compact, meter) }.fixedSize().filmLabArrive(5)
+                        .filmLabBarProbe("actions")
                     ProModeSwitch().fixedSize()
                         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.edition, $0) }
                         .filmLabArrive(6)
+                        .filmLabBarProbe("edition")
                     if let export {
                         FilmLabExportButton(action: export).fixedSize()
                             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.export, $0) }
                             .filmLabArrive(7)
+                            .filmLabBarProbe("export")
                     }
                     if stripToggle {
                         browserToggle.fixedSize()
                             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.strip, $0) }
                             .filmLabArrive(8)
+                            .filmLabBarProbe("strip")
                     }
                 }.fixedSize()
+                    .filmLabBarProbe("right")
             }
             if centred { measuredMode(meter).filmLabArrive(3) }
         }
@@ -196,14 +214,18 @@ struct WindowToolbar<Controls: View, Mode: View, Actions: View>: View {
             WindowBarInputs(width: room.size.width, hasCrop: hasCrop, hasClipboard: hasClipboard,
                             hasExport: export != nil, hasStrip: stripToggle, centreAllowed: centred(width: room.size.width))
         } action: { inputs in
+            guard widths.inputs != inputs else { return }
             widths.inputs = inputs
+            FilmLabMotionPhotoProbe.value("inputs", "\(inputs)")
             updateLayout()
         }
+        .filmLabBarProbe("bar")
     }
 
     private func measuredMode(_ meter: WindowBarMeter) -> some View {
         mode.fixedSize()
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { meter.report(.mode, $0) }
+            .filmLabBarProbe("mode")
     }
 
     /// The browser, there or not: its icon mirrors the column's (`sidebar.right`, as the old column

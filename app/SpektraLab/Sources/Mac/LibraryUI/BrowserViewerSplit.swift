@@ -32,6 +32,7 @@ struct BrowserViewerSplit: View {
                 ZStack {
                     if let image {
                         picture(image, in: box)
+                            .filmLabFlightSource(image, role: .preview)
                             .contentShape(Rectangle())
                             .onTapGesture(count: 2) { open(image) }
                     } else {

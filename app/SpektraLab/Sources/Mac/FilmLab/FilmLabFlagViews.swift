@@ -5,7 +5,7 @@
 //  with a white cross), since the photo under them is not the theme's; on the app's own ground they are chips in the
 //  theme's selection and danger colours. Amber stays the stars'.
 //
-//  Keys, in every mode like the rating's digits: P 留用, X 不要, U takes the flag off (Lightroom's). P was the Light
+//  Keys, in every mode like the rating's digits: P / Z 留用, X 不要, U takes the flag off (Lightroom's). P was the Light
 //  Table's key in 专业版 (it keeps ⇧⌘L and the Image menu): these keys register a turn after the window's own, and the
 //  registry answers a key with its newest registration (`MacShortcutRegistry.entry`).
 
@@ -47,7 +47,7 @@ struct FilmLabFlagDiscs: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(f.title + (f == .pick ? " (P)" : " (X)"))
+        .help(f.title + (f == .pick ? " (P / Z)" : " (X)"))
         .accessibilityLabel(f.title)
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("filmlab.flag.\(f.rawValue)")
@@ -75,7 +75,7 @@ struct FilmLabFlagChips: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(f.title + (f == .pick ? " (P)" : " (X)"))
+                .help(f.title + (f == .pick ? " (P / Z)" : " (X)"))
                 .accessibilityLabel(f.title)
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .accessibilityIdentifier("filmlab.flag.chip.\(f.rawValue)")
@@ -102,7 +102,7 @@ struct FilmLabFlagMark: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(flag?.title ?? FilmLabFlag.pick.title + " (P)")
+        .help(flag?.title ?? FilmLabFlag.pick.title + " (P / Z)")
         .accessibilityLabel(flag?.title ?? L("Flag"))
     }
 }
@@ -121,7 +121,7 @@ struct FilmLabFlagItems: View {
     }
 }
 
-/// P, X and U on the chosen pictures (`MainWindowLayout`, beside the rating's digits).
+/// P / Z, X and U on the chosen pictures (`MainWindowLayout`, beside the rating's digits).
 struct FilmLabFlagKeys: View {
     let store: any MacLibraryData
     let enabled: Bool
@@ -136,7 +136,11 @@ struct FilmLabFlagKeys: View {
                     DispatchQueue.main.async { late = true }
                 }
             if late {
-                HiddenKeyEquivalent(title: FilmLabFlag.pick.title, key: "p", enabled: enabled) { apply(.pick) }
+                // One owner for both plain keys: P stays canonical in the menu, whose title also shows Z.
+                // The registry's default typing guard applies to both; modified Z remains Undo / Redo's.
+                MacKeyRegistration(specs: [MacKeySpec(input: "p"), MacKeySpec(input: "z")],
+                                   title: FilmLabFlag.pick.title + " (P / Z)", enabled: enabled) { apply(.pick) }
+                    .frame(width: 0, height: 0).accessibilityHidden(true)
                 HiddenKeyEquivalent(title: FilmLabFlag.reject.title, key: "x", enabled: enabled) { apply(.reject) }
                 HiddenKeyEquivalent(title: L("Remove Flag"), key: "u", enabled: enabled) { apply(nil) }
             }
