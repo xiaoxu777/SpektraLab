@@ -36,7 +36,7 @@ struct FilmLabSettingsAbout: View {
                     VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
                         Text(Brand.name).font(MacMetric.font(22, .semibold)).foregroundStyle(Theme.text)
                         Text(diagnostics.build.text).font(MacMetric.font(13)).foregroundStyle(Theme.secondaryText)
-                        Text(Brand.name + " · " + L("Made for and by ericxu"))
+                        Text(L("By ericxu"))
                             .font(MacMetric.font(13)).foregroundStyle(Theme.secondaryText)
                     }
                     .fixedSize(horizontal: false, vertical: true)
@@ -47,10 +47,11 @@ struct FilmLabSettingsAbout: View {
             }
             MacSettingsGroup(title: L("Licences and credits")) {
                 VStack(alignment: .leading, spacing: MacMetric.pt(16)) {
-                    // This modified-version notice and both profile attributions must remain visible in full.
-                    Text(verbatim: "FilmLab is a personal, modified version of SpektraLab by JamesQiu2005 "
-                         + "(github.com/JamesQiu2005/SpektraLab), GPL-3.0-or-later. Its engine is a C++/Metal "
-                         + "implementation derived from spektrafilm by Andrea Volpato (github.com/andreavolpato/spektrafilm).")
+                    // This modified-version notice (GPL-3.0 §5(a)) and both profile attributions must remain visible in full.
+                    Text(verbatim: "FilmLab by ericxu (github.com/xiaoxu777/FilmLab), GPL-3.0-or-later. FilmLab is a "
+                         + "modified version of SpektraLab by JamesQiu2005 (github.com/JamesQiu2005/SpektraLab), "
+                         + "GPL-3.0-or-later; its engine is a C++/Metal implementation derived from spektrafilm by "
+                         + "Andrea Volpato (github.com/andreavolpato/spektrafilm). With thanks to both.")
                         .macSettingsItem("SpektraLab engine")
                     Text(L("Film and paper")).font(MacMetric.font(13, .semibold))
                         .macSettingsItem("Film and paper")

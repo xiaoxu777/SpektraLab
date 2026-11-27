@@ -1,4 +1,22 @@
-# Notice: what SpektraLab is derived from, and what it changed
+# Notice: what FilmLab is derived from, and what it changed
+
+## FilmLab
+
+**FilmLab is a modified version of SpektraLab** by JamesQiu2005 (Hanze Qiu),
+https://github.com/JamesQiu2005/SpektraLab, GPL-3.0-or-later, modified by ericxu from 2026-11 onward.
+FilmLab is not affiliated with or endorsed by SpektraLab or spektrafilm.
+
+What FilmLab changed: the Mac app's interface (`app/SpektraLab/Sources/Mac/FilmLab/` and the pages it
+reaches: the five modes, 普通 | 专业, the 个性化 film edge, date back and watermark, export by purpose
+and its animation, the import window, Settings), the app's name and identity (FilmLab,
+`com.filmlab.mac.local`) and its build tools (`tools/filmlab_*.sh`, `tools/install_filmlab.sh`). The
+engine (`engine/`) and the profiles are SpektraLab's and spektrafilm's; FilmLab's few engine changes
+(such as `edr_amount`) are recorded in `API-SPEC-callable-render-service.md`.
+
+The licences are unchanged: the code stays GPL-3.0-or-later and the profiles CC BY-SA 4.0. The notice
+below is SpektraLab's own, kept as it was.
+
+## SpektraLab
 
 **The SpektraLab engine is a C++/Metal implementation derived from spektrafilm by Andrea Volpato
 (GPL-3.0-or-later).** spektrafilm is at https://github.com/andreavolpato/spektrafilm; its film

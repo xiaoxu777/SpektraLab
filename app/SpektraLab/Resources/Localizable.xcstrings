@@ -21161,24 +21161,24 @@
         }
       }
     },
-    "Made for and by ericxu" : {
+    "By ericxu" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ericxu が自分のために制作したカスタム版"
+            "value" : "作者 ericxu"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ericxu 的定制版"
+            "value" : "作者 ericxu"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ericxu 的訂製版"
+            "value" : "作者 ericxu"
           }
         }
       }
