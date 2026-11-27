@@ -202,8 +202,8 @@ final class ThumbnailStore: @unchecked Sendable {
 /// Develops the engine has just handed over, held for the page that asked:
 /// the develop page's canvas between edits. One picture per page at most (a
 /// 2,400 px canvas is 35 MB at 16 bits), put by the page's session and taken
-/// away by it; emptied with the picture cache on a memory warning — the page
-/// then shows the frame's kept develop until its next one lands.
+/// away by it; emptied with the picture cache on a memory warning — the open
+/// page's current develop is put back because the page holds its image anyway.
 final class RenderedPictures: @unchecked Sendable {
     static let shared = RenderedPictures()
     private let lock = NSLock()
@@ -216,6 +216,11 @@ final class RenderedPictures: @unchecked Sendable {
     }
 
     func image(_ id: UUID) -> UIImage? { lock.lock(); defer { lock.unlock() }; return images[id] }
+
+    func restore(_ picture: PictureRef?, _ image: UIImage?) {
+        guard case .rendered(let id)? = picture, let image else { return }
+        lock.lock(); images[id] = image; lock.unlock()
+    }
 
     func remove(_ picture: PictureRef?) {
         guard case .rendered(let id)? = picture else { return }

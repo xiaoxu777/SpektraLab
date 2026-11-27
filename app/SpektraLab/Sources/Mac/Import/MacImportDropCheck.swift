@@ -25,8 +25,8 @@
 //     `MacOpenPanel.debugAnswer`: Finder comes first, from the library, 2026-11-16).
 //  6. **The owner's flow**: *New Catalog…* (the save panel answered), the catalog made and open and
 //     empty; Import, its Finder panel cancelled; then a drop — the page opens with *Import To* that
-//     catalog and *Add to Catalog*. And the same with the import page itself cancelled.
-//  7. **Temporary copies**: copied into the catalog by default, *Add to Catalog* refused for them in the
+//     catalog and the placement from Settings. And the same with the import page itself cancelled.
+//  7. **Temporary copies**: copied to the photo location by default, *Leave in place* refused for them in the
 //     catalog's words; replaced picks and a closed page remove them.
 //  8. **A drop of nothing to import** opens no page and says so.
 
@@ -459,7 +459,7 @@ enum MacImportDropCheck {
             if let s, let made {
                 r.record("6 drop after New Catalog", ["destination": s.destinationSource?.name ?? "new catalog", "placement": "\(s.placement)"])
                 r.check(s.destination == .source(made.id), "Import To is the catalog just made: \(s.destinationSource?.name ?? "new catalog")")
-                r.check(s.placement == .inPlace, "with Add to Catalog")
+                r.check(s.placement == s.defaultPlacement, "with the initial placement from Settings")
                 r.check(s.picked == [folder.standardizedFileURL], "and the drop as its picks")
                 await cancel(s)
             }
@@ -486,7 +486,8 @@ enum MacImportDropCheck {
             let s = await pageUp()
             if let s {
                 await s.scanFinished()
-                r.check(s.picksAreCopies && s.placement == .intoLibrary, "temporary copies default to a copy into the catalog (\(s.placement))")
+                r.check(s.picksAreCopies && s.placement == .copyToFolder && s.copyFolder == s.photoFolder,
+                        "temporary copies use the photo location (\(s.placement))")
                 s.placement = .inPlace
                 r.check(!s.canImport && s.notReady == L("These pictures came from another app: copy them into the catalog or to a folder."),
                         "and Add to Catalog is refused for them, in the catalog's words: \(s.notReady ?? "-")")

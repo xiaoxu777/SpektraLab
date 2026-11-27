@@ -51,7 +51,7 @@ enum FilmLabExportSizeEstimate {
     }
 
     /// The same IDs the footer's button exports. Unknown dimensions suppress the estimate for the whole batch,
-    /// rather than presenting a partial total. Each frame gets its own crop, rotation, cap and optional white sheet.
+    /// rather than presenting a partial total. Each frame gets its own crop, rotation, cap and optional border sheet.
     @MainActor
     static func summary(_ recipe: ExportRecipe, frameIDs: [LibraryFrame.ID], model: AppServices,
                         borderFits: ClosedRange<Double>?) -> String {
@@ -61,8 +61,9 @@ enum FilmLabExportSizeEstimate {
             guard let frame = model.library.frame(id), var size = outputSize(frame, recipe: recipe, model: model) else {
                 return recipe.format.title
             }
-            if let borderFits, let sheet = FilmLabExportPurposeBorder.sheet(width: size.width, height: size.height, fits: borderFits) {
-                size = PixelSize(width: sheet.width, height: sheet.height)
+            if let borderFits, let layout = FilmLabExportPurposeBorder.layout(width: size.width, height: size.height,
+                                                                            fits: borderFits, size: recipe.size) {
+                size = layout.sheet
             }
             total += estimatedBytes(outputPixels: size.width * size.height, format: recipe.format, quality: recipe.quality)
         }

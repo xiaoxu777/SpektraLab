@@ -35,6 +35,9 @@ struct DevelopWorkspace: View {
     @State var effectsPage = EffectsPage.grain
     @State var cameraWhiteBalance: (temperature: Double, tint: Double)?
     @State var initialized = false
+    @State var columnEntrance = FilmLabColumnEntrance.Visit()
+    /// The column's mode as its body last saw it (`FilmLabModeSeen`).
+    @State var modeSeen = FilmLabModeSeen()
     @State var adjustState = AdjustState()
     /// The column's (`PadDevelopPage.swift`): the window's shape, the page's filmstrip and column, and the
     /// keys' focus.

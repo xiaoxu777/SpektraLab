@@ -89,7 +89,7 @@ extension DevelopWorkspace {
                     }
                 }
                 .background(Theme.background)
-                .filmLabFlightColumn()
+                .filmLabFlightColumn(enabled: FilmLabColumnEntrance.off || filmLabMode != .develop)
                 .padPart(.controls)
             }
             if let cropping {
@@ -442,11 +442,13 @@ extension DevelopWorkspace {
         // FilmLab 导出 (the owner, 2026-11-24): the column is only how the photo leaves the app — no histogram, no 图层.
         // 个性化's too (2026-11-25).
         let export = exportColumnShown && arranging == nil
+        modeSeen.note(filmLabMode)
+        if FilmLabColumnProbe.enabled { FilmLabColumnProbe.columnBody(mode: filmLabMode, stockShown: stockPanelShown) }
         return VStack(spacing: 0) {
             // The frame's: it holds its session's histogram while it is shown (`HistogramPanel.holder`), so it is made
             // again with the next frame's session (2.4.0 A2b).
             Group {
-                if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id).filmLabModePart() }
+                if !export { histogramPanel.frame(height: histogram, alignment: .top).id(frame.id).filmLabColumnSection(.histogram).filmLabModePart("histogram") }
             }
             .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
             // 普通版 (FilmLab): a single photograph has no 图层 row (its mask layers are 专业版's); a double or a pair keeps
@@ -454,15 +456,15 @@ extension DevelopWorkspace {
             Group {
                 if !export, !(FeatureFlags.simpleWindow && piece.isSingle) {
                     LayersPanel(session: session, frame: frame).frame(height: layersHeight, alignment: .top)
-                        .animation(.easeOut(duration: 0.18), value: layersHeight).filmLabModePart()
+                        .animation(.easeOut(duration: 0.18), value: layersHeight).filmLabColumnSection(.layers).filmLabModePart("layers")
                 }
             }
             .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
-            Group { if band { navigationBand.frame(height: tabs).filmLabModePart() } }
+            Group { if band { navigationBand.frame(height: tabs).filmLabModePart("band") } }
                 .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
             Group {
                 if let arranging {
-                    ArrangeColumn(session: session, frame: frame, pick: arranging)
+                    ArrangeColumn(session: session, frame: frame, pick: arranging).clipped()
                 } else {
                     columnPanel
                 }
@@ -470,11 +472,18 @@ extension DevelopWorkspace {
             // The panel takes the height the histogram, 图层 and the band leave (the layout's, not a number).
             // A change of mode (the window's switch): the parts the two modes do not share slide and fade, towards the
             // side the switch moved, and the rest of the column stays (`FilmLabModeTransition.swift`; each mode's panel
-            // says so itself in `columnPanel`).
-            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top).clipped()
+            // says so itself in `columnPanel`). Not clipped here: a panel leaving keeps the place it had, which may be above
+            // this slot's new top (个性化 → 冲洗: the slot moves down under the histogram and 图层 at once), and clipped it
+            // lost its top half while it faded (seen 2026-11-27). The column clips (`FilmLabModeColumn`); so do the
+            // kept panel and 摆放, which are this slot's own.
+            .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
+            .filmLabColumnTag("columnPanel")
         }
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
+        .filmLabColumnTag("column")
         .filmLabModeColumn(filmLabMode)
+        .filmLabColumnEntrance(columnEntrance, frame: frame.id, mode: filmLabMode, stock: stockPanelShown,
+                               layers: !export && !(FeatureFlags.simpleWindow && piece.isSingle), grain: stockPanelShown && FeatureFlags.simpleWindow && session.pair == nil)
         .layerSheets(session: session, frame: frame)
         // 摆放 is of this picture and this mode: another frame, or Edit, closes it (Done).
         .onChange(of: frame.id) { _, _ in LayersStage.shared.arranging = nil }
@@ -538,13 +547,14 @@ extension DevelopWorkspace {
         // receives that room only while visible, and never a zero-width proposal on leaving a mode.
         Color.clear
             .overlay(alignment: .topLeading) {
-                FilmLabKeptStockPanel(shown: stockPanelShown) { activity, visit in
+                FilmLabKeptStockPanel(shown: stockPanelShown, mode: filmLabMode, frameID: frame.id) { activity, visit in
                     if let stockStrip { stockColumn(stockStrip, activity: activity, visit: visit) }
                 }
                 .equatable()
+                .clipped()
             }
             .overlay(alignment: .topLeading) {
-                Group { if !stockPanelShown { modeColumnPanel } }
+                Group { if !stockPanelShown { modeColumnPanel.filmLabColumnTag("modeColumnPanel") } }
                     .animation(FilmLabModeMotion.animation(reduce: reduceMotion), value: filmLabMode)
             }
     }
@@ -557,11 +567,14 @@ extension DevelopWorkspace {
                                       decode: decodeSection, status: nil, foldable: true,
                                       room: room.size.height, width: room.size.width, panelActivity: activity, panelVisit: visit)
                         .frame(maxWidth: .infinity, alignment: .top)
+                        .filmLabColumnTag("keptStock.content")
                 }
                 .scrollIndicators(.hidden)
+                .filmLabColumnTag("keptStock.viewport")
+                .filmLabColumnSection(.viewport)
             }
             // 普通版: 颗粒 is pinned at the column's foot, on show whatever Decode's fold or the scroll (`FilmLabSimpleGrain`).
-            if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session) }
+            if FeatureFlags.simpleWindow, session.pair == nil { FilmLabSimpleGrain(session: session).filmLabColumnTag("simpleGrain").filmLabColumnSection(.grain) }
         }
         .filmLabModeHeavyPart()
     }
@@ -570,7 +583,7 @@ extension DevelopWorkspace {
         if exportColumnShown, personalizing {
             // 片边, 日期后背 and 水印, each a switch with its choices as pictures (`FilmLabPersonalizeColumn`).
             FilmLabPersonalizeColumn(session: session, frame: frame, ids: exportIDs, piece: personalizePiece)
-                .filmLabModePart()
+                .filmLabModePart("personalize")
         } else if exportColumnShown {
             // The export's choices scroll; its button stays at the column's foot (`FilmLabExportFooter`).
             VStack(spacing: 0) {

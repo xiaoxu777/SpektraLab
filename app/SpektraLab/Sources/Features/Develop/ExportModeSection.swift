@@ -293,6 +293,9 @@ struct FilmLabExportFooter: View {
                 start(recipeNow, checkFrames: chosen ?? MacDevelopExport.ids(current: current, model: model))
             }
         }
+        .task {
+            if FeatureFlags.simpleWindow { await FilmLabExportPurposeUI.shared.trimIfAsked(model: model) }
+        }
     }
 
     /// What the button exports with: 专业版's kept recipe, or in 普通版 the chosen purpose's (`FilmLabExportPurposeUI`).
@@ -301,9 +304,9 @@ struct FilmLabExportFooter: View {
                                   : FilmLabExportRecipe.binding(settings, recipes).wrappedValue
     }
 
-    /// 普通版: the purpose whose place would crop a picture of this export, where 加白边 was chosen for it.
+    /// 普通版: the purpose whose place would crop a picture of this export, where either border was chosen for it.
     private var bordered: FilmLabExportPurpose? {
-        guard FeatureFlags.simpleWindow, FilmLabExportPurposeUI.shared.border else { return nil }
+        guard FeatureFlags.simpleWindow, FilmLabExportPurposeUI.shared.border != .none else { return nil }
         let p = FilmLabExportPurposeUI.shared.purpose
         return FilmLabExportPurposeUI.cropped(frameIDs, by: p, model: model) != nil ? p : nil
     }
@@ -377,8 +380,9 @@ struct FilmLabExportFooter: View {
         if !run.start(frameIDs, recipe: recipe, folder: folder, exporter: exporter) {
             ui.refused = L("The export could not begin. Try again in a moment.")
         } else if let border, let fits = border.fits {
-            // 加白边: each picture the place would crop is laid on its white sheet as it is saved.
-            FilmLabExportPurposeBorder.follow(run, fits: fits, quality: recipe.quality)
+            // Each picture the place would crop is laid on its chosen sheet as it is saved.
+            FilmLabExportPurposeBorder.follow(run, fits: fits, quality: recipe.quality,
+                                             border: FilmLabExportPurposeUI.shared.border, size: recipe.size)
         }
     }
 }

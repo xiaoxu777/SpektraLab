@@ -33,8 +33,8 @@ struct FilmLabExportPreviewChoice: Equatable {
     var kind: FilmLabExportPurpose.Kind
     var second: Bool
     var dark: Bool
-    var border: Bool
-    var id: String { "\(kind.rawValue)-\(second)-\(dark)-\(border)" }
+    var border: FilmLabExportBorder
+    var id: String { "\(kind.rawValue)-\(second)-\(dark)-\(border.rawValue)" }
     var purpose: FilmLabExportPurpose { FilmLabExportPurpose(kind: kind) }
 }
 
@@ -83,6 +83,7 @@ struct FilmLabExportPreviewFlight {
     let start: CGRect
     let end: CGRect
     let endPictureScale: CGFloat
+    let sheetColour: Color
     let radius: CGFloat
     let bottomRadius: CGFloat
 
@@ -94,6 +95,7 @@ struct FilmLabExportPreviewFlight {
             : CGSize(width: end.height * shot.fileAspect, height: end.height)
         let pictureWidth = min(file.width, file.height * shot.aspect)
         endPictureScale = pictureWidth / max(start.width, 1)
+        sheetColour = shot.sheetColour
         self.radius = radius; self.bottomRadius = bottomRadius
     }
 }
@@ -111,7 +113,7 @@ struct FilmLabExportPreviewMovingPhoto: View {
         let sx = f.start.width / max(f.end.width, 1)
         let sy = f.start.height / max(f.end.height, 1)
         ZStack {
-            Color.white
+            f.sheetColour
             f.pixels
                 .frame(width: f.start.width, height: f.start.height)
                 .scaleEffect(1 + (f.endPictureScale - 1) * progress)

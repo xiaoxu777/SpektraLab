@@ -1,10 +1,12 @@
-// FilmLabExportAnimation.swift — exposure, a paper print, and the stack it lands on.
-// The animation is a consumer of export events, never an export scheduler. Only landing (or a deliberately skipped
-// flight) changes the count. The cursor visits each terminal line once; a progress update does not scan the batch.
+// FilmLabExportAnimation.swift — enlarger → flash → folder.
+// Export owns the work; this consumer owns only timestamped presentation. One clock draws the stage;
+// the deadline task commits landings even when the page is away. No interpolated SwiftUI stage state.
 
 import SwiftUI
+import UIKit
 
 @MainActor
+@Observable
 final class FilmLabExportStage {
     static let shared = FilmLabExportStage()
     nonisolated static let space = "filmlab.export.page"
@@ -14,12 +16,41 @@ final class FilmLabExportStage {
 
 enum FilmLabExportMotion {
     static let slow: Double = CommandLine.arguments.contains("--filmlab-motion-slow") || CommandLine.arguments.contains("--filmlab-export-slow") ? 4 : 1
-    static let lift = 0.12
-    static let travel = 0.55
-    static let settle = 0.32
     static func seconds(_ n: Double) -> Double { n * slow }
     static func fade(_ n: Double) -> Animation { .linear(duration: seconds(n)) }
-    static func angle(_ id: Int) -> Double { [-4, 3, -1.5, 5, -2.5, 2][id % 6] }
+    @MainActor static let freeze: Double? = FilmLabCheckArgs.value("--filmlab-export-freeze").flatMap(Double.init)
+        .flatMap { $0.isFinite && $0 >= 0 ? $0 / 1000 / slow : nil }
+}
+
+/// One fixed-size raster for all appearances of a photo (positive, negative, easel, flight).
+/// FrameView remains the crop/decorated-picture authority. Decode once off the main thread, rasterise once
+/// on it; moving/resizing the stage never changes this request or starts another thumbnail task.
+@MainActor
+@Observable
+final class FilmLabExportThumbnail {
+    private(set) var image: UIImage?
+    init(frame: LibraryFrame, size: CGSize) {
+        let picture = Layer2Copies.shared.served(frame) ?? frame.shownDevelop?.picture ?? frame.picture
+        let edge = max(size.width, size.height, 1)
+        let scale = UIScreen.main.scale
+        func raster() -> UIImage? {
+            let renderer = ImageRenderer(content: FrameView(frame: frame, pointSize: edge, contentMode: .fit)
+                .frame(width: max(size.width, 1), height: max(size.height, 1)))
+            renderer.scale = scale
+            return renderer.uiImage
+        }
+        if ThumbnailStore.shared.cachedAny(picture) != nil { image = raster() }
+        else {
+            Task { @MainActor [weak self] in
+                // Cover a cropped source as well. FrameView uses this same cached bitmap for the final crop.
+                let crop = frame.pictureGeometry.crop
+                let zoom = min(4, 1 / max(min(crop.width, crop.height), 0.1))
+                guard let px = PictureLoading.maxPixel(points: edge, scale: scale, zoom: zoom),
+                      await PictureLoading.picture(picture, maxPixel: px) != nil else { return }
+                self?.image = raster()
+            }
+        }
+    }
 }
 
 @MainActor
@@ -27,465 +58,760 @@ enum FilmLabExportMotion {
 final class FilmLabExportShow {
     static let shared = FilmLabExportShow()
 
-    /// Frozen at exposure: the same frame/crop and decode request survive the whole flight and the stack handoff.
     struct Source {
         let frame: LibraryFrame
         let rect: CGRect
         let viewer: CGRect
         let tray: CGRect
         let exposure: Bool
+        var thumbnail: FilmLabExportThumbnail?
         var size: CGSize { rect.size }
-        var edge: CGFloat { max(size.width, size.height) }
+        var edge: CGFloat { max(size.width, size.height, 1) }
     }
-    struct Card: Identifiable {
-        enum Phase { case developing, lifting, travelling, settling, failed, stopped }
+    struct Photo: Identifiable {
         let id: Int
-        var source: Source
-        var phase: Phase = .developing
-        var fraction = 0.0
-        var target = 0.0
-        var saved = false
-        let began = ContinuousClock.now
-    }
-    struct Print: Identifiable {
-        let id: Int
-        let source: Source
+        var source: Source?
+        var progress = 0.0
+        var received: Double
+        var saved: Double?
+        var failed: Double?
+        var exposure: Double?
+        var flash: Double?
+        var off: Double?
+        var flight: Double?
+        var landed: Double?
+        var silent = false
+        var k: Double { id < 3 ? 1 : id < 9 ? 0.75 : 0.55 }
     }
 
-    private(set) var cards: [Card] = []       // <= 2 flights + 1 developing/fading print
-    private(set) var prints: [Print] = []     // newest five only
+    private(set) var photos: [Int: Photo] = [:]
+    private(set) var opening: Source?
+    private(set) var activeID: Int?
+    private(set) var flightID: Int?
+    private(set) var previousID: Int?
     private(set) var landed = 0
     private(set) var total = 0
     private(set) var fraction = 0.0
     private(set) var running = false
+    private(set) var clockFrozen = false
     private(set) var ready = false
     private(set) var stopped = false
     private(set) var problems: [MacExportRun.Line] = []
     private(set) var folder: URL?
     private(set) var demo = false
+    private(set) var began = Date.now
+    private(set) var stopAt: Double?
+    private(set) var exitAt: Double?
+    private(set) var checkAt: Double?
+    private(set) var abortAt: Double?
+    private(set) var bumpAt: Double?
+    private(set) var readyAt: Double?
     var calm = false
     var hasRun: Bool { total > 0 }
     var identity: UUID { generation }
+    func photo(_ id: Int) -> Photo? { (frozenPhotos ?? photos)[id] }
+    var active: Photo? { activeID.flatMap { photo($0) } }
+    var flying: Photo? { flightID.flatMap { photo($0) } }
+    var previous: Photo? { previousID.flatMap { photo($0) } }
+    var idle: Bool { !hasRun || ready }
 
+    @ObservationIgnored private var frozenPhotos: [Int: Photo]?
     @ObservationIgnored private var cursor = 0
     @ObservationIgnored private var generation = UUID()
-    @ObservationIgnored private var completion: Task<Void, Never>?
-    @ObservationIgnored private var ending = false
+    @ObservationIgnored private var deadline: Task<Void, Never>?
+    @ObservationIgnored private var deadlineAt: Double?
+    @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private var stopSeen = false
+    @ObservationIgnored private var finishedAt: Double?
+    @ObservationIgnored private var nextAt = 0.0
+    @ObservationIgnored private var lastLanding: Double?
+    @ObservationIgnored private var filed: Set<Int> = []
+    @ObservationIgnored private var terminals: Set<Int> = []
+    @ObservationIgnored private var resolve: ((LibraryFrame.ID) -> Source?)?
 
-    func begin(total: Int, folder: URL?, demo: Bool = false) {
+    /// Design seconds; slowing the drawing never delays the exporter. Freeze affects this consumer only.
+    func clock(_ date: Date = .now) -> Double {
+        let t = max(0, date.timeIntervalSince(began) / FilmLabExportMotion.slow)
+        return FilmLabExportMotion.freeze.map { min(t, $0) } ?? t
+    }
+    func begin(total: Int, folder: URL?, demo: Bool = false, at date: Date = .now) {
         reset()
-        self.total = total; self.folder = folder; self.demo = demo
+        self.total = total; self.folder = folder; self.demo = demo; began = date
         running = true
     }
-
     func reset() {
-        completion?.cancel(); completion = nil
-        generation = UUID(); cursor = 0; ending = false; stopSeen = false
-        cards = []; prints = []; landed = 0; total = 0; fraction = 0
-        running = false; ready = false; stopped = false; problems = []; folder = nil; demo = false
+        cancelDeadline(); watcher?.cancel(); watcher = nil
+        generation = UUID(); cursor = 0; stopSeen = false; finishedAt = nil; nextAt = 0
+        photos = [:]; frozenPhotos = nil; opening = nil; activeID = nil; flightID = nil; previousID = nil
+        landed = 0; total = 0; fraction = 0; running = false; clockFrozen = false; ready = false; stopped = false
+        problems = []; folder = nil; demo = false; stopAt = nil; exitAt = nil; checkAt = nil
+        abortAt = nil; bumpAt = nil; readyAt = nil; lastLanding = nil; filed = []; terminals = []
     }
 
-    /// MacExportRun is sequential. Process the changed head and any terminal lines passed between observations;
-    /// already-consumed lines never participate in another progress tick. Demo feeds this same accept() boundary.
-    func follow(_ run: MacExportRun, source: (LibraryFrame.ID) -> Source?) {
+    /// The cursor sees each terminal once. Keep following while away: returning draws today's timestamps,
+    /// rather than reconstructing a new fly-in from a stale view's onAppear.
+    func follow(_ run: MacExportRun, source: @escaping (LibraryFrame.ID) -> Source?) {
         guard !demo else { return }
-        guard !run.lines.isEmpty else { if hasRun { reset() }; return }
-        if !hasRun || (!running && run.isRunning) { begin(total: run.lines.count, folder: run.folder) }
+        resolve = source
+        guard !run.lines.isEmpty else { if hasRun && !running { reset() }; return }
+        if !hasRun {
+            let date = run.lines.compactMap(\.began).min() ?? .now
+            begin(total: run.lines.count, folder: run.folder, at: date)
+            resolve = source
+        }
         if run.stopping && !stopSeen { requestStop() }
         while cursor < run.lines.count {
             let line = run.lines[cursor]
-            accept(line, source: line.frameID.flatMap(source))
+            // Freeze source and decode dimensions once, including the currently displayed develop.
+            accept(line, source: photos[line.id]?.source ?? line.frameID.flatMap(source))
             guard line.isEnded else { break }
             cursor += 1
         }
+        // Only the neighbour is prepared, never the entire batch's pictures.
+        if cursor + 1 < run.lines.count {
+            let line = run.lines[cursor + 1]
+            if photos[line.id] == nil, let s = line.frameID.flatMap(source) {
+                photos[line.id] = Photo(id: line.id, source: prepared(s), received: .infinity)
+            }
+        }
         if !run.isRunning { finish() }
+        if run.isRunning && watcher == nil {
+            let token = generation
+            watcher = Task { @MainActor [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(25))
+                    guard let self, self.generation == token, let resolver = self.resolve else { return }
+                    self.follow(run, source: resolver)
+                    if !run.isRunning { self.watcher = nil; return }
+                }
+            }
+        }
     }
 
     func accept(_ line: MacExportRun.Line, source: Source?) {
-        let index = cards.firstIndex { $0.id == line.id }
-        if line.isEnded { fraction = min(1, Double(line.id + 1) / Double(max(total, 1))) }
-        switch line.state {
-        case .waiting: break
-        case .running(let p):
-            fraction = min(1, (Double(line.id) + p.fraction) / Double(max(total, 1)))
-            guard !stopSeen, !calm, let source else { return }
-            if let index { cards[index].target = min(1, max(0, p.fraction)) }
-            else {
-                guard !cards.contains(where: { $0.saved && $0.phase == .developing }) else { return }
-                // A disappearing failure is expendable when the next exposure needs its one slot.
-                cards.removeAll { $0.phase == .failed || $0.phase == .stopped }
-                expose(line.id, source: source, target: p.fraction)
+        let event = max(0, Date.now.timeIntervalSince(began) / FilmLabExportMotion.slow)
+        let t = FilmLabExportMotion.freeze.map { min(event, $0) } ?? event
+        if case .waiting = line.state {
+            if line.id == 0, photos[0] == nil, let source {
+                photos[0] = Photo(id: 0, source: prepared(source), received: 0)
+                advance(t)
             }
-        case .saved:
-            fraction = min(1, Double(line.id + 1) / Double(max(total, 1)))
-            let paper: Source?
-            if let index {
-                let frozen = cards[index].source
-                let updated = Source(frame: frozen.frame, rect: frozen.rect, viewer: frozen.viewer,
-                                     tray: source?.tray ?? frozen.tray, exposure: frozen.exposure)
-                cards[index].source = updated
-                paper = updated
-            } else { paper = source }
-            // The first exposure can precede the foot's first layout. Capture its landing endpoint at save,
-            // while keeping the exposure's pixels, size and decode request intact.
-            // Saved prints waiting for their exposure beat reserve a flight slot too. A fast batch cannot leave
-            // a queue of white cards on screen while the two visible prints finish their minimum exposure.
-            let flights = cards.filter { $0.saved }.count
-            let developing = cards.contains { $0.id != line.id && $0.saved && $0.phase == .developing }
-            guard !calm, !stopSeen, !developing, flights < 2, let source = paper, source.tray.width > 1 else {
-                cards.removeAll { $0.id == line.id }
-                land(line.id, source: paper)
-                return
-            }
-            if index == nil { expose(line.id, source: source, target: 1) }
-            if let i = cards.firstIndex(where: { $0.id == line.id }) { cards[i].saved = true; cards[i].target = 1 }
-        case .failed, .leftOut:
-            problems.append(line)
-            if index != nil { change(line.id, to: .failed); removeLater(line.id, after: 0.35) }
-        case .stopped:
-            stopped = true
-            if index != nil { change(line.id, to: .stopped); removeLater(line.id, after: 0.2) }
+            return
         }
+        if terminals.contains(line.id) { return }
+        var photo = photos[line.id] ?? Photo(id: line.id, source: source, received: event)
+        if photo.source == nil { photo.source = source }
+        if let s = photo.source, s.thumbnail == nil { photo.source = prepared(s) }
+        if photo.received == .infinity { photo.received = event }
+        switch line.state {
+        case .waiting: return
+        case .running(let p):
+            if FilmLabExportMotion.freeze.map({ event <= $0 }) ?? true { photo.progress = min(1, max(0, p.fraction)) }
+            fraction = min(1, (Double(line.id) + p.fraction) / Double(max(total, 1)))
+        case .saved:
+            // Real event time is retained even while the visual clock is frozen.
+            photo.saved = event
+            terminals.insert(line.id)
+        case .failed, .leftOut:
+            photo.failed = event
+            problems.append(line); terminals.insert(line.id)
+        case .stopped:
+            terminals.insert(line.id)
+            if !stopSeen { requestStop() }
+        }
+        photos[line.id] = photo
+        advance(t)
+    }
+
+    private func prepared(_ source: Source) -> Source {
+        var s = source
+        if s.thumbnail == nil { s.thumbnail = FilmLabExportThumbnail(frame: s.frame, size: s.size) }
+        return s
     }
 
     func requestStop() {
-        stopSeen = true; stopped = true
-        for card in cards {
-            change(card.id, to: .stopped)
-            removeLater(card.id, after: 0.2)
-        }
+        guard !stopSeen else { return }
+        stopSeen = true; stopped = true; stopAt = max(0, Date.now.timeIntervalSince(began) / FilmLabExportMotion.slow)
+        if let id = activeID, var p = photos[id] { p.off = stopAt; photos[id] = p }
+        advance(clock())
     }
-
     func finish() {
-        running = false; ending = true
-        completeWhenQuiet()
+        guard finishedAt == nil else { return }
+        running = false; finishedAt = max(clock(), Date.now.timeIntervalSince(began) / FilmLabExportMotion.slow)
+        if !calm, (finishedAt ?? .infinity) <= clock(), landed == 0, photos.values.allSatisfy({ $0.saved == nil }),
+           photos.values.filter({ $0.received.isFinite }).allSatisfy({ ($0.failed ?? .infinity) < ($0.flash ?? .infinity) }) {
+            activeID = nil; abortAt = finishedAt; exitAt = finishedAt; readyAt = (finishedAt ?? clock()) + 0.2
+        }
+        advance(clock())
     }
 
-    private func expose(_ id: Int, source: Source, target: Double) {
-        cards.append(Card(id: id, source: source, target: min(1, max(0, target))))
-        let token = generation
-        Task { @MainActor in
-            while self.generation == token, let i = self.cards.firstIndex(where: { $0.id == id }),
-                  self.cards[i].phase == .developing {
-                let card = self.cards[i]
-                // Leave the bottom of the completed sweep visible for one display tick before lifting.
-                if card.saved && card.fraction >= 1 { self.lift(id); return }
-                let elapsed = card.began.duration(to: .now).components
-                let seconds = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
-                let minimum = FilmLabExportMotion.seconds(card.source.exposure ? 0.7 : 0.5)
-                let shown = min(card.target, max(0, seconds / minimum))
-                if shown != card.fraction { self.cards[i].fraction = shown }
-                try? await Task.sleep(for: .seconds(1.0 / 60))
+    private func file(_ id: Int, at t: Double, silent: Bool) {
+        guard !filed.contains(id), var p = photos[id] else { return }
+        filed.insert(id); landed += 1; p.landed = t; p.silent = silent; photos[id] = p
+        lastLanding = t
+        // Silent catch-up cannot turn a fast producer into a vibrating folder.
+        if bumpAt.map({ t - $0 >= 0.15 }) ?? true { bumpAt = t }
+    }
+
+    /// Only event/deadline work lives here. Positions, fades and lighting are pure clock functions below.
+    /// A maximum of two saved photos wait for presentation; all excess are filed without creating views.
+    private func advance(_ t: Double) {
+        guard hasRun, !ready, !clockFrozen else { cancelDeadline(); return }
+        let freezesNow = FilmLabExportMotion.freeze.map { t >= $0 } ?? false
+        if freezesNow { clockFrozen = true }
+        defer { if freezesNow { frozenPhotos = photos } }
+        if let id = flightID, let p = photos[id], let start = p.flight, t >= start + 0.34 * p.k {
+            file(id, at: start + 0.34 * p.k, silent: false); flightID = nil
+        }
+        // A frame may have been removed from the library while the exporter still held its source.
+        // Its saved file is real even when there is no thumbnail to fly.
+        for p in photos.values where p.source == nil && (p.saved ?? .infinity) <= t && !filed.contains(p.id) {
+            file(p.id, at: t, silent: true)
+        }
+        let saved = photos.values.filter { ($0.saved ?? .infinity) <= t && !filed.contains($0.id) }.sorted { $0.id < $1.id }
+        if calm || stopSeen {
+            for p in saved where p.id != flightID { file(p.id, at: t, silent: true) }
+        } else if saved.count > 2 {
+            // Preserve an existing flight and the exposed sheet; everything else goes straight into the folder.
+            var keep = Set([activeID, flightID].compactMap { $0 })
+            for p in saved.reversed() where keep.count < 2 { keep.insert(p.id) }
+            for p in saved where !keep.contains(p.id) { file(p.id, at: t, silent: true) }
+        }
+        if stopSeen {
+            if let at = stopAt, t >= at + 0.2 { activeID = nil }
+        } else if calm {
+            activeID = nil
+        } else if abortAt == nil {
+            if let id = activeID, var p = photos[id], let flash = p.flash {
+                if let fail = p.failed, fail <= t {
+                    p.off = fail
+                    if t >= fail + 0.56 { previousID = id; activeID = nil; nextAt = fail + 0.56 }
+                } else if let save = p.saved, save <= t {
+                    let minimum = flash + 0.4 * p.k
+                    let off = max(minimum, save > minimum ? save + 0.16 * p.k : minimum)
+                    p.off = off
+                    let launch = off + (total == 1 ? 0.02 : 0) * p.k
+                    if t >= launch, flightID == nil {
+                        p.flight = launch; flightID = id; previousID = id; activeID = nil; nextAt = off
+                    }
+                }
+                photos[id] = p
+            }
+            if activeID == nil, exitAt == nil {
+                let candidate = photos.values.filter {
+                    $0.received <= t && $0.exposure == nil && !filed.contains($0.id)
+                        && ($0.failed == nil || $0.source != nil)
+                }.min { $0.id < $1.id }
+                if var p = candidate, p.source != nil, t >= nextAt {
+                    let first = !photos.values.contains { $0.exposure != nil }
+                    let start = max(nextAt, p.received)
+                    p.exposure = first ? 0 : start
+                    p.flash = first ? 0.46 : start + 0.3 * p.k
+                    if first { opening = p.source }
+                    // A failed sheet before its flash must never light the lamp.
+                    photos[p.id] = p; activeID = p.id
+                }
             }
         }
-    }
-
-    private func lift(_ id: Int) {
-        guard let card = cards.first(where: { $0.id == id }), card.phase == .developing, card.saved else { return }
-        let source = card.source
-        change(id, to: .lifting)
-        later(FilmLabExportMotion.lift) { self.change(id, to: .travelling) }
-        later(FilmLabExportMotion.lift + FilmLabExportMotion.travel) { self.change(id, to: .settling) }
-        later(FilmLabExportMotion.lift + FilmLabExportMotion.travel + FilmLabExportMotion.settle) {
-            guard self.cards.contains(where: { $0.id == id && $0.phase == .settling }) else { return }
-            var t = Transaction(); t.disablesAnimations = true
-            withTransaction(t) {
-                self.cards.removeAll { $0.id == id }
-                self.land(id, source: source)
+        let pending = photos.values.contains { ($0.saved ?? .infinity) <= t && !filed.contains($0.id) }
+        if let finish = finishedAt, finish <= t, activeID == nil, flightID == nil, !pending, exitAt == nil {
+            let wholeFailure = landed == 0 && !stopped
+            if calm { exitAt = t; readyAt = t + 0.15 }
+            else if wholeFailure { abortAt = t; exitAt = t; readyAt = t + 0.2 }
+            else {
+                let last = max(lastLanding ?? t, stopAt.map { $0 + 0.2 } ?? 0)
+                if !stopped && landed > 0 { checkAt = last }
+                exitAt = stopped ? max(t, last) : last + (total == 1 ? 0.18 : 0.53)
+                readyAt = (exitAt ?? t) + 0.45
             }
-            self.completeWhenQuiet()
         }
+        // Retain only visible neighbours/prints, plus the opening copy until the scrim has gone.
+        let retained = Set([activeID, flightID, previousID, activeID.map { $0 + 1 }].compactMap { $0 })
+        for id in filed where !retained.contains(id) && photos[id]?.source != nil { photos[id]?.source = nil }
+        if let end = readyAt, t >= end { ready = true; opening = nil; cancelDeadline(); return }
+        schedule(after: t)
     }
 
-    private func land(_ id: Int, source: Source?) {
-        landed += 1
-        if let source {
-            prints.append(Print(id: id, source: source))
-            if prints.count > 5 { prints.removeFirst(prints.count - 5) }
+    private func cancelDeadline() {
+        deadline?.cancel(); deadline = nil; deadlineAt = nil
+    }
+
+    private func schedule(after t: Double) {
+        var times: [Double] = []
+        if let freeze = FilmLabExportMotion.freeze, t < freeze { times.append(freeze) }
+        if let p = flying, let a = p.flight { times.append(a + 0.34 * p.k) }
+        if let p = active {
+            if let f = p.failed { times.append(f + 0.56) }
+            else if flightID == nil, let save = p.saved, let flash = p.flash {
+                let minimum = flash + 0.4 * p.k
+                times.append(max(minimum, save > minimum ? save + 0.16 * p.k : minimum) + (total == 1 ? 0.02 * p.k : 0))
+            }
         }
-    }
-    private func change(_ id: Int, to phase: Card.Phase) {
-        guard let i = cards.firstIndex(where: { $0.id == id }), cards[i].phase != .stopped else { return }
-        cards[i].phase = phase
-        if phase == .lifting { cards[i].fraction = 1 }
-    }
-    private func removeLater(_ id: Int, after delay: Double) {
-        later(delay) { self.cards.removeAll { $0.id == id }; self.completeWhenQuiet() }
-    }
-    private func later(_ delay: Double, _ body: @escaping @MainActor () -> Void) {
+        if let s = stopAt, activeID != nil { times.append(s + 0.2) }
+        if let end = readyAt { times.append(end) }
+        guard !clockFrozen, let at = times.min(),
+              FilmLabExportMotion.freeze.map({ at <= $0 }) ?? true else { cancelDeadline(); return }
+        // Progress does not move a saved photo's deadline. Replacing its task on every tick could
+        // cancel the only wake-up, then drop it in the old 10-us near-deadline exclusion window.
+        // A newly selected queued photo can already be due (especially after a failed sheet); wake
+        // once to consume it, rather than filtering its past deadline away and stranding the batch.
+        guard deadlineAt != at else { return }
+        cancelDeadline()
+        deadlineAt = at
         let token = generation
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(FilmLabExportMotion.seconds(delay)))
-            guard self.generation == token, !Task.isCancelled else { return }
-            body()
-        }
-    }
-    private func completeWhenQuiet() {
-        guard ending, cards.isEmpty, !ready, completion == nil else { return }
-        let token = generation
-        completion = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(FilmLabExportMotion.seconds(0.15)))
-            guard !Task.isCancelled, self.generation == token else { return }
-            self.ready = true
+        deadline = Task { @MainActor [weak self] in
+            guard let self, self.generation == token else { return }
+            // Measure when this task actually starts, including any wait for the main actor.
+            let remaining = FilmLabExportMotion.seconds(max(0, at - self.clock()))
+            do { try await Task.sleep(for: .seconds(max(0.001, remaining))) } catch { return }
+            guard !Task.isCancelled, self.generation == token, self.deadlineAt == at else { return }
+            self.deadline = nil; self.deadlineAt = nil
+            self.advance(self.clock())
         }
     }
 }
 
-/// Uses the existing page overlay and named viewer/tray rectangles; never intercepts a click.
+/// Page-space host: existing launch checks and event boundary, one display clock, no click interception.
+@MainActor
 struct FilmLabExportFlight: View {
     let current: LibraryFrame.ID
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(FrameCatalog.self) private var library
     @Environment(AppServices.self) private var model
+    @State private var entered: Double?
     static let calmCheck = CommandLine.arguments.contains("--filmlab-reduce-motion")
     private var show: FilmLabExportShow { .shared }
     private var run: MacExportRun { .shared }
-    private var calm: Bool { reduceMotion || Self.calmCheck }
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.clear
-                .onChange(of: run.lines, initial: true) { _, _ in follow() }
-                .onChange(of: run.isRunning) { _, _ in follow() }
-                .onChange(of: run.stopping) { _, _ in follow() }
-                .onChange(of: calm, initial: true) { _, value in show.calm = value }
-                .onAppear { FilmLabExportCheck.source = source }
-                .onChange(of: current) { _, _ in FilmLabExportCheck.source = source }
-            ForEach(show.cards) { card in FilmLabExportPaper(card: card, calm: calm).id(show.identity) }
+    private var visible: Bool {
+        guard let navigation = model.openSession(current)?.pageNavigation else { return false }
+        return navigation.surface == .develop && navigation.step == .format && FilmLabFinish.shared.page == .export
+    }
+    private var calm: Bool {
+        let r = FilmLabExportStage.shared.viewer
+        return reduceMotion || Self.calmCheck || min(r.width * 0.86 / 460, r.height * 0.86 / 340, 1.35) < 0.55
+    }
+    private var stageClock: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: paused)) { clock in
+            let t = show.clock(clock.date)
+            FilmLabExportEnlargerStage(show: show, t: t).opacity(appearance(at: t))
         }
+    }
+    private var paused: Bool { show.idle || !visible || show.calm || show.clockFrozen }
+    private func appearance(at t: Double) -> Double {
+        guard visible, !show.calm else { return 0 }
+        guard let entered else { return 1 }
+        return WelcomeMotion.phase(t, entered, entered + 0.2)
+    }
+    var body: some View {
+        stageClock
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onChange(of: run.lines, initial: true) { _, _ in follow() }
+        .onChange(of: run.isRunning) { _, _ in follow() }
+        .onChange(of: run.stopping) { _, _ in follow() }
+        .onChange(of: calm, initial: true) { _, value in show.calm = value; follow() }
+        .onChange(of: visible) { _, value in if value && !show.idle { entered = show.clock() } }
+        .onChange(of: show.identity) { _, _ in entered = nil }
+        .onAppear {
+            entered = show.hasRun && show.clock() > 0.06 ? show.clock() : nil
+            FilmLabExportCheck.source = source
+        }
+        .onChange(of: current) { _, _ in FilmLabExportCheck.source = source }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .transaction { $0.animation = nil }
     }
-
     private func follow() { show.calm = calm; show.follow(run, source: source) }
-
     private func source(_ id: LibraryFrame.ID) -> FilmLabExportShow.Source? {
         guard let kept = library.frame(id) else { return nil }
         let frame = MacShownFrame.of(kept, model: model)
         let stage = FilmLabExportStage.shared
-        let viewer = stage.viewer
-        let aspect = MacShownFrame.aspect(frame)
-        // The shown frame is taken to be at fit (zooming in during an export is rare); another frame or a purpose
-        // mock-up uses paper in the developer instead.
+        let viewer = stage.viewer, aspect = MacShownFrame.aspect(frame)
         let exposure = id == current && !FilmLabExportPurposeUI.shared.previewing
-        let rect: CGRect
-        if exposure {
-            let inset = (12 * 10 / 9 / InterfaceScale.padTarget).rounded()
-            let area = CGSize(width: max(viewer.width - 2 * inset, 1), height: max(viewer.height - 2 * inset, 1))
-            let size = area.width / area.height > aspect
-                ? CGSize(width: (area.height * aspect).rounded(), height: area.height)
-                : CGSize(width: area.width, height: (area.width / aspect).rounded())
-            rect = CGRect(x: viewer.midX - size.width / 2, y: viewer.midY - size.height / 2, width: size.width, height: size.height)
-        } else {
-            let edge = max(1, min(viewer.width, viewer.height) * 0.38)
-            let size = aspect >= 1 ? CGSize(width: edge, height: edge / aspect) : CGSize(width: edge * aspect, height: edge)
-            rect = CGRect(x: viewer.midX - size.width / 2, y: viewer.midY - size.height / 2, width: size.width, height: size.height)
-        }
+        // Same fit rectangle as round 3. No paper inset, shadow or rounding is applied to the flying copy.
+        let inset = (12 * 10 / 9 / InterfaceScale.padTarget).rounded()
+        let area = CGSize(width: max(viewer.width - 2 * inset, 1), height: max(viewer.height - 2 * inset, 1))
+        let size = area.width / area.height > aspect
+            ? CGSize(width: (area.height * aspect).rounded(), height: area.height)
+            : CGSize(width: area.width, height: (area.width / aspect).rounded())
+        let rect = CGRect(x: viewer.midX - size.width / 2, y: viewer.midY - size.height / 2, width: size.width, height: size.height)
         return .init(frame: frame, rect: rect, viewer: viewer, tray: stage.tray, exposure: exposure)
     }
 }
 
-/// Fixed-size thumbnail request, including on the stack: movement cannot initiate another decode.
+@MainActor
 private struct FilmLabExportPrintFace: View {
     let source: FilmLabExportShow.Source
-    var imageOpacity = 1.0
-    var paperOpacity = 1.0
-    private var paper: Color {
-        source.exposure ? Color(red: 244 / 255, green: 241 / 255, blue: 234 / 255)
-                        : Color(red: 236 / 255, green: 230 / 255, blue: 218 / 255)
-    }
-    var body: some View {
-        FrameView(frame: source.frame, pointSize: source.edge, contentMode: .fit)
-            .frame(width: source.size.width, height: source.size.height)
-            .opacity(imageOpacity)
-            // The outer sheet is always the viewer-photo rect. Only the fixed-size image transforms inward;
-            // neither the border nor its decode request can grow past the starting rectangle.
-            .scaleEffect(1 - 0.08 * paperOpacity)
-            .background(paper.opacity(paperOpacity))
-            .clipShape(RoundedRectangle(cornerRadius: 2))
-    }
-}
-
-/// Quadratic Bezier translation, independent of the scale's timing curve. No layout along the path.
-private struct FilmLabExportArc: GeometryEffect {
-    var progress: CGFloat
-    let start: CGPoint
-    let end: CGPoint
-    var animatableData: CGFloat { get { progress } set { progress = newValue } }
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        let t = progress, u = 1 - t
-        let control = CGPoint(x: start.x + (end.x - start.x) * 0.5, y: min(start.y, end.y) - 70)
-        let x = u * u * start.x + 2 * u * t * control.x + t * t * end.x
-        let y = u * u * start.y + 2 * u * t * control.y + t * t * end.y
-        return ProjectionTransform(CGAffineTransform(translationX: x - size.width / 2, y: y - size.height / 2))
-    }
-}
-
-private struct FilmLabExportPaper: View {
-    let card: FilmLabExportShow.Card
-    let calm: Bool
-    @State private var visible = false
-    @State private var lifted = false
-    @State private var travel: CGFloat = 0
-    @State private var settled = false
-    @State private var failed = false
-    @State private var vanished = false
-    private var s: FilmLabExportShow.Source { card.source }
-    private var flying: Bool { card.phase != .developing }
-    private var p: CGFloat { CGFloat(min(1, max(0, card.fraction))) }
-    private var developedOpacity: Double { 0.15 + 0.85 * sqrt(Double(p)) }
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            if !s.exposure {
-                Color.black.opacity(visible && !flying && !vanished ? 0.18 : 0)
-                    .frame(width: s.viewer.width, height: s.viewer.height)
-                    .offset(x: s.viewer.minX, y: s.viewer.minY)
-                    .animation(FilmLabExportMotion.fade(0.2), value: visible && !flying && !vanished)
-            }
-            if s.exposure && (!flying || card.phase == .stopped) && !calm {
-                exposure.opacity(vanished ? 0 : 1)
-            }
-            FilmLabExportPrintFace(source: s, imageOpacity: s.exposure ? 1 : developedOpacity,
-                                   paperOpacity: !s.exposure || lifted ? 1 : 0)
-                .overlay { Color(red: 0.5, green: 0.15, blue: 0.12).opacity(failed ? 0.3 : 0) }
-                .scaleEffect(travel > 0 ? 40 / max(s.edge, 1) : 1)
-                .animation(calm ? nil : .timingCurve(0.4, 0, 0.6, 1, duration: FilmLabExportMotion.seconds(0.55)), value: travel)
-                .rotationEffect(.degrees(travel > 0 ? FilmLabExportMotion.angle(card.id) : 0))
-                .animation(calm ? nil : .timingCurve(0.3, 0, 0.2, 1, duration: FilmLabExportMotion.seconds(0.55)), value: travel)
-                .shadow(color: .black.opacity(0.3), radius: settled || (s.exposure && !lifted) ? 4 : 18, y: settled ? 2 : 8)
-                .offset(y: failed ? 12 : settled ? 0 : travel > 0 ? -3 : 0)
-                .animation(calm ? nil : .spring(response: FilmLabExportMotion.seconds(0.32), dampingFraction: 0.7), value: settled)
-                .animation(FilmLabExportMotion.fade(0.35), value: failed)
-                .opacity(vanished || (s.exposure && (!flying || card.phase == .stopped)) ? 0 : visible ? 1 : 0)
-                .animation(FilmLabExportMotion.fade(failed ? 0.35 : 0.2), value: vanished)
-                .animation(FilmLabExportMotion.fade(0.2), value: visible)
-                .modifier(FilmLabExportArc(progress: travel,
-                                          start: CGPoint(x: s.rect.midX, y: s.rect.midY),
-                                          end: CGPoint(x: s.tray.midX, y: s.tray.midY)))
-                .animation(calm ? nil : .timingCurve(0.3, 0, 0.2, 1, duration: FilmLabExportMotion.seconds(0.55)), value: travel)
-        }
-        .onAppear { visible = true; phase() }
-        .onChange(of: card.phase) { _, _ in phase() }
-    }
-
-    private var exposure: some View {
-        ZStack(alignment: .top) {
-            Color.white.opacity(0.06)
-                .scaleEffect(x: 1, y: p, anchor: .top)
-            LinearGradient(colors: [Color(red: 1, green: 244 / 255, blue: 224 / 255).opacity(0.28), .clear],
-                           startPoint: .top, endPoint: .bottom)
-                .frame(height: 64)
-                .offset(y: (s.size.height - 1.5) * p)
-            Rectangle().fill(Color(red: 1, green: 244 / 255, blue: 224 / 255).opacity(0.85))
-                .frame(height: 1.5)
-                .offset(y: (s.size.height - 1.5) * p)
-        }
-        .frame(width: s.size.width, height: s.size.height, alignment: .top)
-        .clipped().blendMode(.plusLighter)
-        .offset(x: s.rect.minX, y: s.rect.minY)
-        .animation(.linear(duration: 1.0 / 60), value: p)
-        .animation(FilmLabExportMotion.fade(0.2), value: vanished)
-    }
-
-    private func phase() {
-        switch card.phase {
-        case .developing: break
-        case .lifting:
-            // Yield once for a file that completed before the first progress observation.
-            withAnimation(FilmLabExportMotion.fade(0.12)) { lifted = true }
-        case .travelling: travel = 1
-        case .settling: settled = true
-        case .failed: failed = true; vanished = true
-        case .stopped: vanished = true
-        }
-    }
-}
-
-// MARK: - pinned foot
-
-private struct FilmLabExportStack: View {
-    private var show: FilmLabExportShow { .shared }
+    var negative = 0.0
     var body: some View {
         ZStack {
-            ForEach(show.prints) { print in
-                let age = show.prints.count - 1 - (show.prints.firstIndex { $0.id == print.id } ?? 0)
-                FilmLabExportPrintFace(source: print.source)
-                    .scaleEffect(40 / max(print.source.edge, 1))
-                    .frame(width: 40, height: 40)
-                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                    .rotationEffect(.degrees(show.ready || show.calm ? 0 : FilmLabExportMotion.angle(print.id)))
-                    .offset(x: show.ready || show.calm ? 0 : CGFloat(age), y: show.ready || show.calm ? 0 : -CGFloat(age))
-                    .animation(show.calm ? FilmLabExportMotion.fade(0.2) : .spring(response: FilmLabExportMotion.seconds(0.4), dampingFraction: 0.85), value: show.ready)
-                    // Removed stack entries disappear immediately; fading every outgoing entry would retain an
-                    // unbounded number of thumbnail views in a very fast batch.
-                    .transition(.asymmetric(insertion: .opacity, removal: .identity))
+            if let image = source.thumbnail?.image {
+                Image(uiImage: image).resizable().aspectRatio(contentMode: .fit)
+                if negative > 0 {
+                    Image(uiImage: image).resizable().aspectRatio(contentMode: .fit)
+                        .colorInvert().colorMultiply(Color(hex: 0xF2A766)).opacity(negative)
+                }
             }
         }
-        .id(show.identity)
-        .frame(width: 56, height: 56)
-        .clipped()
-        .overlay(alignment: .topTrailing) {
-            if show.ready && !show.stopped && show.problems.isEmpty {
-                FilmLabExportBadge(calm: show.calm).padding(1)
-            }
-        }
-        .animation(FilmLabExportMotion.fade(0.15), value: show.prints.map(\.id))
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(FilmLabExportStage.space)) } action: {
-            FilmLabExportStage.shared.tray = $0
-        }
+        .frame(width: source.size.width, height: source.size.height)
     }
 }
 
-private struct FilmLabExportBadge: View {
-    let calm: Bool
-    @State private var visible = false
+/// Copied from the help drawing under a new name; that file's private Shape stays private.
+private struct FilmLabExportCone: Shape {
+    let top: CGFloat, bottom: CGFloat
+    func path(in r: CGRect) -> Path {
+        let wide = max(top, bottom, 1), a = r.width * top / wide, b = r.width * bottom / wide
+        var p = Path()
+        p.move(to: CGPoint(x: r.midX - a / 2, y: r.minY))
+        p.addLine(to: CGPoint(x: r.midX + a / 2, y: r.minY))
+        p.addLine(to: CGPoint(x: r.midX + b / 2, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.midX - b / 2, y: r.maxY)); p.closeSubpath()
+        return p
+    }
+}
+
+/// The same two panels in the stage and the reserved foot slot. Split layers put a filing print behind
+/// the front panel, never above it. Coordinates here are relative to (318, 226) of the 460 × 340 field.
+@MainActor
+private struct FilmLabExportFolder: View {
+    enum Layer { case back, front, all }
+    var count: Int
+    var batch = false
+    var check = 0.0
+    var layer: Layer = .all
     var body: some View {
-        Image(systemName: "checkmark").font(Theme.Font.ui(10, .bold)).foregroundStyle(.white)
-            .frame(width: 19, height: 19).background(Theme.labelGreen, in: Circle())
-            .scaleEffect(calm || visible ? 1 : 0.6).opacity(visible ? 1 : 0)
-            .onAppear {
-                withAnimation(calm ? FilmLabExportMotion.fade(0.2) : .spring(response: FilmLabExportMotion.seconds(0.3), dampingFraction: 0.6)) { visible = true }
+        ZStack(alignment: .topLeading) {
+            if layer != .front {
+                RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0xA87A42)).frame(width: 44, height: 12)
+                RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0xA87A42))
+                    .frame(width: 120, height: 82).offset(y: 10)
+                ForEach(0..<edges, id: \.self) { i in
+                    Rectangle().fill(Color(hex: 0xF1EEE7)).frame(width: 106, height: 2)
+                        .offset(x: 7, y: 24 - CGFloat(i) * 3)
+                }
             }
+            if layer != .back {
+                RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0xD2A25F))
+                    .frame(width: 120, height: 62).offset(y: 30)
+                if batch && count > 0 {
+                    Text("\(count)").font(MacMetric.font(20, .bold)).monospacedDigit()
+                        .foregroundStyle(Color(hex: 0x5A3E1C)).position(x: 60, y: 66)
+                }
+                if check > 0 {
+                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 18, height: 18).background(Theme.accent, in: Circle())
+                        .scaleEffect(0.6 + 0.4 * check).opacity(check).position(x: 120, y: 0)
+                }
+            }
+        }
+        .frame(width: 120, height: 92, alignment: .topLeading)
+    }
+    private var edges: Int { count == 0 ? 0 : count == 1 ? 1 : count < 5 ? 2 : count < 20 ? 3 : count < 50 ? 4 : 5 }
+}
+
+/// All positions and lighting are functions of this clock and Show's stored event times.
+/// Machinery is clipped to the viewer; only the final folder is allowed to cross into the foot.
+@MainActor
+private struct FilmLabExportEnlargerStage: View {
+    let show: FilmLabExportShow
+    let t: Double
+    private var viewer: CGRect { FilmLabExportStage.shared.viewer }
+    private var scale: CGFloat { min(viewer.width * 0.86 / 460, viewer.height * 0.86 / 340, 1.35) }
+    private var origin: CGPoint { CGPoint(x: viewer.midX - 230 * scale, y: viewer.midY - 170 * scale) }
+    private var entrance: Double { WelcomeMotion.ease(.out, phase(0, 0.26)) }
+    private var rise: CGFloat { 10 * CGFloat(1 - entrance) }
+    private var exit: Double { show.exitAt ?? .infinity }
+    private var machineOpacity: Double { entrance * (1 - phase(exit, exit + 0.25)) * abortOpacity }
+    private var abortOpacity: Double { show.abortAt.map { 1 - phase($0, $0 + 0.2) } ?? 1 }
+    private var scrim: Double {
+        0.88 * entrance * (1 - WelcomeMotion.ease(.inOut, phase(exit + 0.05, exit + 0.35))) * abortOpacity
+    }
+    private var p: FilmLabExportShow.Photo? { show.active }
+    private var lampPhoto: FilmLabExportShow.Photo? {
+        if let p, let flash = p.flash, t >= flash { return p }
+        return show.previous
+    }
+    private var lamp: Double {
+        guard let p = lampPhoto, let flash = p.flash, t >= flash,
+              p.failed.map({ $0 > flash }) ?? true else { return 0 }
+        let u = t - flash
+        let strength = u < 0.06 ? u / 0.06 : 1 - 0.3 * WelcomeMotion.phase(u, 0.06, 0.24)
+        let off = min(p.off ?? .infinity, show.stopAt ?? .infinity, p.failed ?? .infinity)
+        return strength * (1 - phase(off, off + 0.08))
+    }
+    private var bulb: Double {
+        guard let p = lampPhoto, let flash = p.flash, t >= flash,
+              p.failed.map({ $0 > flash }) ?? true else { return 0 }
+        let off = min(p.off ?? .infinity, show.stopAt ?? .infinity, p.failed ?? .infinity)
+        return phase(flash, flash + 0.06) * (1 - phase(off, off + 0.08))
+    }
+    private var wash: Double {
+        guard let p = lampPhoto, let flash = p.flash, t >= flash,
+              p.failed.map({ $0 > flash }) ?? true, show.stopAt.map({ t < $0 }) ?? true else { return 0 }
+        let u = t - flash
+        return u < 0.06 ? 0.22 * u / 0.06 : 0.22 * (1 - WelcomeMotion.ease(.out, WelcomeMotion.phase(u, 0.06, 0.3)))
+    }
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            if show.hasRun && !show.ready && !show.calm && scale >= 0.55 {
+                viewerDrawing
+                    .frame(width: viewer.width, height: viewer.height, alignment: .topLeading)
+                    .clipped().offset(x: viewer.minX, y: viewer.minY)
+                if show.landed > 0 && show.abortAt == nil && t >= exit {
+                    exitingFolder
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+    private var viewerDrawing: some View {
+        ZStack(alignment: .topLeading) {
+            Color.black.opacity(scrim)
+            // Completely cover the old photo under its moving copy. At t=0 the copy has exactly its fit
+            // rectangle and no paper, corner radius or shadow; the original cannot show through behind it.
+            if let source = firstSource, source.exposure {
+                let rect = fit(source, in: viewer)
+                Color.black.opacity((1 - WelcomeMotion.ease(.inOut, phase(exit + 0.05, exit + 0.35))) * abortOpacity)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX - viewer.minX, y: rect.midY - viewer.minY)
+            }
+            RadialGradient(colors: [Color(hex: 0xFFD9A0), .clear],
+                           center: UnitPoint(x: (origin.x + 180 * scale - viewer.minX) / max(viewer.width, 1),
+                                             y: (origin.y + 140 * scale - viewer.minY) / max(viewer.height, 1)),
+                           startRadius: 0, endRadius: viewer.width * 0.6)
+                .opacity(wash * machineOpacity)
+            machine
+                .scaleEffect(scale, anchor: .topLeading)
+                .offset(x: origin.x - viewer.minX, y: origin.y - viewer.minY + rise * scale)
+                .opacity(machineOpacity)
+            if let source = firstSource, source.exposure, t < 0.4 {
+                flyIn(source)
+            }
+        }
+    }
+    private var firstSource: FilmLabExportShow.Source? {
+        show.opening
+    }
+    private var machine: some View {
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x3F4147)).frame(width: 10, height: 314).offset(x: 40, y: 14)
+            Rectangle().fill(Color(hex: 0x3F4147)).frame(width: 90, height: 8).offset(x: 40, y: 22)
+            RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x3F4147)).frame(width: 120, height: 40).offset(x: 120, y: 10)
+            Capsule().fill(Color(hex: 0xFFE2A8)).opacity(0.25 + 0.75 * bulb)
+                .frame(width: 44, height: 6)
+                .shadow(color: Theme.accent.opacity(bulb), radius: 5 + 5 * WelcomeMotion.phase(t - (lampPhoto?.flash ?? t), 0, 0.06))
+                .position(x: 180, y: 45)
+            FilmLabExportCone(top: 36, bottom: 68).fill(beam(0.9, 0.5))
+                .frame(width: 68, height: 20).position(x: 180, y: 60)
+            RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x2B2C30))
+                .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(hex: 0x4A4C52), lineWidth: 1))
+                .frame(width: 132, height: 64).position(x: 180, y: 102)
+            negatives
+            RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0x3F4147)).frame(width: 34, height: 12).offset(x: 163, y: 134)
+            FilmLabExportCone(top: 34, bottom: 196).fill(beam(0.6, 0.18))
+                .frame(width: 196, height: 50).position(x: 180, y: 171)
+            easel
+            if show.landed == 0 || t < exit {
+                FilmLabExportFolder(count: show.landed, batch: show.total > 1, layer: .back)
+                    .scaleEffect(folderBump).position(x: 378, y: 272)
+                if let flying = show.flying { filing(flying) }
+                FilmLabExportFolder(count: show.landed, batch: show.total > 1, check: check, layer: .front)
+                    .scaleEffect(folderBump).position(x: 378, y: 272)
+            }
+            RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0x2A2B2F)).frame(width: 430, height: 10).offset(x: 20, y: 318)
+        }
+        .frame(width: 460, height: 340, alignment: .topLeading)
+    }
+    private var check: Double {
+        show.checkAt.map { WelcomeMotion.ease(.out, phase($0, $0 + 0.18)) } ?? 0
+    }
+    private var folderBump: Double { 1 + 0.05 * (show.bumpAt.map { WelcomeMotion.pop(t - $0) } ?? 0) }
+    private func beam(_ top: Double, _ bottom: Double) -> LinearGradient {
+        LinearGradient(colors: [Color(hex: 0xFFE2A8).opacity(top * lamp), Color(hex: 0xFFE2A8).opacity(bottom * lamp)],
+                       startPoint: .top, endPoint: .bottom)
+    }
+    private var stripPhoto: FilmLabExportShow.Photo? { p ?? show.previous }
+    private var negatives: some View {
+        let photo = stripPhoto
+        let start = photo?.exposure ?? 0
+        let first = start == 0
+        let advance = first ? 1 : WelcomeMotion.ease(.inOut, phase(start, start + 0.3 * (photo?.k ?? 1)))
+        let stop = show.stopAt.map { phase($0, $0 + 0.2) } ?? 0
+        let fade = show.total > 1 ? WelcomeMotion.phase(t, 0.2, 0.4) : 1.0
+        return ZStack(alignment: .topLeading) {
+            if show.total > 1 {
+                Rectangle().fill(Color(hex: 0x4A2B14)).frame(width: 240, height: 64)
+                ForEach(0..<20, id: \.self) { i in
+                    let x = (CGFloat(i) * 12 + CGFloat(112 * advance)).truncatingRemainder(dividingBy: 240)
+                    Rectangle().fill(Color(hex: 0x1C1D20)).frame(width: 3, height: 4).offset(x: x, y: 3)
+                    Rectangle().fill(Color(hex: 0x1C1D20)).frame(width: 3, height: 4).offset(x: x, y: 57)
+                }
+            }
+            if let photo {
+                if let source = photo.source, !(first && source.exposure && t < 0.4) {
+                    negative(source).position(x: 120 - CGFloat(112 * (1 - advance)), y: 32 + settle(first))
+                }
+                if show.total > 1 {
+                    if !first, let source = show.previous?.source, show.previousID != photo.id {
+                        negative(source).position(x: 120 + CGFloat(112 * advance), y: 32)
+                    }
+                    if let next = show.photo(photo.id + 1)?.source {
+                        negative(next).position(x: 8 - CGFloat(112 * (1 - advance)), y: 32)
+                    }
+                }
+            }
+        }
+        .frame(width: 240, height: 64, alignment: .topLeading)
+        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.125),
+                                    .init(color: .black, location: 0.875), .init(color: .clear, location: 1)],
+                             startPoint: .leading, endPoint: .trailing))
+        .opacity(fade * (1 - stop)).offset(x: 60 - 40 * stop, y: 70)
+    }
+    private func settle(_ first: Bool) -> CGFloat { first ? 2 * CGFloat(1 - WelcomeMotion.ease(.out, phase(0.4, 0.46))) : 0 }
+    private func negative(_ source: FilmLabExportShow.Source) -> some View {
+        let size = fitted(source.size, into: CGSize(width: 104, height: 56))
+        return FilmLabExportPrintFace(source: source, negative: 1)
+            .scaleEffect(size.width / max(source.size.width, 1))
+            .frame(width: 104, height: 56).background(Color(hex: 0x4A2B14))
+    }
+    private var easel: some View {
+        let start = p?.exposure ?? .infinity
+        let first = start == 0
+        let sheet = first ? 1 : phase(start + 0.14 * (p?.k ?? 1), start + 0.34 * (p?.k ?? 1))
+        let stopFade = show.stopAt.map { 1 - phase($0, $0 + 0.2) } ?? 1
+        let failureFade = p?.failed.map { 1 - phase($0 + 0.36, $0 + 0.56) } ?? 1
+        return ZStack {
+            RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0xF1EEE7))
+            if let p, let source = p.source {
+                let amount = developed(p)
+                let size = fitted(source.size, into: CGSize(width: 184, height: 106))
+                FilmLabExportPrintFace(source: source)
+                    .brightness(0.35 * (1 - amount)).opacity(amount)
+                    .scaleEffect(size.width / max(source.size.width, 1)).frame(width: 184, height: 106)
+                if let fail = p.failed, t >= fail {
+                    Color(hex: 0x77787C).opacity(0.6)
+                    Image(systemName: "exclamationmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: 14, height: 14).background(Theme.danger, in: Circle()).position(x: 204, y: 0)
+                }
+            }
+        }
+        .frame(width: 204, height: 122).opacity(sheet * stopFade * failureFade)
+        .position(x: 180, y: 257)
+    }
+    private func developed(_ p: FilmLabExportShow.Photo) -> Double {
+        guard let flash = p.flash, t >= flash + 0.02 * p.k else { return 0 }
+        let start = flash + 0.02 * p.k
+        if let save = p.saved, save <= flash + 0.4 * p.k, t >= save {
+            let end = start + 0.38 * p.k
+            if save <= start { return WelcomeMotion.ease(.out, phase(start, end)) }
+            // A save received during development cannot retroactively change earlier frames. Meet the
+            // fast beat from the value already on screen, rather than jumping to its nearly-finished curve.
+            let atSave = min(0.85, max(min(p.progress, 0.85), 0.85 * (1 - exp(-max(0, save - start) / 1.2))))
+            return atSave + (1 - atSave) * WelcomeMotion.ease(.out, phase(save, max(save + 0.001, end)))
+        }
+        let base = min(0.85, max(min(p.progress, 0.85), 0.85 * (1 - exp(-(t - start) / 1.2))))
+        if let save = p.saved, t >= save {
+            // Freeze the slow-develop value at save, then finish over exactly 160 ms.
+            let atSave = min(0.85, max(0.85 * (1 - exp(-max(0, save - start) / 1.2)), min(p.progress, 0.85)))
+            return atSave + (1 - atSave) * WelcomeMotion.ease(.out, phase(save, save + 0.16 * p.k))
+        }
+        return base
+    }
+    private func filing(_ p: FilmLabExportShow.Photo) -> some View {
+        let e = WelcomeMotion.ease(.inOut, phase(p.flight ?? .infinity, (p.flight ?? .infinity) + 0.34 * p.k))
+        let wave = sin(.pi * e)
+        return Group {
+            if let source = p.source {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0xF1EEE7))
+                    let size = fitted(source.size, into: CGSize(width: 184, height: 106))
+                    FilmLabExportPrintFace(source: source).scaleEffect(size.width / max(source.size.width, 1))
+                        .frame(width: 184, height: 106)
+                }
+                .frame(width: 204, height: 122).scaleEffect(WelcomeMotion.lerp(1, 96.0 / 204, e))
+                .rotationEffect(.degrees(-6 * wave)).shadow(color: .black.opacity(0.4 * wave), radius: 6, y: 4 * wave)
+                .position(x: WelcomeMotion.lerp(180, 378, e), y: WelcomeMotion.lerp(257, 302, e) - 30 * wave)
+            }
+        }
+    }
+    private func flyIn(_ source: FilmLabExportShow.Source) -> some View {
+        let e = WelcomeMotion.ease(.inOut, phase(0, 0.4))
+        let rect = fit(source, in: viewer)
+        let target = fitted(source.size, into: CGSize(width: 104 * scale, height: 56 * scale))
+        return FilmLabExportPrintFace(source: source, negative: phase(0.2, 0.4))
+            .scaleEffect(x: WelcomeMotion.lerp(rect.width, target.width, e) / max(source.size.width, 1),
+                         y: WelcomeMotion.lerp(rect.height, target.height, e) / max(source.size.height, 1))
+            .position(x: WelcomeMotion.lerp(rect.midX, origin.x + 180 * scale, e) - viewer.minX,
+                      y: WelcomeMotion.lerp(rect.midY, origin.y + (104 + rise) * scale, e) - viewer.minY - 24 * scale * sin(.pi * e))
+    }
+    private var exitingFolder: some View {
+        let e = WelcomeMotion.ease(.inOut, phase(exit, exit + 0.45))
+        let tray = FilmLabExportStage.shared.tray
+        return FilmLabExportFolder(count: show.landed, batch: show.total > 1, check: check)
+            .scaleEffect(WelcomeMotion.lerp(scale, 0.25, e) * folderBump)
+            .position(x: WelcomeMotion.lerp(origin.x + 378 * scale, tray.midX, e),
+                      y: WelcomeMotion.lerp(origin.y + 272 * scale, tray.midY, e) - 40 * sin(.pi * e))
+    }
+    private func phase(_ a: Double, _ b: Double) -> Double {
+        guard a.isFinite, b.isFinite else { return 0 }
+        return WelcomeMotion.phase(t, a, b)
+    }
+    private func fitted(_ size: CGSize, into box: CGSize) -> CGSize {
+        let s = min(box.width / max(size.width, 1), box.height / max(size.height, 1))
+        return CGSize(width: size.width * s, height: size.height * s)
+    }
+    private func fit(_ source: FilmLabExportShow.Source, in viewer: CGRect) -> CGRect {
+        if viewer == source.viewer { return source.rect }
+        // The fixed decode is retained while the fit rectangle follows a resized viewer.
+        let inset = (12 * 10 / 9 / InterfaceScale.padTarget).rounded()
+        let size = fitted(source.size, into: CGSize(width: max(1, viewer.width - 2 * inset), height: max(1, viewer.height - 2 * inset)))
+        return CGRect(x: viewer.midX - size.width / 2, y: viewer.midY - size.height / 2, width: size.width, height: size.height)
     }
 }
 
+// MARK: - pinned foot (fixed height, reserved folder slot, no progress bar)
+
+@MainActor
 struct FilmLabExportTray: View {
     private var show: FilmLabExportShow { .shared }
     var body: some View {
         HStack(spacing: 12) {
-            FilmLabExportStack().accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 7) {
-                ZStack(alignment: .leading) {
-                    Text(show.total == 1 && show.landed == 0 ? L("Exporting print…") : "\(show.landed) / \(show.total)")
-                        .font(Theme.Font.ui(17, .semibold)).monospacedDigit().foregroundStyle(Theme.text)
-                        .opacity(show.ready ? 0 : 1)
-                        .accessibilityHidden(show.ready)
-                    if show.ready { FilmLabExportDone().transition(.opacity) }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 48, alignment: .leading)
-                .animation(FilmLabExportMotion.fade(0.2), value: show.ready)
-                Capsule().fill(Theme.card).frame(height: 1)
-                    .overlay(alignment: .leading) {
-                        Capsule().fill(Theme.accent)
-                            .scaleEffect(x: max(0, min(1, show.fraction)), y: 1, anchor: .leading)
-                            .animation(FilmLabExportMotion.fade(0.15), value: show.fraction)
-                    }
-                    .accessibilityHidden(true)
+            Group {
+                if show.ready, show.landed > 0, let folder = show.folder, !show.demo {
+                    Button { UIApplication.shared.open(folder) } label: { icon }
+                        .buttonStyle(.plain).accessibilityLabel(L("Show in Finder"))
+                } else { icon.accessibilityHidden(true) }
             }
-            .frame(height: 56)
+            .frame(width: 30, height: 24)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(FilmLabExportStage.space)) } action: {
+                FilmLabExportStage.shared.tray = $0
+            }
+            ZStack(alignment: .topLeading) {
+                Text(show.total == 1 ? L("Exporting print…") : "\(show.landed) / \(show.total)")
+                    .font(Theme.Font.ui(15, .medium)).monospacedDigit().foregroundStyle(Theme.text)
+                    .id(show.landed).transition(.opacity)
+                    .opacity(show.ready ? 0 : 1).accessibilityHidden(show.ready)
+                if show.ready { FilmLabExportDone().transition(.opacity) }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading).frame(height: 48, alignment: .topLeading)
+            .offset(y: 14)
+            // Foot cross-fades only. Stage trajectories are never SwiftUI animations.
+            .animation(FilmLabExportMotion.fade(0.15), value: show.landed)
+            .animation(FilmLabExportMotion.fade(0.15), value: show.ready)
         }
         .frame(height: 72)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.updatesFrequently)
+        .accessibilityElement(children: .contain).accessibilityAddTraits(.updatesFrequently)
         .accessibilityIdentifier("filmlab.export.tray")
+    }
+    private var icon: some View {
+        FilmLabExportFolder(count: show.ready ? show.landed : 0, check: show.ready && !show.stopped && show.landed > 0 ? 1 : 0)
+            .scaleEffect(0.25).frame(width: 30, height: 24)
+            .opacity(show.ready && show.landed > 0 ? 1 : 0.35)
+            .animation(FilmLabExportMotion.fade(0.15), value: show.ready)
     }
 }
 
-/// Shown only after landing + settle + 150 ms. The existing reveal action and failure summary stay here.
+@MainActor
 struct FilmLabExportDone: View {
     private var show: FilmLabExportShow { .shared }
     private var run: MacExportRun { .shared }
@@ -499,7 +825,7 @@ struct FilmLabExportDone: View {
             } else {
                 HStack(spacing: 4) { title; reveal }
                 // The fixed result area has two lines: summary and reason. Keep all details available on hover
-                // without expanding the foot or letting another reason displace the stack.
+                // without expanding the foot or letting another reason displace the folder.
                 Text(problemText).font(Theme.Font.ui(11.5)).foregroundStyle(Theme.danger)
                     .lineLimit(1).truncationMode(.middle).help(problemText)
             }
@@ -618,32 +944,46 @@ enum FilmLabExportCheck {
 
     private static func demo(count: Int, seconds: Double, ids: [LibraryFrame.ID], model: AppServices) async {
         let show = FilmLabExportShow.shared
-        let fail = FilmLabCheckArgs.value("--filmlab-export-demo-fail").flatMap(Int.init)
-        let stopAt = FilmLabCheckArgs.value("--filmlab-export-demo-stop").flatMap(Int.init)
+        let fail = (FilmLabCheckArgs.value("--filmlab-export-demo-fail") ?? FilmLabCheckArgs.value("-demo-fail")).flatMap(Int.init)
+        let stopAt = (FilmLabCheckArgs.value("--filmlab-export-demo-stop") ?? FilmLabCheckArgs.value("-demo-stop")).flatMap(Int.init)
         while (source == nil || FilmLabExportStage.shared.viewer.width <= 40) && !Task.isCancelled {
             try? await Task.sleep(for: .milliseconds(25))
         }
         guard !Task.isCancelled else { return }
         show.begin(total: count, folder: nil, demo: true)
-        // First layout of the stack is caused by begin(), not by the check's wall clock.
+        // First layout of the folder slot is caused by begin(), not by the check's wall clock.
         while FilmLabExportStage.shared.tray.width <= 1 && !Task.isCancelled {
             try? await Task.sleep(for: .milliseconds(25))
         }
+        // SECONDS is the whole batch's render budget, including repeated library pictures. Use
+        // absolute monotonic deadlines: 25-ms sleeps plus a busy main actor must not stretch every
+        // photo's render (formerly N * SECONDS, with all scheduling delays added to every tick).
+        let clock = ContinuousClock()
+        let began = clock.now
+        let perPhoto = seconds / Double(count)
         for index in 0..<count {
             guard !Task.isCancelled else { return }
             let id = ids[index % ids.count]
             let photo = source?(id)
+            // The batch index identifies the event; a repeated library ID only supplies the pixels.
             var line = MacExportRun.Line(id: index, frameID: id, name: model.library.frame(id)?.fileName ?? "", state: .waiting(""))
-            let ticks = max(1, Int(ceil(seconds / 0.025)))
-            for tick in 0...ticks {
+            let start = began.advanced(by: .seconds(Double(index) * perPhoto))
+            let end = began.advanced(by: .seconds(Double(index + 1) * perPhoto))
+            while true {
                 guard !Task.isCancelled else { return }
-                line.state = .running(RenderProgress(stage: .save, fraction: Double(tick) / Double(ticks)))
+                let elapsed = start.duration(to: clock.now).components
+                let age = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+                let fraction = perPhoto > 0 ? min(1, max(0, age / perPhoto)) : 1
+                line.state = .running(RenderProgress(stage: .save, fraction: fraction))
                 show.accept(line, source: photo)
-                if stopAt == index + 1 && tick >= ticks / 2 { stop(); return }
-                if tick < ticks { try? await Task.sleep(for: .seconds(seconds / Double(ticks))) }
+                if stopAt == index + 1 && fraction >= 0.5 { stop(); return }
+                if fraction >= 1 { break }
+                let wake = min(end, clock.now.advanced(by: .milliseconds(25)))
+                do { try await clock.sleep(until: wake) } catch { return }
             }
             line.state = fail == index + 1 ? .failed(L("Could not develop")) : .saved(URL(fileURLWithPath: "/filmlab-animation-demo/\(index).jpg"))
             show.accept(line, source: photo)
+            await Task.yield()
         }
         show.finish()
     }

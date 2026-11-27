@@ -7,9 +7,9 @@
 //  pictures and folders dropped on the window (`MacImportDrop`: the page opens with them as picked).
 //
 //  Capture One's Import Images window is the reference, at the library's Mac metrics (MAC-LIBRARY-UI §4):
-//  - **the left column**: *Import From* (what was picked, *Include Subfolders*, *Exclude Duplicates (n)*),
-//    *Import To* (the catalog or session, or *New Catalog…*; *Add to Catalog* — the files stay where they
-//    are — or *Copy to Folder…*, or the helper's copy into the catalog; the collection, Recent Imports),
+//  - **the left column**: *Import From* (Add… accumulates picks, each removable; subfolders and duplicate
+//    exclusion stay on), *Import To* (the catalog or session, or *New Catalog…*), then the placement cards
+//    (the photo location from Settings, leave in place, another folder, or a session's Capture folder),
 //    *Filters* (format, the day taken);
 //  - **the right**: the pictures found, in the library's own cells and with its selection (click,
 //    ⌘-click, ⇧-click, a marquee from the space between, ⌘A, ⇧⌘A, the arrows), a duplicate greyed; the
@@ -236,6 +236,7 @@ struct MacImportFlow: View {
     /// temporary copies removed: the next Import asks Finder again), then the flow's request closed.
     private static func finish(_ session: MacImportSession?, done: () -> Void) {
         session?.close()
+        FilmLabImport.shared.releasePanelPicks()
         MacImportDrop.letGo()
         MacLibraryBrowser.shared.finderPicks = nil
         done()
@@ -322,7 +323,11 @@ private struct MacImportPage: View {
             // Import's Finder panel answered before the page was asked for (`MacLibraryBrowser.askImport`).
             if let picks = library.finderPicks {
                 library.finderPicks = nil
-                Task { if await session.receivePicks(picks) { done() } }
+                let access = FilmLabImport.shared.takePanelPicks()
+                Task {
+                    defer { for url in access { url.stopAccessingSecurityScopedResource() } }
+                    if await session.receivePicks(picks) { done() }
+                }
                 return
             }
             // Dropped on the window (`MacImportDrop`): those are the picks, and Finder is not asked.
@@ -340,14 +345,25 @@ private struct MacImportPage: View {
             // Asked with nothing picked (no way in does so now; kept so such a page is never empty): Finder.
             ask(.sources)
         }
+        .task {
+            guard let urls = FilmLabCheckArgs.importURLs("--filmlab-import-add"), !urls.isEmpty else { return }
+            do { try await Task.sleep(for: .seconds(4)) } catch { return }
+            guard !session.closed, !session.finderUp, session.progress == nil else { return }
+            _ = await session.receivePicks(urls, adding: true)
+        }
+        .task {
+            await FilmLabCheckArgs.importIfAsked(session: session) {
+                if await session.run() != nil { done() }
+            }
+        }
         .fileImporter(isPresented: $panelShown, allowedContentTypes: asking.types,
                       allowsMultipleSelection: asking == .sources) { result in
             switch result {
             case .success(let urls):
                 guard let first = urls.first else { cancelled(); return }
                 switch asking {
-                case .sources: Task { if await session.receivePicks(urls) { done() } }
-                case .copyFolder: session.copyFolder = first; session.placement = .copyToFolder
+                case .sources: Task { if await session.receivePicks(urls, adding: true) { done() } }
+                case .copyFolder: session.useOtherFolder(first)
                 case .catalogFolder: session.newCatalogFolder = first
                 }
             case .failure(let error):
@@ -364,8 +380,7 @@ private struct MacImportPage: View {
         if what == .sources {
             guard !choosingSources else { return }
             choosingSources = true
-            // A drop while Finder is asked is refused (`MacImportDrop.accepts`): the panel's answer
-            // replaces the picks, and would wipe it.
+            // Keep the panel's answer and a concurrent drop from racing through the same scan.
             session.finderUp = true
             Task {
                 defer { choosingSources = false; session.finderUp = panelShown }
@@ -373,14 +388,14 @@ private struct MacImportPage: View {
                 let answer = await MacOpenPanel.choose(multiple: true)
                 MacImportClock.mark("panel answered", ["picked": answer?.count ?? 0])
                 guard let urls = answer, !urls.isEmpty else { cancelled(); return }
-                if await session.receivePicks(urls) { done() }
+                if await session.receivePicks(urls, adding: true) { done() }
             }
             return
         }
         panelShown = true
     }
 
-    /// Cancel and Escape. **The Finder panel goes first.** A panel the page asked for (Choose…, a folder) is, on the
+    /// Cancel and Escape. **The Finder panel goes first.** A panel the page asked for (Add…, a folder) is, on the
     /// Mac, a window of its own that can sit behind the app's; while it is presented the cover cannot go, so
     /// Cancel on the page waited on a panel the owner could not see (2026-10-24: "cancel in this page won't
     /// work fast"; a sample of the app showed its main thread idle and the panel's ViewBridge up). Taken
@@ -575,44 +590,65 @@ private struct MacImportColumn: View {
     // Import From
 
     private var importFrom: some View {
-        VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            MacImportHeading(title: L("Import From"), value: session.files.isEmpty ? nil : L("\(session.files.count.formatted()) pictures"), rule: false)
-            HStack(spacing: MacMetric.pt(8)) {
-                Image(systemName: "folder").font(MacMetric.font(13)).foregroundStyle(Theme.secondaryText).frame(width: MacMetric.pt(16))
-                VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
-                    Text(session.picked.isEmpty ? L("Nothing chosen") : session.pickedTitle)
-                        .font(MacMetric.font(13)).foregroundStyle(Theme.text)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if session.picked.count == 1, let one = session.picked.first {
-                        Text(placeWords(one.deletingLastPathComponent())).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
+        VStack(alignment: .leading, spacing: MacMetric.pt(6)) {
+            MacImportHeading(title: L("Import From"), rule: false)
+            VStack(alignment: .leading, spacing: MacMetric.pt(10)) {
+                Button { choose(.sources) } label: {
+                    HStack(spacing: MacMetric.pt(10)) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(MacMetric.font(24, .medium)).foregroundStyle(Theme.accent)
+                            .accessibilityHidden(true)
+                        Text(session.picked.isEmpty ? L("Nothing chosen") : session.pickedTitle)
+                            .font(MacMetric.font(15, .semibold)).foregroundStyle(Theme.text)
                             .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(L("Add…")).font(MacMetric.font(13, .semibold)).foregroundStyle(Theme.accent)
+                            .fixedSize()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(session.picked.isEmpty ? L("Nothing chosen") : session.pickedTitle)
+                .accessibilityHint(L("Add…"))
+                .accessibilityAddTraits(session.picked.isEmpty ? [] : .isSelected)
+                .accessibilityIdentifier("mac.import.add")
+                ForEach(Array(session.picked.prefix(3)), id: \.standardizedFileURL) { url in
+                    HStack(spacing: MacMetric.pt(8)) {
+                        Text(url.lastPathComponent).font(MacMetric.font(12.5)).foregroundStyle(Theme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button { session.removePick(url) } label: {
+                            Image(systemName: "xmark").font(MacMetric.font(10, .semibold))
+                                .foregroundStyle(Theme.dim).frame(width: MacMetric.pt(24), height: MacMetric.pt(24))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L("Remove"))
+                        .accessibilityValue(url.lastPathComponent)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Button(L("Choose…")) { choose(.sources) }
-                    .buttonStyle(MacImportButtonStyle(kind: .small))
+                if session.picked.count > 3 {
+                    Text(L("+\((session.picked.count - 3).formatted())"))
+                        .font(MacMetric.font(12)).foregroundStyle(Theme.dim)
+                }
             }
+            .padding(MacMetric.pt(12))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous).strokeBorder(Theme.rule, lineWidth: 1))
             .padding(.horizontal, MacMetric.pt(12))
-            .padding(.vertical, MacMetric.pt(4))
-            MacImportCheckRow(title: L("Include Subfolders"), on: $session.includeSubfolders)
-            MacImportCheckRow(title: L("Exclude Duplicates"), detail: duplicateDetail, on: $session.excludeDuplicates)
             Text(foundLine).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, MacMetric.pt(12)).padding(.top, MacMetric.pt(2))
+                .padding(.horizontal, MacMetric.pt(12))
         }
         .disabled(session.progress != nil)
     }
 
-    private var duplicateDetail: String? {
-        if session.loadingExisting { return "…" }
-        guard session.existing != nil else { return nil }
-        return "(\(session.duplicateCount.formatted()))"
-    }
-
-    /// "629 pictures found · 8 other files left out".
+    /// Duplicates remain visible in the grid, but are skipped; the switches keep their true defaults.
     private var foundLine: String {
         let t = session.tally
         var out = L("\(session.files.count.formatted()) pictures found")
+        if session.duplicateCount > 0 { out += " · " + L("\(session.duplicateCount.formatted()) already imported") }
         let left = t.movies + t.sidecars + t.other + t.unreadable
         if left > 0 { out += " · " + L("\(left.formatted()) other files left out") }
         return out
@@ -622,7 +658,7 @@ private struct MacImportColumn: View {
 
     private var importTo: some View {
         VStack(alignment: .leading, spacing: MacMetric.pt(2)) {
-            MacImportHeading(title: L("Import To"), value: session.destinationSource?.name)
+            MacImportHeading(title: L("Import To"))
             destinationMenu
                 .padding(.horizontal, MacMetric.pt(12))
                 .padding(.vertical, MacMetric.pt(3))
@@ -634,31 +670,34 @@ private struct MacImportColumn: View {
                     .accessibilityIdentifier("import.captureOneNote")
             }
             if session.destination == .newCatalog { newCatalog }
-            MacImportRadioRow(title: session.destinationSource?.kind == .session ? L("Add to Session") : L("Add to Catalog"), detail: L("Your files stay where they are."),
-                              on: session.placement == .inPlace) { session.placement = .inPlace }
-            MacImportRadioRow(title: L("Copy to Folder…"),
-                              detail: session.copyFolder.map(placeWords) ?? L("Copies go to a folder you choose; the originals are only read."),
-                              on: session.placement == .copyToFolder) {
-                if session.copyFolder == nil { choose(.copyFolder) } else { session.placement = .copyToFolder }
-            }
-            if session.placement == .copyToFolder, session.copyFolder != nil {
-                HStack {
-                    Spacer(minLength: 0)
-                    Button(L("Choose Folder…")) { choose(.copyFolder) }.buttonStyle(MacImportButtonStyle(kind: .small))
-                }
+            MacImportHeading(title: L("Store In"))
+            placements
                 .padding(.horizontal, MacMetric.pt(12))
-            }
-            MacImportRadioRow(title: session.intoLibraryTitle,
-                              detail: session.destinationSource?.kind == .session ? nil : L("Into its Originals folder, by date."),
-                              on: session.placement == .intoLibrary) { session.placement = .intoLibrary }
-            HStack(spacing: MacMetric.pt(8)) {
-                Text(L("Collection")).font(MacMetric.font(12)).foregroundStyle(Theme.dim)
-                Spacer(minLength: 0)
-                Text(L("Recent Imports")).font(MacMetric.font(12)).foregroundStyle(Theme.secondaryText)
-            }
-            .padding(.horizontal, MacMetric.pt(12)).padding(.top, MacMetric.pt(6))
         }
         .disabled(session.progress != nil)
+    }
+
+    private var placements: some View {
+        let photoFolder = session.photoFolder.standardizedFileURL
+        let toPhotoFolder = session.placement == .copyToFolder && session.copyFolder?.standardizedFileURL == photoFolder
+        return VStack(spacing: MacMetric.pt(6)) {
+            MacImportRadioRow(title: L("Copy to photo location"), detail: placeWords(session.photoFolder),
+                              symbol: "doc.on.doc", on: toPhotoFolder) { session.usePhotoFolder() }
+                .accessibilityIdentifier("mac.import.photoFolder")
+            MacImportRadioRow(title: L("Leave in place"), symbol: "mappin.and.ellipse",
+                              on: session.placement == .inPlace) { session.placement = .inPlace }
+                .disabled(session.picksAreCopies)
+                .accessibilityIdentifier("mac.import.inPlace")
+            MacImportRadioRow(title: L("Other Folder…"), detail: session.otherCopyFolder.map(placeWords),
+                              symbol: "folder", compact: true, on: session.placement == .copyToFolder && !toPhotoFolder) {
+                choose(.copyFolder)
+            }
+            .accessibilityIdentifier("mac.import.otherFolder")
+            if session.destinationSource?.kind == .session {
+                MacImportRadioRow(title: session.intoLibraryTitle, symbol: "tray.and.arrow.down",
+                                  on: session.placement == .intoLibrary) { session.placement = .intoLibrary }
+            }
+        }
     }
 
     private var destinationMenu: some View {
@@ -1092,38 +1131,49 @@ private struct MacImportCheckRow: View {
     }
 }
 
-/// One of the placements: a radio button, the words and what they mean under them.
+/// A placement is one large target, using the export purpose cards' rounded outline and accent selection.
 private struct MacImportRadioRow: View {
     let title: String
-    var detail: String?
+    var detail: String? = nil
+    let symbol: String
+    var compact = false
     let on: Bool
     let action: () -> Void
     @Environment(\.isEnabled) private var enabled
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: MacMetric.pt(7)) {
-                FilmLabRadioMark(on: on)
-                    .frame(width: MacMetric.pt(16))
-                    .padding(.top, MacMetric.pt(2))
-                VStack(alignment: .leading, spacing: MacMetric.pt(1)) {
-                    Text(title).font(MacMetric.font(13)).foregroundStyle(Theme.text)
+            HStack(spacing: MacMetric.pt(10)) {
+                Image(systemName: symbol)
+                    .font(MacMetric.font(compact ? 18 : 24, .medium))
+                    .foregroundStyle(on ? Theme.accent : Theme.secondaryText)
+                    .frame(width: MacMetric.pt(32))
+                VStack(alignment: .leading, spacing: MacMetric.pt(4)) {
+                    Text(title).font(MacMetric.font(compact ? 13 : 15, .semibold)).foregroundStyle(Theme.text)
                         .fixedSize(horizontal: false, vertical: true)
                     if let detail {
                         Text(detail).font(MacMetric.font(11)).foregroundStyle(Theme.dim)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1).truncationMode(.middle)
                     }
                 }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                FilmLabRadioMark(on: on)
             }
-            .padding(.horizontal, MacMetric.pt(12))
-            .padding(.vertical, MacMetric.pt(3))
-            .frame(minHeight: MacMetric.pt(MacMetric.row))
-            .contentShape(Rectangle())
+            .padding(.horizontal, MacMetric.pt(10))
+            .padding(.vertical, MacMetric.pt(compact ? 8 : 12))
+            .frame(minHeight: MacMetric.pt(compact ? 44 : 64))
+            .background(on ? Theme.card : Color.clear,
+                        in: RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous)
+                .strokeBorder(on ? Theme.accent : Theme.rule, lineWidth: on ? 1.5 : 1))
+            .contentShape(RoundedRectangle(cornerRadius: MacMetric.pt(10), style: .continuous))
             .opacity(enabled ? 1 : Theme.disabledOpacity)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(detail ?? "")
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 }
 

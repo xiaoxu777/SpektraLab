@@ -65,6 +65,9 @@ final class MacImportSession {
     }
 
     let store: any MacLibraryData
+    /// Captured on opening the page; explicit values let import checks own their preferences and destination.
+    private let importMode: FilmLabImport.Mode
+    let photoFolder: URL
     /// The page's selection, marquee and keys: its own, so the library's selection is left as it was. Its width
     /// beside the viewer is the import page's own, kept across launches (2.4.1 E3: culling wants a wider browser
     /// than the library's); until the divider is first dragged here it is the library's.
@@ -96,6 +99,7 @@ final class MacImportSession {
     var destination: Destination? { didSet { if destination != oldValue { destinationChanged() } } }
     var placement: Placement = .inPlace
     var copyFolder: URL?
+    private(set) var otherCopyFolder: URL?
     var newCatalogName = "FilmLab Catalog"
     var newCatalogFolder = URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Pictures")
     private(set) var existing: MacImportExisting?
@@ -120,14 +124,19 @@ final class MacImportSession {
     @ObservationIgnored private var scan: Task<Void, Never>?
     @ObservationIgnored private var existingTask: Task<Void, Never>?
     @ObservationIgnored private var scoped: [URL] = []
+    @ObservationIgnored private var copiedPicks: Set<URL> = []
+    @ObservationIgnored private var copyFolderScope: URL?
     @ObservationIgnored private var scanStarted = ContinuousClock.now
     /// How long the last scan's listing and headers took, seconds.
     private(set) var listedIn: Double?
     private(set) var scannedIn: Double?
 
-    init(store: any MacLibraryData) {
+    init(store: any MacLibraryData, importMode: FilmLabImport.Mode? = nil, photoFolder: URL? = nil) {
         self.store = store
+        self.importMode = importMode ?? FilmLabImport.shared.mode
+        self.photoFolder = photoFolder ?? FilmLabImport.shared.folder
         destination = Self.defaultDestination(store)
+        copyFolder = self.photoFolder
         placement = defaultPlacement
         destinationChanged()
     }
@@ -143,6 +152,8 @@ final class MacImportSession {
         existingTask?.cancel()
         for url in scoped { url.stopAccessingSecurityScopedResource() }
         scoped = []
+        copyFolderScope?.stopAccessingSecurityScopedResource()
+        copyFolderScope = nil
         MacImportDrop.discard(picked)
     }
 
@@ -151,9 +162,10 @@ final class MacImportSession {
     /// Import's picker also opens library documents. A catalog is a source, never a folder to crawl
     /// for previews and Originals. In a mixed pick, photo files go into the last writable source opened.
     /// True means only libraries were picked and the import page can close.
-    /// `adding`: a drop on the open page — the pictures join what was picked. `copies`: they are a drop's
+    /// `adding`: Add… or a drop on the open page — the pictures join what was picked. `copies`: they are a drop's
     /// temporary copies (`picksAreCopies`).
     func receivePicks(_ urls: [URL], adding: Bool = false, copies: Bool = false) async -> Bool {
+        guard !closed else { return false }
         problem = nil
         let documents = urls.filter { MacLibraryDocuments.kind(of: $0) != nil }
         let photos = urls.filter { MacLibraryDocuments.kind(of: $0) == nil }
@@ -168,29 +180,59 @@ final class MacImportSession {
                 return false
             }
         }
+        guard !closed else { return false }
         if photos.isEmpty { return !documents.isEmpty && !adding }
-        let known = Set(picked.map(\.standardizedFileURL))
-        let all = adding ? picked + photos.filter { !known.contains($0.standardizedFileURL) } : photos
-        // Picks replaced (the Finder panel's Choose…): a drop's temporary copies among them go with them.
+        var known = Set<URL>()
+        let all = ((adding ? picked : []) + photos).filter { known.insert($0.standardizedFileURL).inserted }
+        // A replacement from a check or another entry point also releases any discarded temporary copies.
         if !adding {
             let kept = Set(all.map(\.standardizedFileURL))
             MacImportDrop.discard(picked.filter { !kept.contains($0.standardizedFileURL) })
         }
-        picksAreCopies = (adding && picksAreCopies) || copies
-        if picksAreCopies, placement == .inPlace { placement = .intoLibrary }
+        if !adding { copiedPicks = [] }
+        if copies { copiedPicks.formUnion(photos.map(\.standardizedFileURL)) }
+        picksAreCopies = !copiedPicks.isEmpty
+        if picksAreCopies, placement == .inPlace { usePhotoFolder() }
         pick(all)
         return false
     }
 
     /// What Finder gave: folders and pictures. Replaces what was picked before.
     func pick(_ urls: [URL]) {
+        // Acquire the new grants before returning the old ones: Add… keeps already-picked scoped URLs alive.
+        let access = urls.filter { $0.startAccessingSecurityScopedResource() }
         for url in scoped { url.stopAccessingSecurityScopedResource() }
-        scoped = urls.filter { $0.startAccessingSecurityScopedResource() }
+        scoped = access
         let first = picked.isEmpty
         picked = urls
         // The destination's files, not read while nothing was picked (`destinationChanged`).
         if first, existing == nil, !loadingExisting { readExisting() }
         rescan()
+    }
+
+    /// Remove just this pick. The next scan still sees every other picked file or folder.
+    func removePick(_ url: URL) {
+        guard progress == nil, !closed else { return }
+        let remaining = picked.filter { $0.standardizedFileURL != url.standardizedFileURL }
+        copiedPicks.remove(url.standardizedFileURL)
+        picksAreCopies = !copiedPicks.isEmpty
+        pick(remaining)
+        MacImportDrop.discard([url])
+    }
+
+    /// These are page choices only; neither writes the import preferences in Settings.
+    func usePhotoFolder() {
+        copyFolder = photoFolder
+        placement = .copyToFolder
+    }
+
+    func useOtherFolder(_ url: URL) {
+        let access = url.startAccessingSecurityScopedResource()
+        copyFolderScope?.stopAccessingSecurityScopedResource()
+        copyFolderScope = access ? url : nil
+        otherCopyFolder = url
+        copyFolder = url
+        placement = .copyToFolder
     }
 
     /// "115NZ7_2", "3 folders, 2 files".
@@ -207,6 +249,8 @@ final class MacImportSession {
 
     func rescan() {
         scan?.cancel()
+        scanning = false
+        readingHeaders = false
         files = []
         byPath = [:]
         tally = .init()
@@ -417,17 +461,16 @@ final class MacImportSession {
         destinationSource?.kind == .session ? L("Copy into the Session's Capture Folder") : L("Copy into the Catalog")
     }
 
-    /// Capture One's defaults: a catalog references the files where they are; a session copies them into
-    /// its Capture folder (MAC-LIBRARY-DATA §6.1).
+    /// Settings supplies the initial choice, even for a session; a temporary drop must always be copied.
     var defaultPlacement: Placement {
-        picksAreCopies || destinationSource?.defaultImport == .copy ? .intoLibrary : .inPlace
+        picksAreCopies || importMode == .copy ? .copyToFolder : .inPlace
     }
 
     private func destinationChanged() {
         existingTask?.cancel()
         existing = nil
-        // A chosen Copy to Folder is kept; otherwise the new destination's own default.
-        if placement != .copyToFolder { placement = defaultPlacement }
+        // Keep the page's choice. Catalog Originals is no longer offered; Capture remains a session choice.
+        if placement == .intoLibrary, destinationSource?.kind != .session { usePhotoFolder() }
         readExisting()
     }
 
@@ -543,8 +586,14 @@ final class MacImportSession {
             out.seconds = seconds(since: t0)
             result = out
             progress = nil
-            Log.note(.library, "mac import: done", ["added": out.added, "existing": out.existing, "copied": out.copied,
-                                                    "failed": out.failed.count, "chunks": out.chunks, "seconds": out.seconds])
+            let location = copyTo?.path ?? (placement == .intoLibrary ? target.url?.path ?? target.name
+                : Set(chosen.map { $0.url.deletingLastPathComponent().path }).sorted().joined(separator: " | "))
+            let facts: [String: Any] = ["added": out.added, "existing": out.existing, "copied": out.copied,
+                                      "where": location, "placement": placement.rawValue,
+                                      "destination": target.url?.path ?? target.name,
+                                      "failed": out.failed.count, "chunks": out.chunks, "seconds": out.seconds]
+            Log.note(.library, "mac import: done", facts)
+            FilmLabCheckArgs.importFinished(facts)
             return out
         } catch {
             progress = nil

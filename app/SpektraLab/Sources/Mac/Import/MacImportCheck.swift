@@ -174,7 +174,8 @@ enum MacImportCheck {
 
     /// A scan of `picked`, finished, with the subfolders as asked.
     private static func scanned(_ store: any MacLibraryData, _ picked: [URL], subfolders: Bool = true) async -> MacImportSession {
-        let s = MacImportSession(store: store)
+        // These scan/copy/reference cases choose their placement explicitly, independent of the owner's Settings.
+        let s = MacImportSession(store: store, importMode: .inPlace)
         s.includeSubfolders = subfolders
         s.pick(picked)
         await s.scanFinished()
@@ -200,6 +201,22 @@ enum MacImportCheck {
 
         // 1. The scan.
         let made = makeSynthetic(in: work.appending(path: "synthetic"))
+        // Loose-file picks never expand to their parent; Add… accumulates once, and the last × leaves no scan.
+        let a = made.appending(path: "a.jpg"), b = made.appending(path: "sub/b.png")
+        let picks = MacImportSession(store: store, importMode: .inPlace, photoFolder: work.appending(path: "Photos"))
+        _ = await picks.receivePicks([a])
+        await picks.scanFinished()
+        r.check(picks.files.map(\.url) == [a] && picks.files.first?.root == nil, "one picked file scans just itself")
+        _ = await picks.receivePicks([b, b, a], adding: true)
+        await picks.scanFinished()
+        r.check(picks.picked == [a, b] && Set(picks.files.map(\.url)) == Set([a, b]), "Add… keeps both exact files once")
+        picks.removePick(a)
+        await picks.scanFinished()
+        r.check(picks.picked == [b] && picks.files.map(\.url) == [b], "× removes only that pick")
+        picks.removePick(b)
+        r.check(picks.picked.isEmpty && picks.files.isEmpty && !picks.scanning && !picks.readingHeaders && !picks.canImport,
+                "removing the last pick clears the page and the scan state")
+        picks.close()
         for (name, folder) in [("synthetic", made), ("z7ii", haveZ7 ? z7 : nil), ("disk", haveDisk ? disk : nil)] {
             guard let folder else { continue }
             for subfolders in [true, false] {
@@ -359,7 +376,7 @@ enum MacImportCheck {
                 sel.close()
             }
 
-            // 6. Copy into the catalog, a session's default, the default destination.
+            // 6. The retained catalog-copy path, Settings' initial placements, and the default destination.
             let s = await scanned(store, [made])
             s.destination = .newCatalog
             s.newCatalogName = "Inside"
@@ -379,11 +396,20 @@ enum MacImportCheck {
             next.close()
             s.close()
             let session = try await store.newSession(named: "Shoot", in: work.appending(path: "Catalogs"))
-            let onSession = MacImportSession(store: store)
-            r.check(onSession.destination == .source(session.id) && onSession.placement == .intoLibrary,
-                    "a session's default is a copy into its Capture folder")
-            r.check(onSession.intoLibraryTitle == L("Copy into the Session's Capture Folder"), "and says so")
+            let onSession = MacImportSession(store: store, importMode: .inPlace)
+            r.check(onSession.destination == .source(session.id) && onSession.placement == .inPlace,
+                    "Leave in place remains the initial choice for a session")
+            r.check(onSession.intoLibraryTitle == L("Copy into the Session's Capture Folder"), "the optional Capture choice keeps its title")
             onSession.close()
+            let photoFolder = work.appending(path: "Photo location")
+            let photoCopy = MacImportSession(store: store, importMode: .copy, photoFolder: photoFolder)
+            r.check(photoCopy.placement == .copyToFolder && photoCopy.copyFolder == photoFolder,
+                    "Copy uses the photo location, even for a session")
+            photoCopy.placement = .intoLibrary
+            photoCopy.destination = .newCatalog
+            r.check(photoCopy.placement == .copyToFolder && photoCopy.copyFolder == photoFolder,
+                    "leaving a session's Capture choice for a catalog uses the photo location")
+            photoCopy.close()
         } catch {
             r.check(false, "the run stopped: \(error.localizedDescription)")
         }

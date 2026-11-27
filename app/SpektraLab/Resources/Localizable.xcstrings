@@ -799,6 +799,28 @@
         }
       }
     },
+    "%@ already imported" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 枚は読み込み済み"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 张已导入过"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 張已匯入過"
+          }
+        }
+      }
+    },
     "%@ checked" : {
       "localizations" : {
         "ja" : {
@@ -3225,6 +3247,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+ 底片"
+          }
+        }
+      }
+    },
+    "+%@" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%@"
           }
         }
       }
@@ -22261,6 +22305,28 @@
         }
       }
     },
+    "Movie film runs top to bottom." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "映画フィルムはもともと縦に走ります"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电影胶片本来就是竖着走的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "電影膠片本來就是直著走的"
+          }
+        }
+      }
+    },
     "Name" : {
       "localizations" : {
         "ja" : {
@@ -25481,6 +25547,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "其他"
+          }
+        }
+      }
+    },
+    "Other Folder…" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかのフォルダ…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他文件夹…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他檔案夾…"
           }
         }
       }
@@ -32192,19 +32280,19 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "スペースキーで表示中の写真をチェックし、読み込みではチェックした写真を読み込みます。"
+            "value" : "スペースでチェック"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按空格键勾选当前显示的照片；导入时只导入勾选的照片。"
+            "value" : "空格键勾选照片"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按空白鍵勾選目前顯示的照片；匯入時只匯入勾選的照片。"
+            "value" : "空白鍵勾選照片"
           }
         }
       }
@@ -33089,6 +33177,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存空間"
+          }
+        }
+      }
+    },
+    "Store In" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存先"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存放"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存放"
           }
         }
       }
@@ -38533,6 +38643,28 @@
         }
       }
     },
+    "Upload PNG" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG をアップロード"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上传 PNG"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上傳 PNG"
+          }
+        }
+      }
+    },
     "Update Now" : {
       "localizations" : {
         "ja" : {
@@ -39603,6 +39735,160 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "原樣輸出"
+          }
+        }
+      }
+    },
+    "24 MP" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2400万画素"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2400 万像素"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2400 萬像素"
+          }
+        }
+      }
+    },
+    "Add a Black Border" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黒フチ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加黑边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加黑邊"
+          }
+        }
+      }
+    },
+    "Sides get cropped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "左右が切れます"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会裁掉两边"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會裁掉兩邊"
+          }
+        }
+      }
+    },
+    "Top and bottom get cropped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上下が切れます"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会裁掉上下"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會裁掉上下"
+          }
+        }
+      }
+    },
+    "%lld will be cropped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 枚が切れます"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 张会被裁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 張會被裁"
+          }
+        }
+      }
+    },
+    "Not cropped" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切れません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不会被裁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不會被裁"
+          }
+        }
+      }
+    },
+    "With the black border, all of it shows." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黒フチを付けると、写真全体が表示されます。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加了黑边，整张都能看到。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加了黑邊，整張都能看到。"
           }
         }
       }
@@ -40945,6 +41231,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的圖庫現在是一個 SpektraLab 目錄。照片在原處讀取，不會移動或拷貝任何東西。"
+          }
+        }
+      }
+    },
+    "Your logo or signature, transparent background" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自分のロゴや署名（背景透過）"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自己的 logo 或签名，透明底"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自己的 logo 或簽名，透明底"
           }
         }
       }

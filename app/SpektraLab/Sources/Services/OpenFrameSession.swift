@@ -229,6 +229,7 @@ final class OpenFrameSession {
     /// develop until then — and with an engine that makes no picture.
     private(set) var developed: DevelopedPicture?
     @ObservationIgnored private var developedImage: UIImage?
+    @ObservationIgnored nonisolated(unsafe) private var memoryWarning: NSObjectProtocol?
     @ObservationIgnored private var opened = false
     /// The neutral-grey eyedropper that is waiting for a click on the picture, if one is (`NeutralPick`,
     /// `pickNeutral(at:)`, 2026-11-11). Nil when no eyedropper is out.
@@ -352,6 +353,17 @@ final class OpenFrameSession {
            placement.highlightPullBack > 0 || placement.shadowPullBack > 0 {
             edit.placementNeedsFit = true
         }
+        // The trim cannot free the image this session still holds; keep its reference resolvable for new views.
+        memoryWarning = NotificationCenter.default.addObserver(forName: .spkMemoryWarning, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                RenderedPictures.shared.restore(self.developed?.picture, self.developedImage)
+            }
+        }
+    }
+
+    deinit {
+        if let memoryWarning { NotificationCenter.default.removeObserver(memoryWarning) }
     }
 
     /// A frame's edit as its page takes it (the session's `edit` at its start, and every edit it commits): held

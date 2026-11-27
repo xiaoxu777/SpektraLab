@@ -503,6 +503,45 @@ enum FilmLabCheckArgs {
     /// `--filmlab-export-go` has pressed 导出 once this launch (`FilmLabExportFooter`).
     static var exportWent = false
 
+    /// The page's own confirm, after its check-only delay and placement choice; once per launch.
+    static var importWent = false
+    static func importIfAsked(session: MacImportSession, confirm: () async -> Void) async {
+        guard !importWent, let wait = value("--filmlab-import-go").flatMap(Double.init), wait.isFinite, wait >= 0 else { return }
+        do { try await Task.sleep(for: .seconds(wait)) } catch { return }
+        guard !importWent, !session.closed, !session.finderUp, session.progress == nil else { return }
+        switch value("--filmlab-import-place") {
+        case "inPlace":
+            guard !session.picksAreCopies else { return }
+            session.placement = .inPlace
+        case "photo": session.usePhotoFolder()
+        case let place? where place.hasPrefix("other:"):
+            let path = String(place.dropFirst("other:".count))
+            guard !path.isEmpty else { return }
+            session.useOtherFolder(URL(fileURLWithPath: path, isDirectory: true))
+        case nil: break
+        default: return
+        }
+        guard session.canImport else { return }
+        importWent = true
+        await confirm()
+    }
+
+    /// The normal Log record is kept in its session file; checks also get that line on stderr.
+    static func importFinished(_ fields: [String: Any]) {
+        guard value("--filmlab-import-go") != nil else { return }
+        FileHandle.standardError.write(LogStore.line(at: Date(), .info, .library, "mac import: done", fields))
+    }
+
+    /// Check-only panel answers: ask the file system, so loose files keep their file identity.
+    static func importURLs(_ name: String) -> [URL]? {
+        value(name).map { $0.split(separator: "|").map { path in
+            var directory: ObjCBool = false
+            let path = String(path)
+            _ = FileManager.default.fileExists(atPath: path, isDirectory: &directory)
+            return URL(fileURLWithPath: path, isDirectory: directory.boolValue)
+        } }
+    }
+
     /// A page asked for, for `--capture-window` (design A round 7): `--filmlab-show lighttable` opens the Light Table as it
     /// stands (nothing is put on it), `--filmlab-show import --filmlab-show-path <folder>` opens the import page with that
     /// folder picked, as Finder's panel would hand it over. Nothing is imported: that takes the page's own Import button.
@@ -517,6 +556,12 @@ enum FilmLabCheckArgs {
                 guard let path = value("--filmlab-show-path") else { return }
                 MacLibraryBrowser.shared.finderPicks = [URL(fileURLWithPath: path, isDirectory: true)]
                 MacLibraryBrowser.shared.importAsked = true
+            case "import-files":
+                guard let urls = importURLs("--filmlab-show-paths"), !urls.isEmpty else { return }
+                MacLibraryBrowser.shared.finderPicks = urls
+                MacLibraryBrowser.shared.importAsked = true
+            case "import-answer":
+                FilmLabImport.shared.importPhotos(store: MacLibraryUI.store(model), router: model.router)
             default: break
             }
         }

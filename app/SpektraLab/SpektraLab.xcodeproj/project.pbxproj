@@ -135,6 +135,7 @@
 		15A9FDA0FDB8A0B6FF8A2BDA /* MacRenderCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRenderCheck.swift; sourceTree = "<group>"; };
 		15DE3B069FD0B9EA53483D76 /* MacDoubleRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacDoubleRows.swift; sourceTree = "<group>"; };
 		15E66B981549A441F92A6F3A /* MacFinishedLayersCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2DB422035BBC231D8DFAE1 /* MacFinishedLayersCheck.swift */; };
+		16058F67658014E4F68CF232 /* FilmLabColumnEntrance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B14B0E0ADB96A1C520FE9F1 /* FilmLabColumnEntrance.swift */; };
 		161EBEFC891AC53A97FCB352 /* FilmLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81B876A5D0C7EED692836B18 /* FilmLayout.swift */; };
 		16A14C264BA9EF1E287D512B /* Navigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2702D0710CF3F5F03168FB49 /* Navigation.swift */; };
 		16D1F2827872C407464745F4 /* ValueSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA7BD07773A70475583DDB0 /* ValueSlider.swift */; };
@@ -157,6 +158,8 @@
 			isa = PBXGroup;
 			children = (
 				9F5BBB53DA8A760F7F0C0703 /* FilmLabBar.swift */,
+				7B14B0E0ADB96A1C520FE9F1 /* FilmLabColumnEntrance.swift */,
+				1F8EF2A3F55E8021F9F059BD /* FilmLabColumnProbe.swift */,
 				A61082C91B5ADCCF3B147747 /* FilmLabCopier.swift */,
 				FDC2D134DE185DB921CAE80E /* FilmLabExportAnimation.swift */,
 				8C3A1DFB0A7DA8AC9F8E459B /* FilmLabExportLog.swift */,
@@ -211,6 +214,7 @@
 		1E9F089CACB3DC9D4AA8EF4D /* FilmLabMotionPhotoProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabMotionPhotoProbe.swift; sourceTree = "<group>"; };
 		1F020A6723BA2CC6AA7BC9E9 /* MacDevelopBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EE332ABA7A3CB0E346E2A2 /* MacDevelopBrowser.swift */; };
 		1F2FF81FE037254132B20407 /* CineonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B8FCB241B760C31B19D437 /* CineonView.swift */; };
+		1F8EF2A3F55E8021F9F059BD /* FilmLabColumnProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabColumnProbe.swift; sourceTree = "<group>"; };
 		1FBB59631541578ECEEF7D39 /* ArrangeStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangeStage.swift; sourceTree = "<group>"; };
 		1FBE98FEC408E14B496049CD /* MacVariantActsCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacVariantActsCheck.swift; sourceTree = "<group>"; };
 		1FF02992C68D02F18BDCB59C /* MacHistoryPageCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacHistoryPageCheck.swift; sourceTree = "<group>"; };
@@ -302,6 +306,7 @@
 		2F3BCE66F9F05E86638085F2 /* FilmLabExportPurposePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8BF8BC0B346DA8D2239EC4 /* FilmLabExportPurposePreview.swift */; };
 		2FDA04419DAB374C321717FD /* PairLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180F8E4A85CDF29CCE6FD27B /* PairLayout.swift */; };
 		2FE693940F9BEBB6313D4A94 /* HDRGain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HDRGain.swift; sourceTree = "<group>"; };
+		308472A724FD3A06CCF91B6B /* FilmLabColumnProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8EF2A3F55E8021F9F059BD /* FilmLabColumnProbe.swift */; };
 		319B2DF33B5F4932AD0BF40E /* HDRGain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE693940F9BEBB6313D4A94 /* HDRGain.swift */; };
 		31C1CEC25050A503E35226DF /* LensLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensLibrary.swift; sourceTree = "<group>"; };
 		320FC43BB3A5612D4F63D6D6 /* WindowLayoutRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01E29EBC5303F94364138738 /* WindowLayoutRule.swift */; };
@@ -885,6 +890,8 @@
 				C24ECB06AF3EAC6AFB855825 /* MacExportRun.swift */,
 				9440E515F0D842E30F295990 /* MacHDRChoiceCheck.swift */,
 				091777C259CD64E2D1342678 /* FilmLabBar.swift */,
+				16058F67658014E4F68CF232 /* FilmLabColumnEntrance.swift */,
+				308472A724FD3A06CCF91B6B /* FilmLabColumnProbe.swift */,
 				2918D511AE485C203E1C9127 /* FilmLabCopier.swift */,
 				C2DC8BA866A5113DD689EC41 /* FilmLabExportAnimation.swift */,
 				F327F52B5308BEF31D70B261 /* FilmLabExportLog.swift */,
@@ -1301,6 +1308,7 @@
 		79FE2EFDD06CF75B360A2185 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E7BB6A1CDB66786D10C8C9 /* Theme.swift */; };
 		7A1244BD6FBE732BD2295CD9 /* LightTableSizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightTableSizing.swift; sourceTree = "<group>"; };
 		7AD123E10271E71C8932B973 /* StockPreviewGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CAF441508B705CD27BE8D8 /* StockPreviewGrid.swift */; };
+		7B14B0E0ADB96A1C520FE9F1 /* FilmLabColumnEntrance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabColumnEntrance.swift; sourceTree = "<group>"; };
 		7B1DDE397A125FF0F7BC1DAD /* FilmLabRollFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmLabRollFilter.swift; sourceTree = "<group>"; };
 		7B9B37171A7550B40803BEC1 /* FolderReach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderReach.swift; sourceTree = "<group>"; };
 		7B9DFB2BFA0F784E94342F95 /* MemoryLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F665C099579B0018EDCF397 /* MemoryLog.swift */; };

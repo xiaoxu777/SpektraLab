@@ -36,6 +36,12 @@ enum FilmLabModeMotion {
     static var direction: CGFloat = 1
     /// Reduce Motion as the column last saw it, for the transitions (which have no environment of their own).
     static var calm = false
+    /// When the column last saw its mode change. A part made within a second of it is arriving for the switch
+    /// (`FilmLabModeArrival`): the switch's parts are made 40–300 ms after the column's body, in later turns of the main
+    /// queue (measured 2026-11-27), so a flag cleared on the next turn missed them. A part made at any other time (the
+    /// page opening, a photo change remaking the histogram) is simply there.
+    static var switchedAt: CFTimeInterval = -.infinity
+    static var switching: Bool { CACurrentMediaTime() - switchedAt < 1 }
     /// The mode 图库's row was asked for (`MacLibraryGo.choose`): what the switch wears for the frame between the develop
     /// page arriving and its first word to the bar, so the tab never visits 冲洗 on its way to 导出.
     static var wanted: WorkspaceMode?
@@ -54,6 +60,11 @@ enum FilmLabModeMotion {
     /// The switch's tab: it slides; under Reduce Motion it is simply there.
     static func pill(reduce: Bool) -> Animation? {
         reduce || calmCheck ? nil : animation(reduce: false)
+    }
+
+    /// One handoff for moving and Reduce Motion alike: the old part clears before the new part draws.
+    static func opacity(gone: CGFloat, leaving: Bool) -> CGFloat {
+        min(max(leaving ? 1 - gone / 0.3 : (1 - gone - 0.3) / 0.7, 0), 1)
     }
 }
 
@@ -89,23 +100,42 @@ struct FilmLabModePill: View {
 /// A part of the develop column that belongs to one mode: it arrives from the side the switch moved towards and leaves
 /// to the other, a short way, fading. The direction is read when the transition runs (`FilmLabModeMotion.direction`):
 /// a transition is stored with its view, and a view that leaves would otherwise go the way the *last* switch went.
-struct FilmLabModeSlide: Transition {
-    func body(content: Content, phase: TransitionPhase) -> some View {
-        let leaving = phase == .didDisappear
-        let reach: CGFloat = FilmLabModeMotion.calm ? 0 : 28
-        content.modifier(FilmLabModeSlideEffect(gone: phase.isIdentity ? 0 : 1, leaving: leaving,
-                                               shift: (leaving ? -1 : 1) * FilmLabModeMotion.direction * reach,
-                                               plain: FilmLabModeMotion.calm))
+@MainActor
+enum FilmLabModeSlide {
+    static func transition(probeTag: String?) -> AnyTransition {
+        // Interpolate the modifier itself, not a Transition body's expanded opacity/offset endpoints. Each branch
+        // keeps its role even at identity: removal must evaluate the leaving formula all the way from gone = 0.
+        func part(leaving: Bool) -> AnyTransition {
+            .modifier(active: FilmLabModeSlideEffect(gone: 1, leaving: leaving, probeTag: probeTag),
+                      identity: FilmLabModeSlideEffect(gone: 0, leaving: leaving, probeTag: probeTag))
+        }
+        return .asymmetric(insertion: .identity, removal: part(leaving: true))
     }
 }
 
-/// The slide's drawing, by how far gone the part is (0 in place … 1 gone). The part leaving is clear a little past half
-/// way and the part arriving starts a little in, so the two never sit over each other at full strength.
+/// An arriving part's own clock (2026-11-27). As an insertion transition, the histogram and 图层 came into 冲洗 at full
+/// strength in their first frame, over the 个性化 column still leaving (`--filmlab-column-probe`: gone 0, opacity 1 from
+/// the first frame; seen in slowed window captures): the insertion's transaction carried no animation to them. Here the
+/// part starts gone and its own `.animation(_:value:)`, on the part itself as in `FilmLabLibraryEntrance`, takes it in
+/// when it appears; SwiftUI starts that clock at the first frame drawn, after the switch's busy main thread.
+private struct FilmLabModeArrival: ViewModifier {
+    let probeTag: String?
+    @State private var gone: CGFloat = FilmLabModeMotion.switching && !FilmLabModeMotion.still ? 1 : 0
+
+    func body(content: Content) -> some View {
+        content
+            .modifier(FilmLabModeSlideEffect(gone: gone, leaving: false, probeTag: probeTag))
+            .animation(FilmLabModeMotion.animation(reduce: FilmLabModeMotion.calm), value: gone)
+            .onAppear { if gone != 0 { gone = 0 } }
+    }
+}
+
+/// The slide's drawing, by how far gone the part is (0 in place … 1 gone). At 30% progress the old part is clear;
+/// only then does the new part start drawing. The same handoff applies to the shorter, still Reduce Motion fade.
 private struct FilmLabModeSlideEffect: ViewModifier, Animatable {
     var gone: CGFloat
     let leaving: Bool
-    let shift: CGFloat
-    let plain: Bool
+    let probeTag: String?
 
     var animatableData: CGFloat {
         get { gone }
@@ -113,15 +143,22 @@ private struct FilmLabModeSlideEffect: ViewModifier, Animatable {
     }
 
     func body(content: Content) -> some View {
-        let shown: CGFloat = plain ? 1 - gone
-            : leaving ? 1 - gone / 0.6
-            : (1 - gone - 0.15) / 0.85
+        let shown = FilmLabModeMotion.opacity(gone: gone, leaving: leaving)
+        let reach: CGFloat = FilmLabModeMotion.calm ? 0 : 28
+        let shift = (leaving ? -1 : 1) * FilmLabModeMotion.direction * reach
         // As one group: faded leaf by leaf, 冲洗's film grid (some hundred pictures and labels) cost the main thread
         // 25–40 ms a frame on the way out (measured 2026-11-26, `FilmLabModeProbe`); a group is one layer to move.
         content
             .compositingGroup()
-            .opacity(min(max(shown, 0), 1))
-            .offset(x: shift * gone)
+            .filmLabColumnTag(probeTag, motion: .init(gone: gone, opacity: shown, phase: leaving ? "leaving" : "arriving"))
+            .opacity(shown)
+            // Drawn shifted, not laid out shifted: an `.offset` moved the part's geometry every frame, so every
+            // GeometryReader in it ran again (the kept film panel rebuilt its drawing each frame: 个性化 → 冲洗 cost
+            // ~120 ms more main thread, measured 2026-11-27).
+            .visualEffect { [x = shift * gone] effect, _ in effect.offset(x: x) }
+            // gone is the ONE animated value. Its evaluated opacity/offset must not start their own animations
+            // or bypass the nonlinear handoff. Inner value-scoped animations (e.g. Layers' height) still own theirs.
+            .transaction { $0.animation = nil }
     }
 }
 
@@ -149,11 +186,30 @@ private struct FilmLabModeColumn: ViewModifier {
     }
 }
 
+/// The develop page's mode as its column's body last saw it (`DevelopWorkspace.modeSeen`), noted at the top of that body:
+/// the parts the body makes take their first state from `FilmLabModeMotion.switching` as they are made, before
+/// `FilmLabModeColumn`'s body runs (seen 2026-11-27: noted there, the histogram and 图层 were made as if nothing had
+/// changed and came into 冲洗 at full strength). A new page starts with nothing seen: opening one is not a switch.
+@MainActor
+final class FilmLabModeSeen {
+    private var mode: WorkspaceMode?
+
+    func note(_ now: WorkspaceMode) {
+        if let mode, mode != now {
+            FilmLabModeMotion.direction = FilmLabModeMotion.order(now) > FilmLabModeMotion.order(mode) ? 1 : -1
+            FilmLabModeMotion.switchedAt = CACurrentMediaTime()
+        }
+        mode = now
+    }
+}
+
 extension View {
     /// On the develop column: its parts move for a change of `mode` (`FilmLabModeColumn`).
     func filmLabModeColumn(_ mode: WorkspaceMode) -> some View { modifier(FilmLabModeColumn(mode: mode)) }
     /// On a part of the column that only some modes have (`FilmLabModeSlide`).
-    func filmLabModePart() -> some View { transition(FilmLabModeSlide()) }
+    func filmLabModePart(_ probeTag: String? = nil) -> some View {
+        modifier(FilmLabModeArrival(probeTag: probeTag)).transition(FilmLabModeSlide.transition(probeTag: probeTag))
+    }
     /// On 冲洗's panel, which takes no part: it is there, and gone, in the frame the mode changes in.
     ///
     /// The panel is the film grid and the paper grid, some hundred pictures (measured 2026-11-26, `FilmLabModeProbe`,
@@ -197,7 +253,7 @@ struct FilmLabModeVeil: View {
     @State private var gone = false
 
     var body: some View {
-        if !gone {
+        if !gone && !FilmLabColumnEntrance.ownsPageVeil {
             Theme.background
                 .opacity(lifted ? 0 : Self.depth)
                 // Here, under `ShellContent`'s cleared transaction.
@@ -226,6 +282,11 @@ struct FilmLabModeVeil: View {
 @MainActor
 final class FilmLabModeProbe: NSObject {
     private static var running: FilmLabModeProbe?
+
+    static var columnPress: CFTimeInterval? {
+        guard let probe = running, probe.from == "library→develop", probe.began > 0 else { return nil }
+        return probe.began
+    }
 
     static func startIfAsked(model: AppServices) {
         guard running == nil, let wait = FilmLabCheckArgs.value("--filmlab-mode-probe").flatMap(Double.init) else { return }
@@ -268,6 +329,7 @@ final class FilmLabModeProbe: NSObject {
     }
 
     private func start(wait: Double) {
+        FilmLabColumnProbe.startIfAsked()
         let l = CADisplayLink(target: self, selector: #selector(tick(_:)))
         l.add(to: .main, forMode: .common)
         link = l
@@ -301,6 +363,7 @@ final class FilmLabModeProbe: NSObject {
                 DispatchQueue.main.asyncAfter(deadline: .now() + max(0, nextAt - CACurrentMediaTime())) { [self] in next() }
             }
         }
+        FilmLabColumnProbe.press(from, at: began, round: round)
         Self.go(mode, model: model)
         NSLog("[filmlab-mode] %@", from)
     }
@@ -361,6 +424,7 @@ final class FilmLabModeProbe: NSObject {
     }
 
     private func finish() {
+        FilmLabColumnProbe.finishWalk()
         link?.invalidate(); link = nil
         let head = "\(ISO8601DateFormatter().string(from: Date()))  args \(CommandLine.arguments.dropFirst().joined(separator: " "))\n"
         let text = head + lines.joined(separator: "\n") + "\n"

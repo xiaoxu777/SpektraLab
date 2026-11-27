@@ -8,22 +8,20 @@
 //  `AppSettings.recipe`, so what 普通版 chooses never moves 专业版's recipe, and back. Which purpose is chosen is its own
 //  setting (`FilmLabExportPurposeUI.kind`). 存到 and the file's naming stay the shared ones.
 //
-//  **The numbers** (round 11 of `ui-darkroom-plan.md` has the sources; nothing here is a platform's own document):
-//  - 朋友圈: long edge 2560. Reported by users' tests of WeChat 8.0.64 (Oct 2025), which raised it from about 1080.
-//  - Instagram: short edge 1080. Guides quoting its Help Center: photos are kept up to 1080 px wide, shapes from
-//    1.91:1 to 3:4 (3:4 since May 2025). Short edge makes every upright and square photo exactly 1080 wide.
-//  - 微博 and 小红书: long edge 2048, above every size reported for them, so they reduce once and never enlarge. A
-//    judgement. 小红书's notes are 3:4 to 4:3 (its creators' guides).
-//  - sRGB and quality 90 for all four: each of them compresses again, and 1–3 MB is under every upload limit.
-//  - 发给朋友: every pixel, sRGB, quality 90. 保存到电脑: every pixel, Display P3 (the app's default), quality 100.
+//  **The numbers** (the owner's `round4/export-sizes.md`, 2026-11-27; evidence and uncertainty are recorded there):
+//  - 朋友圈: short edge 1920. Instagram: short edge 1440. Neither enlarges a smaller picture.
+//  - 微博: long edge 2048. 小红书: long edge 2560; notes are 3:4 to 4:3.
+//  - sRGB and quality 90 for all four. A border's sheet meets the same target, not just the picture on it.
+//  - 发给朋友: 24 MP, sRGB, quality 90. 保存到电脑: every pixel, Display P3 (the app's default), quality 100.
 //
 //  **Nothing is cropped silently.** The export never cuts the picture. Where a place shows only some shapes (`fits`)
-//  and a picture is outside them, the chosen card says so over two choices: 原样导出 (the file is the picture; the place
-//  crops it when it shows it) or 加白边 (the file is laid on a white sheet of the nearest shape the place shows:
+//  and a picture is outside them, the chosen card says so over three choices: 原样导出 (the file is the picture; the place
+//  crops it when it shows it), 加白边 or 加黑边 (the file is laid on a sheet of the nearest shape the place shows:
 //  `FilmLabExportPurposeBorder`). 预览效果 shows which it will be (`FilmLabExportPurposePreview.swift`).
 
 import ImageIO
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct FilmLabExportPurpose: Identifiable, Equatable {
@@ -87,11 +85,11 @@ struct FilmLabExportPurpose: Identifiable, Equatable {
                          colour: colour, quality: quality)
         }
         switch kind {
-        case .moments: return made(1, .longEdge(2560))
-        case .instagram: return made(2, .shortEdge(1080))
+        case .moments: return made(1, .shortEdge(1920))
+        case .instagram: return made(2, .shortEdge(1440))
         case .weibo: return made(3, .longEdge(2048))
-        case .xiaohongshu: return made(4, .longEdge(2048))
-        case .friend: return made(5, .full)
+        case .xiaohongshu: return made(4, .longEdge(2560))
+        case .friend: return made(5, .megapixels(24))
         case .computer: return made(6, .full, .displayP3, 100)
         }
     }
@@ -107,7 +105,7 @@ struct FilmLabExportPurpose: Identifiable, Equatable {
     /// "JPEG · 约 2.4 MB": the card and pinned foot share the button's export selection and estimate.
     @MainActor func specs(frameIDs: [LibraryFrame.ID], model: AppServices) -> String {
         FilmLabExportSizeEstimate.summary(recipe, frameIDs: frameIDs, model: model,
-                                        borderFits: FilmLabExportPurposeUI.shared.border ? fits : nil)
+                                        borderFits: FilmLabExportPurposeUI.shared.border != .none ? fits : nil)
     }
 
     /// Which way a picture of shape `aspect` is outside what the place shows: nil where it is shown whole.
@@ -121,7 +119,22 @@ struct FilmLabExportPurpose: Identifiable, Equatable {
     enum Cropped { case sides, ends }
 }
 
-/// What 普通版's 导出 column and the preview share: the purpose, the white border, the preview's switches.
+/// The sheet's colour is a choice; its geometry is identical for white and black.
+enum FilmLabExportBorder: String, CaseIterable, Sendable {
+    case none, white, black
+
+    var title: String {
+        switch self {
+        case .none: L("Export As It Is")
+        case .white: L("Add a White Border")
+        case .black: L("Add a Black Border")
+        }
+    }
+
+    var colour: Color { self == .black ? .black : .white }
+}
+
+/// What 普通版's 导出 column and the preview share: the purpose, the border, the preview's switches.
 @MainActor
 @Observable
 final class FilmLabExportPurposeUI {
@@ -133,19 +146,26 @@ final class FilmLabExportPurposeUI {
     /// A check's launch may ask for one (`--filmlab-export-purpose instagram`); nothing is kept then.
     /// A check's launch that makes the choices itself keeps none of them.
     private static let checking = CommandLine.arguments.contains("--filmlab-export-border")
+        || CommandLine.arguments.contains("--filmlab-export-border-black")
         || CommandLine.arguments.contains("--filmlab-export-walk")
         || CommandLine.arguments.contains("--filmlab-export-preview-toggle")
         || CommandLine.arguments.contains("--filmlab-export-choose-walk")
+        || CommandLine.arguments.contains("--filmlab-export-trim")
     private static let asked = FilmLabCheckArgs.value("--filmlab-export-purpose").flatMap(FilmLabExportPurpose.Kind.init(rawValue:))
 
     var kind: FilmLabExportPurpose.Kind = FilmLabExportPurposeUI.asked
         ?? UserDefaults.standard.string(forKey: FilmLabExportPurposeUI.kindKey).flatMap(FilmLabExportPurpose.Kind.init(rawValue:)) ?? .moments {
         didSet { if Self.asked == nil, !Self.checking { UserDefaults.standard.set(kind.rawValue, forKey: Self.kindKey) } }
     }
-    /// 加白边: a picture outside the place's shapes is laid on a white sheet, not left for the place to crop. Off
-    /// unless chosen: the file is the picture.
-    var border = CommandLine.arguments.contains("--filmlab-export-border") || UserDefaults.standard.bool(forKey: FilmLabExportPurposeUI.borderKey) {
-        didSet { if !Self.checking { UserDefaults.standard.set(border, forKey: Self.borderKey) } }
+    /// The old Bool shares this key: true is white, false (or no setting) is none. New choices are raw strings.
+    private static var openingBorder: FilmLabExportBorder {
+        if CommandLine.arguments.contains("--filmlab-export-border-black") { return .black }
+        if CommandLine.arguments.contains("--filmlab-export-border") { return .white }
+        if let raw = UserDefaults.standard.string(forKey: borderKey), let saved = FilmLabExportBorder(rawValue: raw) { return saved }
+        return UserDefaults.standard.bool(forKey: borderKey) ? .white : .none
+    }
+    var border: FilmLabExportBorder = FilmLabExportPurposeUI.openingBorder {
+        didSet { if !Self.checking { UserDefaults.standard.set(border.rawValue, forKey: Self.borderKey) } }
     }
     /// 预览效果: the viewer shows the place's mock-up (`FilmLabExportPurposePreview`). Not kept: 导出 opens on the photo.
     var previewing = CommandLine.arguments.contains("--filmlab-export-preview")
@@ -155,6 +175,33 @@ final class FilmLabExportPurposeUI {
     var dark = CommandLine.arguments.contains("--filmlab-export-preview-dark")
 
     var purpose: FilmLabExportPurpose { FilmLabExportPurpose(kind: kind) }
+
+    /// Reproduce a post mounted after OS-style cache trimming. No render, reload or picture repair here.
+    @ObservationIgnored private var trimStarted = false
+    func trimIfAsked(model: AppServices) async {
+        guard !trimStarted, let seconds = FilmLabCheckArgs.value("--filmlab-export-trim").flatMap(Double.init),
+              seconds.isFinite, seconds >= 0 else { return }
+        trimStarted = true
+        do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
+        guard let signals = model.signals else { return }
+        signals.deliver(.warning)
+        Log.note(.export, "filmlab check trim", ["phase": "pressure", "seconds": seconds])
+        do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        previewing = true
+        do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+        var fields: [String: Any] = ["phase": "preview", "picture": "no current session"]
+        if case .develop(let frameID)? = MacShellPath.develop(model.router.path),
+           let picture = model.openSession(frameID)?.developed?.picture {
+            fields["frame"] = frameID.uuidString
+            if case .rendered(let id) = picture {
+                fields["picture"] = "rendered"
+                fields["resolves"] = RenderedPictures.shared.image(id) != nil
+            } else {
+                fields["picture"] = "not rendered"
+            }
+        }
+        Log.note(.export, "filmlab check trim", fields)
+    }
 
     /// Capture the matched move without clicks. Keep the two-second gaps in slow mode too: a 4× move takes 1.4 s.
     /// Like export-walk, this check never persists its purpose/border choices.
@@ -188,7 +235,7 @@ final class FilmLabExportPurposeUI {
         Task { @MainActor in
             let steps: [() -> Void] = [
                 { self.kind = .instagram }, { self.previewing = true }, { self.second = true }, { self.dark = true },
-                { self.kind = .xiaohongshu }, { self.border = true }, { self.previewing = false }, { self.kind = .computer },
+                { self.kind = .xiaohongshu }, { self.border = .white }, { self.previewing = false }, { self.kind = .computer },
             ]
             for act in steps {
                 try? await Task.sleep(for: .seconds(step))
@@ -283,7 +330,7 @@ final class FilmLabExportPurposeUI {
 // MARK: - the cards
 
 /// 普通版's 用在哪儿: one card a place, the chosen one raised, with its preview and — where the place would crop a picture
-/// of this export — the two choices about it.
+/// of this export — the three choices about it.
 struct FilmLabExportPurposeCards: View {
     let frameIDs: [LibraryFrame.ID]
 
@@ -336,18 +383,13 @@ struct FilmLabExportPurposeCards: View {
             .strokeBorder(on ? Theme.selectionFrame : Theme.rule, lineWidth: on ? 1.5 : 1))
     }
 
-    /// Under the chosen place's name: what it would crop and the two choices, then 预览效果.
+    /// Under the chosen place's name: what it would crop and the three choices, then 预览效果.
     @ViewBuilder private func chosen(_ p: FilmLabExportPurpose) -> some View {
         @Bindable var ui = ui
         VStack(alignment: .leading, spacing: 8) {
             if let c = FilmLabExportPurposeUI.cropped(frameIDs, by: p, model: model) {
-                Text(FilmLabExportPurposeUI.cropLine(c, of: frameIDs.count, place: p.name))
-                    .font(Theme.Font.ui(12, .medium)).foregroundStyle(Theme.text)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("filmlab.export.purpose.crop")
-                SegmentedSwitch(options: [false, true], selection: $ui.border,
-                                title: { $0 ? L("Add a White Border") : L("Export As It Is") },
-                                height: 30, track: Theme.background, size: 12.5)
+                cropTag(c, place: p.name)
+                FilmLabExportBorderSwitch(selection: $ui.border)
                     .accessibilityIdentifier("filmlab.export.purpose.border")
             }
             Button {
@@ -369,6 +411,77 @@ struct FilmLabExportPurposeCards: View {
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 10)
+    }
+
+    private func cropTag(_ c: (count: Int, how: FilmLabExportPurpose.Cropped), place: String) -> some View {
+        let protected = ui.border != .none
+        let title = protected ? L("Not cropped") : frameIDs.count > 1
+            ? String(format: L("%lld will be cropped"), Int64(c.count))
+            : (c.how == .sides ? L("Sides get cropped") : L("Top and bottom get cropped"))
+        return ZStack(alignment: .leading) {
+            HStack(spacing: 4) {
+                Image(systemName: protected ? "checkmark" : "exclamationmark")
+                Text(title)
+            }
+            .font(Theme.Font.ui(11, .semibold))
+            .foregroundStyle(protected ? Theme.secondaryText : Color.white)
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(protected ? Theme.secondaryText.opacity(0.1) : Color(red: 0.78, green: 0.15, blue: 0.15), in: Capsule())
+            .fixedSize(horizontal: true, vertical: false)
+            .id(protected)
+            .transition(.opacity)
+        }
+        .frame(height: 22, alignment: .leading)
+        .animation(.easeInOut(duration: 0.15), value: protected)
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("filmlab.export.purpose.crop")
+        .accessibilityLabel(Text(FilmLabExportPurposeUI.cropLine(c, of: frameIDs.count, place: place)))
+        .accessibilityValue(Text(title))
+    }
+}
+
+/// SegmentedSwitch's same thumb and tap animation, with widths that fit all three full English labels at 12.5 pt.
+/// At the 393 pt column minimum there are 349 pt here (393 − 2×12 − 2×10). Each label gets 4 pt per side;
+/// the remaining width is shared. Measure semibold for every segment so selecting one cannot move its neighbours.
+private struct FilmLabExportBorderSwitch: View {
+    @Binding var selection: FilmLabExportBorder
+    @Namespace private var thumb
+
+    var body: some View {
+        let options = FilmLabExportBorder.allCases
+        let titles = options.map(\.title)
+        let font = UIFont.systemFont(ofSize: 12.5, weight: .semibold)
+        let widths = titles.map { ($0 as NSString).size(withAttributes: [.font: font]).width.rounded(.up) + 8 }
+        GeometryReader { room in
+            let extra = max(0, (room.size.width - widths.reduce(0, +)) / CGFloat(options.count))
+            HStack(spacing: 0) {
+                ForEach(options.indices, id: \.self) { i in
+                    let option = options[i]
+                    let on = option == selection
+                    Text(titles[i])
+                        .font(Theme.Font.ui(12.5, on ? .semibold : .medium))
+                        .foregroundStyle(on ? Theme.onSelection : Theme.secondaryText)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .frame(width: widths[i] + extra, height: 30)
+                        .background {
+                            if on {
+                                Capsule().fill(Theme.selection).padding(2)
+                                    .matchedGeometryEffect(id: "thumb", in: thumb)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard !on else { return }
+                            withAnimation(.easeOut(duration: 0.15)) { selection = option }
+                        }
+                        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+                }
+            }
+            .background(Capsule().fill(Theme.background))
+        }
+        .frame(height: 30)
     }
 }
 
@@ -420,21 +533,21 @@ struct FilmLabExportPurposeGlyph: View {
     }
 }
 
-// MARK: - the white border
+// MARK: - the border
 
-/// 加白边: after the exporter has saved a picture the place would crop, its file is laid on a white sheet of the nearest
+/// 加白边 / 加黑边: after the exporter has saved a picture the place would crop, its file is laid on a sheet of the nearest
 /// shape the place shows, and written over itself.
 ///
 /// A step after the export, not inside it: the exporter is not asked for anything new, and a picture that already fits
 /// is never touched. The saved JPEG is read once and written once more at the same quality, with its profile and its
-/// EXIF; the picture is set down a multiple of 16 px from the sheet's edge, so the JPEG's blocks lie where they did and
-/// the second writing changes next to nothing. A gain map (an HDR frame's) does not survive it.
+/// EXIF. Margins start at multiples of 16 px; if the sheet exceeds the recipe's target, picture and margins shrink
+/// together in the same draw/encode. A gain map (an HDR frame's) does not survive it.
 @MainActor
 enum FilmLabExportPurposeBorder {
     private static var task: Task<Void, Never>?
 
     /// Follows `run`'s batch: each picture saved is given its border where it needs one.
-    static func follow(_ run: MacExportRun, fits: ClosedRange<Double>, quality: Int) {
+    static func follow(_ run: MacExportRun, fits: ClosedRange<Double>, quality: Int, border: FilmLabExportBorder, size: ExportRecipe.Size) {
         task?.cancel()
         task = Task { @MainActor in
             var seen = Set<Int>()
@@ -447,7 +560,7 @@ enum FilmLabExportPurposeBorder {
                     let padded = await Task.detached(priority: .userInitiated) {
                         let scoped = folder?.startAccessingSecurityScopedResource() ?? false
                         defer { if scoped { folder?.stopAccessingSecurityScopedResource() } }
-                        return pad(url, fits: fits, quality: quality)
+                        return pad(url, fits: fits, quality: quality, border: border, size: size)
                     }.value
                     if padded { Log.note(.export, "filmlab border", ["file": url.lastPathComponent]) }
                 }
@@ -471,23 +584,43 @@ enum FilmLabExportPurposeBorder {
         return nil
     }
 
+    /// Size the whole sheet, never up: the encoder and the estimate share these final pixels and placement.
+    nonisolated static func layout(width w: Int, height h: Int, fits: ClosedRange<Double>, size: ExportRecipe.Size)
+        -> (sheet: PixelSize, picture: CGRect)? {
+        guard let base = sheet(width: w, height: h, fits: fits) else { return nil }
+        let whole = PixelSize(width: base.width, height: base.height)
+        let final: PixelSize
+        switch size {
+        case .shortEdge(let e): final = whole.scaled(toShortEdge: e)
+        case .longEdge(let e): final = whole.scaled(toLongEdge: e)
+        case .megapixels(let mp): final = whole.scaled(toMegapixels: mp)
+        case .full, .preview: final = whole
+        }
+        let scale = min(CGFloat(final.width) / CGFloat(whole.width), CGFloat(final.height) / CGFloat(whole.height))
+        let picture = CGSize(width: CGFloat(w) * scale, height: CGFloat(h) * scale)
+        return (final, CGRect(x: (CGFloat(final.width) - picture.width) / 2, y: (CGFloat(final.height) - picture.height) / 2,
+                              width: picture.width, height: picture.height))
+    }
+
     /// True where the file was given a border.
-    nonisolated static func pad(_ url: URL, fits: ClosedRange<Double>, quality: Int) -> Bool {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+    nonisolated static func pad(_ url: URL, fits: ClosedRange<Double>, quality: Int, border: FilmLabExportBorder = .white,
+                                size: ExportRecipe.Size = .full) -> Bool {
+        guard border != .none, let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return false }
         var properties = (CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]) ?? [:]
         // A turned file's width is not its picture's: left as it is (the exporter writes them upright).
         if let turn = properties[kCGImagePropertyOrientation] as? Int, turn != 1 { return false }
-        guard let sheet = sheet(width: image.width, height: image.height, fits: fits) else { return false }
+        guard let layout = layout(width: image.width, height: image.height, fits: fits, size: size) else { return false }
+        let sheet = layout.sheet
         let srgb = CGColorSpace(name: CGColorSpace.sRGB)!
         let space = image.colorSpace.flatMap { $0.model == .rgb && $0.supportsOutput ? $0 : nil } ?? srgb
         guard let context = CGContext(data: nil, width: sheet.width, height: sheet.height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: space, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return false }
-        context.setFillColor(CGColor(colorSpace: space, components: [1, 1, 1, 1]) ?? CGColor(gray: 1, alpha: 1))
+        let level: CGFloat = border == .black ? 0 : 1
+        context.setFillColor(CGColor(colorSpace: space, components: [level, level, level, 1]) ?? CGColor(gray: level, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: sheet.width, height: sheet.height))
-        context.interpolationQuality = .none
-        context.draw(image, in: CGRect(x: (sheet.width - image.width) / 2, y: (sheet.height - image.height) / 2,
-                                       width: image.width, height: image.height))
+        context.interpolationQuality = layout.picture.width < CGFloat(image.width) ? .high : .none
+        context.draw(image, in: layout.picture)
         guard let made = context.makeImage() else { return false }
         // The sheet's size is the file's now.
         properties[kCGImagePropertyPixelWidth] = nil

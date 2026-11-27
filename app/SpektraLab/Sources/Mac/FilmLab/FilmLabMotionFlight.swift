@@ -166,6 +166,7 @@ final class FilmLabMotionFlight {
     /// Commit *moving* layers before any store/navigation work can build Develop. A plain async main-queue turn is
     /// enough after the explicit flush; waiting for a canvas or another layout pass here would recreate the stall.
     static func open(_ row: MacImage, model: AppServices, navigate: @escaping @MainActor () -> Void) {
+        FilmLabColumnEntrance.arm(frame: row.develop?.frameID, inLibrary: MacShellPath.develop(model.router.path) == nil)
         guard let flight = current, flight.prepare(row, model: model) else { navigate(); return }
         let ticket = flight.generation
         DispatchQueue.main.async { [weak flight] in
@@ -259,6 +260,7 @@ final class FilmLabMotionFlight {
                 startIn(targetID: id, target: target?.id == id ? target : nil)
             } else if previous != route, active { end() }
         } else if previous != nil {
+            FilmLabColumnEntrance.pending = nil; FilmLabColumnEntrance.ownsPageVeil = false
             beginOut(model: model)
         }
     }
@@ -722,11 +724,14 @@ private struct FilmLabFlightTarget: ViewModifier {
 /// The owner adds this to PadDevelopPage's column Group, before `.padPart(.controls)`. Only drawing moves; the
 /// DevelopRegions proposal is final from the first frame. Kept here so that session can add exactly one line.
 private struct FilmLabFlightColumn: ViewModifier {
+    let enabled: Bool
     @Environment(\.filmLabFlight) private var flight
     @State private var appeared = false
     func body(content: Content) -> some View {
-        let arriving = flight?.ownsTransition == true && flight?.inward == true
+        let arriving = enabled && flight?.ownsTransition == true && flight?.inward == true
         let amount = arriving ? (appeared ? (flight?.libraryOpacity ?? 0) : 1) : 0
+        // One structure whatever `enabled` says (it follows the mode): an `if` here gave the whole column a new identity
+        // on every switch into or out of 冲洗, so it was made again and none of its parts could move (2026-11-27).
         content.compositingGroup()
             .animation(FilmLabFlightOptions.hold == nil ? FilmLabFlightOptions.animation(seconds: flight?.duration ?? 0.38) : nil) {
                 $0.opacity(1 - amount).offset(x: flight?.calm == true ? 0 : 28 * CGFloat(amount))
@@ -747,7 +752,7 @@ extension View {
     func filmLabFlightTarget(frame: LibraryFrame, edit: FrameEdit, developed: DevelopedPicture?, original: Bool, enabled: Bool, canvas: CGRect) -> some View {
         modifier(FilmLabFlightTarget(frame: frame, edit: edit, developed: developed, original: original, enabled: enabled, canvas: canvas))
     }
-    func filmLabFlightColumn() -> some View { modifier(FilmLabFlightColumn()) }
+    func filmLabFlightColumn(enabled: Bool = true) -> some View { modifier(FilmLabFlightColumn(enabled: enabled)) }
 }
 
 private extension CGRect {

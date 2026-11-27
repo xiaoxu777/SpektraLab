@@ -516,8 +516,8 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
     var mode = FilmEdgeView.strip
     var gate = FilmEdgeGate.auto
     var holes = FilmEdgeHoles.white
-    var fog = FilmEdgeScan.natural.look.fog       // 0…4; saved professional values still win on decode
-    var leaks = FilmEdgeScan.natural.look.leaks   // 0…4
+    var fog = FilmEdgeScan.clean.look.fog       // 0…4; saved professional values still win except legacy automatic defaults
+    var leaks = FilmEdgeScan.clean.look.leaks   // 0…4
     /// Quarter turns of the film around the picture, clockwise (the Frame
     /// step's ↻): 0 across with the name on top, 1 down with it on the right,
     /// 2 across with it below, 3 down with it on the left.
@@ -525,10 +525,10 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
     /// Nil keeps the existing automatic direction on first use and when another format is chosen.
     /// Only a hand-picked direction is written, so old edits keep the same JSON until it is chosen.
     var orientation: FilmEdgeOrientation? = nil
-    /// Missing in older edits means Natural, by the owner's decision: existing edges gain the scan
-    /// finish without rewriting their files. The saved fog/leaks remain the professional tools' values.
+    /// Missing means Clean: the engine's clean strip, no carrier or app-side scan finish. Keep the key absent
+    /// until a look is chosen; only the old automatic fog/leaks are normalised on decode, not professional edits.
     var scan: FilmEdgeScan? = nil
-    var scanLook: FilmEdgeScan { scan ?? .natural }
+    var scanLook: FilmEdgeScan { scan ?? .clean }
     var scanCarrier: String { view == .strip ? scanLook.look.carrier : "none" }
 
     mutating func chooseScan(_ choice: FilmEdgeScan) {
@@ -576,11 +576,19 @@ struct FilmEdgeSettings: Codable, Equatable, Sendable {
         mode = (try? c.decodeIfPresent(FilmEdgeView.self, forKey: .mode)) ?? d.mode
         gate = (try? c.decodeIfPresent(FilmEdgeGate.self, forKey: .gate)) ?? d.gate
         holes = (try? c.decodeIfPresent(FilmEdgeHoles.self, forKey: .holes)) ?? d.holes
-        fog = try c.decodeIfPresent(Double.self, forKey: .fog) ?? d.fog
+        // An explicit scan keeps the previous decoder fallback too if its fog field was omitted.
+        let defaultFog = c.contains(.scan) ? FilmEdgeScan.natural.look.fog : d.fog
+        fog = try c.decodeIfPresent(Double.self, forKey: .fog) ?? defaultFog
         leaks = try c.decodeIfPresent(Double.self, forKey: .leaks) ?? d.leaks
         turn = try c.decodeIfPresent(Int.self, forKey: .turn) ?? d.turn
         orientation = try? c.decodeIfPresent(FilmEdgeOrientation.self, forKey: .orientation)
         scan = try? c.decodeIfPresent(FilmEdgeScan.self, forKey: .scan)
+        // Before scan was chosen, 1.2 (FilmLab round 3) and 1.0 (upstream) with no leaks were automatic.
+        // Normalise before stamping, not on save: the first develop and the reloaded edit must share one key.
+        // An explicit scan or any other fog/leaks belongs to the person and stays exactly as saved.
+        if !c.contains(.scan), leaks == 0, fog == 1.2 || fog == 1.0 {
+            fog = FilmEdgeScan.clean.look.fog
+        }
         cameraSeed = try c.decodeIfPresent(Int.self, forKey: .cameraSeed) ?? d.cameraSeed
         frameNumber = try c.decodeIfPresent(Int.self, forKey: .frameNumber) ?? d.frameNumber
         framing = try? c.decodeIfPresent(Geometry.self, forKey: .framing)

@@ -14,8 +14,8 @@
 //
 //  What the place does to the picture's shape is the point: the window the picture is shown through is clamped as the
 //  place clamps it (`FilmLabExportPurpose.fits`, the squares of a nine-grid, a 3:4 profile tile), the picture fills it
-//  and what falls outside is cut, exactly as the line under the phone says. With 加白边 chosen the picture is shown on
-//  its white sheet, as its file will be.
+//  and what falls outside is cut, exactly as the line under the phone says. With 加白边 / 加黑边 chosen the picture is
+//  shown on its chosen sheet, as its file will be.
 
 import SwiftUI
 import UIKit
@@ -29,7 +29,7 @@ struct FilmLabExportPurposePreview: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var ui: FilmLabExportPurposeUI { .shared }
-    @State private var displayed = FilmLabExportPreviewChoice(kind: .moments, second: false, dark: false, border: false)
+    @State private var displayed = FilmLabExportPreviewChoice(kind: .moments, second: false, dark: false, border: .none)
     @State private var mounted = false
     @State private var moving = false
     @State private var travel = false
@@ -116,7 +116,8 @@ struct FilmLabExportPurposePreview: View {
         let edit = open?.shownEdit ?? source.edit
         let aspect = CGFloat(max(0.05, DevelopedFrameView.shownAspect(frame: source, edit: edit, model: model,
                                                                       developed: open?.developed)))
-        var shot = FilmLabPurposeShot(session: open, frame: source, aspect: aspect, sheet: sheet(p, aspect: aspect))
+        var shot = FilmLabPurposeShot(session: open, frame: source, aspect: aspect, sheet: sheet(p, aspect: aspect),
+                                     border: displayed.border)
         shot.pixels = flightFrame == source.id ? flight?.pixels : nil
         return shot
     }
@@ -309,9 +310,9 @@ struct FilmLabExportPurposePreview: View {
     private static let notesHeight: CGFloat = 62
     private static let coachHeight: CGFloat = 46
 
-    /// The white sheet's shape, where 加白边 gives this picture one: the nearest shape the place shows.
+    /// The sheet's shape, where either border gives this picture one: the nearest shape the place shows.
     private func sheet(_ p: FilmLabExportPurpose, aspect: CGFloat) -> CGFloat? {
-        guard displayed.border, let fits = p.fits, p.cropped(Double(aspect)) != nil else { return nil }
+        guard displayed.border != .none, let fits = p.fits, p.cropped(Double(aspect)) != nil else { return nil }
         return min(max(aspect, CGFloat(fits.lowerBound)), CGFloat(fits.upperBound))
     }
 
@@ -341,7 +342,9 @@ struct FilmLabExportPurposePreview: View {
         let cropped = p.kind == .instagram && fileAspect < 0.8 / 1.01
             ? FilmLabExportPurpose.Cropped.ends : p.cropped(Double(fileAspect))
         if let cropped { return FilmLabExportPurposeUI.cropLine((1, cropped), of: 1, place: p.name) }
-        if displayed.border, p.cropped(Double(aspect)) != nil { return L("With the white border, all of it shows.") }
+        if displayed.border != .none, p.cropped(Double(aspect)) != nil {
+            return displayed.border == .black ? L("With the black border, all of it shows.") : L("With the white border, all of it shows.")
+        }
         if p.fits == nil, aspect > FilmLabPurposeFeed.single.upperBound * 1.01 || aspect < FilmLabPurposeFeed.single.lowerBound / 1.01 {
             return L("Very long pictures show their middle here. A tap shows it whole.")
         }
@@ -352,14 +355,15 @@ struct FilmLabExportPurposePreview: View {
 // MARK: - the picture
 
 /// The page's own picture — the develop, Edit's pass over it (its 成片 watermarks), through Edit's crop — filling
-/// whatever window a mock-up gives it, and cut by that window. On a white sheet first where 加白边 gave it one.
+/// whatever window a mock-up gives it, and cut by that window. On its chosen sheet first where a border gave it one.
 struct FilmLabPurposeShot {
     let session: OpenFrameSession?
     let frame: LibraryFrame
     /// The picture's shape, width over height.
     let aspect: CGFloat
-    /// The white sheet's shape (加白边), nil for none.
+    /// The sheet's shape (加白边 / 加黑边), nil for none.
     let sheet: CGFloat?
+    var border: FilmLabExportBorder = .white
     var pixels: FilmLabExportPreviewPixels? = nil
 
     /// Only memory already held by the viewer/post. A cold cache uses the ordinary cross-fade instead.
@@ -382,6 +386,7 @@ struct FilmLabPurposeShot {
 
     /// What is uploaded: the sheet, or the picture.
     var fileAspect: CGFloat { sheet ?? aspect }
+    var sheetColour: Color { sheet == nil ? .white : border.colour }
 
     /// The file filling a `width` × `height` window, what does not fit cut away.
     @MainActor
@@ -389,11 +394,11 @@ struct FilmLabPurposeShot {
         let fa = fileAspect
         // The file, large enough to cover the window.
         let file = width / max(height, 1) > fa ? CGSize(width: width, height: width / fa) : CGSize(width: height * fa, height: height)
-        // The picture on it: all of it, the sheet's white around it.
+        // The picture on it: all of it, the sheet's chosen colour around it.
         let picture = file.width / max(file.height, 1) > aspect ? CGSize(width: file.height * aspect, height: file.height)
                                                                 : CGSize(width: file.width, height: file.width / aspect)
         return ZStack {
-            Color.white.frame(width: file.width, height: file.height)
+            sheetColour.frame(width: file.width, height: file.height)
             Group {
                 if let pixels { pixels }
                 else if let session { FilmLabPurposeLook(session: session, frame: frame, pointSize: max(width, height)) }

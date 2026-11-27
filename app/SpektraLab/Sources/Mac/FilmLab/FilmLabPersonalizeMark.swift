@@ -4,7 +4,8 @@
 //
 //  The switch, then:
 //  - **the marks as tiles**, three across on the checkerboard: 文字 (a mark made from typed text, kept in the library as
-//    a PNG like any other, `FilmLabTextMark`), the library's marks, and PNG… (Finder's panel, the library's own checks);
+//    a PNG like any other, `FilmLabTextMark`), the library's marks; Upload PNG below opens Finder's panel with the
+//    library's own checks;
 //  - **where it sits**: a pad of nine places, each the safe margin in from its edge, beside 大小 and 不透明度 — the mark can
 //    still be dragged, sized and turned on the picture itself (`WatermarkCanvasStage`);
 //  - **its colour**, and in 专业版 成片 · 底片, the typed size and turn, and up to four marks (`WatermarkPage(embedded:)`).
@@ -50,11 +51,12 @@ struct FilmLabMarkSection: View {
                                   isOn: Binding(get: { anyOn || typing }, set: { setOn($0) }), id: "watermark") {
             VStack(alignment: .leading, spacing: 12) {
                 tiles
-                if typing { textRow; textChoices }
+                uploadButton
                 if let refusal {
                     Text(refusal).font(Theme.Font.ui(11.5)).foregroundStyle(Theme.danger)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if typing { textRow; textChoices }
                 if let p = current, anyOn {
                     if pro, marks.count > 1 || WatermarkGeometry.canAdd(to: session.edit.watermarks) { markChips(p) }
                     placeRow(p)
@@ -169,11 +171,36 @@ struct FilmLabMarkSection: View {
                     if FilmLabTextMark.recipe(of: mark.id) != nil { editText(mark.id, focus: false) }
                 }
             }
-            tile(width: side, on: false, label: L("PNG…"), id: "png") {
-                Image(systemName: "plus").font(Theme.Font.ui(17, .medium)).foregroundStyle(Theme.secondaryText)
-            } action: { cancelText(); importing = true }
         }
         .frame(width: side * 3 + gap * 2, alignment: .leading)
+    }
+
+    private var uploadButton: some View {
+        Button { cancelText(); importing = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(Theme.Font.ui(19, .medium)).foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L("Upload PNG")).font(Theme.Font.ui(14, .semibold)).foregroundStyle(Theme.text)
+                    Text(L("Your logo or signature, transparent background"))
+                        .font(Theme.Font.ui(12)).foregroundStyle(Theme.secondaryText)
+                }
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .frame(width: width - 32, alignment: .leading)
+            .frame(minHeight: 52)
+            .background(Theme.card.opacity(0.55), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.accent.opacity(0.55), lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressStyle())
+        .help(L("Your logo or signature, transparent background"))
+        .accessibilityLabel(L("Upload PNG"))
+        .accessibilityHint(L("Your logo or signature, transparent background"))
+        .accessibilityIdentifier("filmlab.personalize.mark.upload")
     }
 
     private func tile<Face: View>(width side: CGFloat, on: Bool, label: String, id: String,

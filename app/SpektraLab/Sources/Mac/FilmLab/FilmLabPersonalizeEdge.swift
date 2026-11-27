@@ -197,12 +197,17 @@ struct FilmLabEdgeSection: View {
         var e = session.edit
         if format != e.filmEdge.format {
             e.filmEdge.take(format: format, stockID: e.params.filmStock)
-            e.filmEdge.turn = e.filmEdge.orientation?.turn(keeping: e.filmEdge.turn)
-                ?? format.defaultTurn(pictureAspect: pictureAspect)
+            e.filmEdge.turn = Self.turn(for: e.filmEdge, pictureAspect: pictureAspect)
             e.filmEdge.framing = nil
         }
         e.dateBack.active = false
         return e
+    }
+
+    /// Format previews and applied choices keep the same half turn, including with automatic direction.
+    private static func turn(for edge: FilmEdgeSettings, pictureAspect: Double) -> Int {
+        edge.orientation?.turn(keeping: edge.turn)
+            ?? (edge.format.defaultTurn(pictureAspect: pictureAspect) + (edge.turn >= 2 ? 2 : 0))
     }
 
     private func card(_ format: FilmEdgeFormat, width side: CGFloat) -> some View {
@@ -261,6 +266,11 @@ struct FilmLabEdgeSection: View {
         let side = floor((width - 32 - 8) / 2)
         return VStack(alignment: .leading, spacing: 8) {
             FilmLabPersonalizeLabel(L("Direction"))
+            if edge.format.isCine, edge.format.acrossMM > edge.format.alongMM {
+                Text(L("Movie film runs top to bottom."))
+                    .font(Theme.Font.ui(11.5)).foregroundStyle(Theme.dim)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 8) {
                 ForEach(FilmEdgeOrientation.allCases, id: \.self) { orientation in
                     directionCard(orientation, width: side)
@@ -306,8 +316,7 @@ struct FilmLabEdgeSection: View {
         e.filmEdge.orientation = orientation
         let aspect = Double(source.width / max(source.height, 1))
         let shownAspect = e.geometry.quarterTurns % 2 == 0 ? aspect : 1 / max(aspect, 0.0001)
-        e.filmEdge.turn = orientation?.turn(keeping: e.filmEdge.turn)
-            ?? (e.filmEdge.format.defaultTurn(pictureAspect: shownAspect) + (e.filmEdge.turn >= 2 ? 2 : 0))
+        e.filmEdge.turn = Self.turn(for: e.filmEdge, pictureAspect: shownAspect)
         if let kept = e.filmEdge.framing,
            !FilmFraming.fits(kept, format: e.filmEdge.format, turn: e.filmEdge.turn, source: source) {
             e.filmEdge.framing = nil
@@ -373,8 +382,7 @@ struct FilmLabEdgeSection: View {
     static func setFilmEdge(_ on: Bool, in e: inout FrameEdit, pictureAspect: Double, body: Int) {
         guard on != e.filmEdge.active else { return }
         if on, e.filmEdge.cameraSeed == 0 {
-            e.filmEdge.turn = e.filmEdge.orientation?.turn(keeping: e.filmEdge.turn)
-                ?? e.filmEdge.format.defaultTurn(pictureAspect: pictureAspect)
+            e.filmEdge.turn = Self.turn(for: e.filmEdge, pictureAspect: pictureAspect)
             e.filmEdge.cameraSeed = body
             if e.filmEdge.format.is120 { e.filmEdge.perforation = FilmEdgePerforation.starting(stockID: e.params.filmStock) }
         }
@@ -391,10 +399,8 @@ struct FilmLabEdgeSection: View {
 
     static func pick(_ format: FilmEdgeFormat, in e: inout FrameEdit, pictureAspect: Double) {
         guard format != e.filmEdge.format else { return }
-        let wasHalfTurned = e.filmEdge.turn >= 2
         e.filmEdge.take(format: format, stockID: e.params.filmStock)
-        e.filmEdge.turn = e.filmEdge.orientation?.turn(keeping: e.filmEdge.turn)
-            ?? (format.defaultTurn(pictureAspect: pictureAspect) + (wasHalfTurned ? 2 : 0))
+        e.filmEdge.turn = Self.turn(for: e.filmEdge, pictureAspect: pictureAspect)
         e.filmEdge.framing = nil
         if !format.draws(e.dateBack.style), let face = DateBackFace.offered.first(where: format.draws) {
             e.dateBack.style = face

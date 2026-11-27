@@ -44,6 +44,18 @@ final class FilmLabImport {
     }
 
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// The panel's grants bridge presentation; the import session acquires its own before these are returned.
+    @ObservationIgnored private var panelPicks: [URL] = []
+
+    func takePanelPicks() -> [URL] {
+        let access = panelPicks
+        panelPicks = []
+        return access
+    }
+
+    func releasePanelPicks() {
+        for url in takePanelPicks() { url.stopAccessingSecurityScopedResource() }
+    }
 
     /// `~/Pictures/FilmLab`: the default photo folder.
     static var defaultFolder: URL {
@@ -70,17 +82,31 @@ final class FilmLabImport {
         folder = url
     }
 
-    /// Import Photos…: a folder picked in Finder, copied or left where it is, then opened as a project.
+    /// One folder keeps the project shortcut. Files and mixed picks go through the import page unchanged.
     func importPhotos(store: any MacLibraryData, router: AppRouter, then done: @escaping () -> Void = {}) {
         guard run?.finished != false else { return }
         Task {
-            guard let picked = await MacOpenPanel.choose(multiple: false)?.first else { return }
+            let answer: [URL]?
+            if let urls = FilmLabCheckArgs.importURLs("--filmlab-import-answer") { answer = urls }
+            else { answer = await MacOpenPanel.choose(multiple: true) }
+            guard let urls = answer, let picked = urls.first else { return }
+            let access = urls.filter { $0.startAccessingSecurityScopedResource() }
+            guard urls.count == 1, (try? picked.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else {
+                releasePanelPicks()
+                panelPicks = access
+                if MacShellPath.develop(router.path) != nil { router.toLibrary() }
+                FilmLabHome.shared.hideHome()
+                MacLibraryBrowser.shared.finderPicks = urls
+                MacLibraryBrowser.shared.importAsked = true
+                return
+            }
+            defer { for url in access { url.stopAccessingSecurityScopedResource() } }
             let source = picked.standardizedFileURL
             let inside = source.path.hasPrefix(folder.standardizedFileURL.path + "/") || source == folder.standardizedFileURL
             if mode == .inPlace || inside {
-                await open(source, store: store, router: router, done: done)
+                await open(picked, store: store, router: router, done: done)
             } else {
-                copy(source, store: store, router: router, done: done)
+                copy(picked, store: store, router: router, done: done)
             }
         }
     }
@@ -108,8 +134,10 @@ final class FilmLabImport {
     /// Every picture among `items` — a dropped file as it is, a folder's pictures with their sub-folders — copied
     /// into `target`, then `landed` (when anything is there). Skips what is there already; never overwrites.
     private func copyItems(_ items: [URL], into target: URL, name: String, landed: @escaping () async -> Void) {
+        let access = items.filter { $0.startAccessingSecurityScopedResource() }
         run = Run(name: name)
         task = Task {
+            defer { for url in access { url.stopAccessingSecurityScopedResource() } }
             let jobs = await Task.detached(priority: .userInitiated) { Self.jobs(items, into: target) }.value
             run?.total = jobs.count
             guard !jobs.isEmpty else {

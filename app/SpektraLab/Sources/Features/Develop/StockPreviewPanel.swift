@@ -32,6 +32,8 @@ final class FilmLabStockPanelActivity {
 /// their isEnabled environment. Only the outer composited layer changes; the image lease is released afterwards.
 struct FilmLabKeptStockPanel<Content: View>: View, Equatable {
     let shown: Bool
+    let mode: WorkspaceMode
+    let frameID: LibraryFrame.ID
     @ViewBuilder var content: (FilmLabStockPanelActivity, Int) -> Content
     @State private var memory = Memory()
     @MainActor private final class Memory {
@@ -41,6 +43,18 @@ struct FilmLabKeptStockPanel<Content: View>: View, Equatable {
         var visit = 0
         private var visible = false
         let activity = FilmLabStockPanelActivity()
+        private var last: (shown: Bool, mode: WorkspaceMode, frameID: LibraryFrame.ID)?
+        private var arriving = false
+
+        /// Latch until the next input change, not the next layout: resizing must not restart the arrival.
+        /// A first drawing or a different photograph is immediately there, even if its remembered mode differs.
+        func modeArrival(shown: Bool, mode: WorkspaceMode, frameID: LibraryFrame.ID) -> Bool {
+            if last?.shown != shown || last?.mode != mode || last?.frameID != frameID {
+                arriving = shown && last?.shown == false && last?.mode != mode && last?.frameID == frameID
+                last = (shown, mode, frameID)
+            }
+            return arriving
+        }
 
         func prepare(_ size: CGSize, shown: Bool, make: (FilmLabStockPanelActivity, Int) -> Content) {
             guard shown, size.width > 0, size.height > 0 else {
@@ -57,23 +71,51 @@ struct FilmLabKeptStockPanel<Content: View>: View, Equatable {
         }
     }
 
-    nonisolated static func == (a: Self, b: Self) -> Bool { !a.shown && !b.shown }
+    // Hidden mode changes still reach the small memory; the cached drawing keeps its own Equatable boundary.
+    nonisolated static func == (a: Self, b: Self) -> Bool {
+        !a.shown && !b.shown && a.mode == b.mode && a.frameID == b.frameID
+    }
 
     var body: some View {
-        GeometryReader { room in
+        let arriving = memory.modeArrival(shown: shown, mode: mode, frameID: frameID)
+        return GeometryReader { room in
             let _ = memory.prepare(room.size, shown: shown, make: content)
             if let size = memory.size, let drawing = memory.drawing {
                 FilmLabStockPanelContent(owner: ObjectIdentifier(memory), revision: memory.revision, size: size, content: drawing).equatable()
-                    .compositingGroup()
-                    .opacity(shown ? 1 : 0)
-                    .allowsHitTesting(shown)
-                    .accessibilityHidden(!shown)
             }
         }
+        // Protect the complete contents, including GeometryReader, before animating its ONE composited layer.
+        // Keep that layer even before the first cached drawing, so a launch in 个性化 can animate its first 冲洗.
+        .transaction { $0.animation = nil; $0.disablesAnimations = true }
+        .compositingGroup()
+        .modifier(FilmLabKeptStockArrival(gone: shown ? 0 : 1, shown: shown, arriving: arriving))
+        .animation(shown && arriving ? FilmLabModeMotion.animation(reduce: FilmLabModeMotion.calm) : nil, value: shown)
+        .allowsHitTesting(shown)
+        .accessibilityHidden(!shown)
         // pauseRequests() above is plain storage; observable image releases happen outside body evaluation.
         .onChange(of: shown) { _, on in if !on { memory.activity.release() } }
         .onDisappear { memory.activity.pauseRequests(); memory.activity.release() }
-        .transaction { $0.animation = nil; $0.disablesAnimations = true }
+    }
+}
+
+/// Only the already-composited drawing interpolates; hiding cuts even if an arrival was still running.
+private struct FilmLabKeptStockArrival: ViewModifier, Animatable {
+    var gone: CGFloat
+    let shown: Bool
+    let arriving: Bool
+
+    var animatableData: CGFloat {
+        get { gone }
+        set { gone = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let opacity = !shown ? 0 : arriving ? FilmLabModeMotion.opacity(gone: gone, leaving: false) : 1
+        let shift: CGFloat = shown && arriving && !FilmLabModeMotion.calm ? 28 * FilmLabModeMotion.direction * gone : 0
+        let _ = FilmLabColumnProbe.motion("keptStock", gone: gone, opacity: opacity, phase: shown ? "arriving" : "hidden")
+        // Drawn shifted, not laid out shifted: an `.offset` reran the panel's GeometryReader, which rebuilt the
+        // whole drawing every frame of the arrival (`FilmLabModeSlideEffect`).
+        content.opacity(opacity).visualEffect { [shift] effect, _ in effect.offset(x: shift) }
     }
 }
 
@@ -287,12 +329,13 @@ struct StockPreviewPanel: View {
     /// Under the strips: Decode (or the slider alone), Apply Film Emulation, the status line.
     @ViewBuilder private var rest: some View {
         if let decode {
-            decode
+            decode.filmLabColumnSection(.decode)
         } else {
             EditSlider(title: L("Film Exposure"), value: session.binding(\.params.exposureCompensationEV),
                        range: -8...8, text: { Fmt.signed($0) + " EV" }, detentAtRest: true, editing: session.editing(.shoot))
                 .padding(.horizontal, 16)
                 .rowEnabled(appliesFilm)
+                .filmLabColumnSection(.decode)
         }
         if session.pair == nil { filmSwitch }
         if let status { StatusFoot(status: status) }
@@ -336,19 +379,22 @@ struct StockPreviewPanel: View {
                                 toggleFold: { prefs.filmRowCollapsed.toggle() }) {
                 if let crop { cropButton(crop).rowEnabled(appliesFilm) }
             }
+            .filmLabColumnTag("stock.firstSection")
+            .filmLabColumnSection(.film)
             if !filmFolded {
                 StockShelfChips(shelves: StockShelf.film, shelf: memory.binding(.film, kind: $filmKind), all: memo.films)
                     .rowEnabled(appliesFilm)
                 filmGrid.frame(height: split.film).rowEnabled(appliesFilm)
-                grip(.film, layout, shown: split.film)
+                grip(.film, layout, shown: split.film).filmLabColumnSection(.film)
             }
             ColumnSectionHeader(title: L("Paper"), folded: paperFolded, id: "paper", value: chosenText(1),
                                 toggleFold: { prefs.paperRowCollapsed.toggle() }) {
                 paperPill(small: true).rowEnabled(appliesFilm)
             }
+            .filmLabColumnSection(.paper)
             if !paperFolded {
                 paperGrid.frame(height: split.paper).rowEnabled(appliesFilm)
-                grip(.paper, layout, shown: split.paper)
+                grip(.paper, layout, shown: split.paper).filmLabColumnSection(.paper)
             }
             rest
         }
